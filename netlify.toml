@@ -1,0 +1,14 @@
+# Netlify build config. The app is a Next.js project under web/, but it depends on
+# the @trajectoryos/core workspace package in lib/, so the build must run from the
+# repo root where npm workspaces resolve (NOT from web/).
+#
+# Required environment variables (set in the Netlify UI, never commit them):
+#   NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
+#   SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY   (optional: OPENAI_MODEL)
+
+[build]
+  command = "npm run build"
+  publish = "web/.next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
