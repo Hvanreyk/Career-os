@@ -7,7 +7,7 @@
 #   SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY   (optional: OPENAI_MODEL)
 
 [build]
-  command = "npm run build"
+  command = "npm ci && npm rebuild --build-from-source lightningcss || true && npm run build -w web"
   publish = "web/.next"
 
 [[plugins]]
