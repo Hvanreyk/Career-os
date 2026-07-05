@@ -6,6 +6,7 @@ import {
   Y3_NO_IB_PRE_RECRUITING,
   Y2_FOUNDATION,
   LATERAL_BIG4_AUDIT,
+  Y6_EXTENDED_DEGREE,
   TEST_NOW,
 } from './fixtures.js';
 
@@ -35,5 +36,9 @@ describe('classifyStage', () => {
 
   it('lateral candidate flag → S5 regardless of other fields', () => {
     expect(classify(LATERAL_BIG4_AUDIT)).toBe('S5');
+  });
+
+  it('Y6 extended-degree student (current_year now allows up to 6) → S1', () => {
+    expect(classify(Y6_EXTENDED_DEGREE)).toBe('S1');
   });
 });

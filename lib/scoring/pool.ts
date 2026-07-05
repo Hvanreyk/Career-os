@@ -4,10 +4,12 @@
  *
  * Rules (per scoring_engine_spec_v3.md):
  * - Hard filter on geography (target student wants Sydney → only
- *   Sydney pros).
+ *   Sydney pros). Perth/Adelaide/Brisbane targets broaden this to match
+ *   any confirmed-AU geography instead, since there's no dedicated
+ *   professional data for those cities yet (see AU_BROAD_MATCH_TARGETS).
  * - Tier filter: include the target tier and one tier above
  *   ("BB target" therefore matches BB only — there is no tier above
- *   BB; "elite_boutique_and_mm target" matches that and BB; etc.).
+ *   BB; "elite_boutique target" matches that and BB; etc.).
  * - Cohort filter:
  *   - Entry-level stages (S0–S4): exclude `years_to_current_role > 3`.
  *     A Y2 student should not be matched to a 9-year veteran.
@@ -23,7 +25,7 @@ import type {
   TargetFirmTier,
   TargetGeography,
 } from './types';
-import { TIER_LEVEL } from './types';
+import { AU_BROAD_MATCH_TARGETS, AU_CONFIRMED_GEOGRAPHIES, TIER_LEVEL } from './types';
 
 export function filterPool(
   professionals: Professional[],
@@ -32,8 +34,14 @@ export function filterPool(
   stage: Stage,
 ): Professional[] {
   return professionals.filter(p => {
-    // Geography (hard filter)
-    if (p.current_geography !== target_geography) return false;
+    // Geography (hard filter). Perth/Adelaide/Brisbane targets broaden to
+    // any confirmed-AU geography — there's no dedicated professional data
+    // for those cities yet.
+    if (AU_BROAD_MATCH_TARGETS.includes(target_geography)) {
+      if (!AU_CONFIRMED_GEOGRAPHIES.includes(p.current_geography)) return false;
+    } else if (p.current_geography !== target_geography) {
+      return false;
+    }
 
     // Tier — target tier and above. 'any' skips this check.
     if (target_tier !== 'any') {

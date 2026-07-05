@@ -9,7 +9,7 @@ import { searchUniversities } from '@/lib/onboard/universities';
 import type { DegreeType } from '@/lib/onboard/types';
 import { X } from 'lucide-react';
 
-const YEARS = [1, 2, 3, 4, 5];
+const YEARS = [1, 2, 3, 4, 5, 6];
 const DEGREE_TYPES: { value: DegreeType; label: string }[] = [
   { value: 'bachelor', label: 'Bachelor' },
   { value: 'double_degree', label: 'Double Degree' },

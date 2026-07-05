@@ -85,7 +85,11 @@ export function computeFields(input: ComputeInput): ComputedFields {
 
   // Firm-tier booleans
   const has_bb_experience = experiences.some(e => e.firm_tier === 'bb');
-  const has_eb_mm_experience = experiences.some(e => e.firm_tier === 'elite_boutique_and_mm');
+  const has_elite_boutique_experience = experiences.some(e => e.firm_tier === 'elite_boutique');
+  // Legacy combined value counts toward mid-market, conservatively (see TIER_LEVEL).
+  const has_mid_market_experience = experiences.some(
+    e => e.firm_tier === 'mid_market' || e.firm_tier === 'elite_boutique_and_mm',
+  );
   const has_boutique_experience = experiences.some(e => e.firm_tier === 'boutique');
 
   // Type-based booleans
@@ -144,7 +148,8 @@ export function computeFields(input: ComputeInput): ComputedFields {
   return {
     has_ib_experience,
     has_bb_experience,
-    has_eb_mm_experience,
+    has_elite_boutique_experience,
+    has_mid_market_experience,
     has_boutique_experience,
     has_big4_advisory_experience,
     has_pe_experience,

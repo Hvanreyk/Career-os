@@ -10,7 +10,7 @@ import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 const EXP_TYPES: { value: ExpType; label: string }[] = [
   { value: 'summer_internship', label: 'Summer Internship' },
   { value: 'winter_internship', label: 'Winter Internship' },
-  { value: 'penultimate_internship', label: 'Penultimate Internship' },
+  { value: 'penultimate_internship', label: 'Penultimate Year Internship' },
   { value: 'part_time', label: 'Part-time Role' },
   { value: 'full_time', label: 'Full-time Role' },
   { value: 'grad_program', label: 'Graduate Program' },
@@ -18,7 +18,8 @@ const EXP_TYPES: { value: ExpType; label: string }[] = [
 
 const FIRM_TIERS: { value: FirmTier; label: string }[] = [
   { value: 'bb', label: 'Bulge Bracket (BB)' },
-  { value: 'elite_boutique_and_mm', label: 'Elite Boutique / Mid-Market' },
+  { value: 'elite_boutique', label: 'Elite Boutique' },
+  { value: 'mid_market', label: 'Mid-Market' },
   { value: 'boutique', label: 'Boutique' },
   { value: 'big4', label: 'Big 4' },
   { value: 'private_equity', label: 'Private Equity' },

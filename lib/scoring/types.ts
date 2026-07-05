@@ -7,11 +7,17 @@ import { z } from 'zod';
 export const CurrentRole = z.enum(['ib_analyst', 'ib_associate', 'ib_vp']);
 export type CurrentRole = z.infer<typeof CurrentRole>;
 
-export const CurrentFirmTier = z.enum(['bb', 'elite_boutique_and_mm', 'boutique']);
+// 'elite_boutique_and_mm' is retained for backward compatibility with
+// existing professional records that predate the EB/MM split. New data
+// should use 'elite_boutique' or 'mid_market'.
+export const CurrentFirmTier = z.enum([
+  'bb', 'elite_boutique', 'mid_market', 'elite_boutique_and_mm', 'boutique',
+]);
 export type CurrentFirmTier = z.infer<typeof CurrentFirmTier>;
 
 export const Geography = z.enum([
-  'sydney', 'melbourne', 'hk', 'london', 'ny', 'singapore', 'other',
+  'sydney', 'melbourne', 'perth', 'adelaide', 'brisbane',
+  'hk', 'london', 'ny', 'singapore', 'other',
 ]);
 export type Geography = z.infer<typeof Geography>;
 
@@ -46,8 +52,10 @@ export const ExpType = z.enum([
 ]);
 export type ExpType = z.infer<typeof ExpType>;
 
+// 'elite_boutique_and_mm' is retained for backward compatibility with
+// existing records that predate the EB/MM split — see CurrentFirmTier.
 export const ExpFirmTier = z.enum([
-  'bb', 'elite_boutique_and_mm', 'boutique',
+  'bb', 'elite_boutique', 'mid_market', 'elite_boutique_and_mm', 'boutique',
   'big4', 'private_equity', 'top_tier_law',
   'corporate', 'startup', 'government', 'non_profit',
   'other', 'unknown',
@@ -286,8 +294,12 @@ export type Stage = z.infer<typeof Stage>;
 // `TIER_LEVEL` in the spec — used for distance computation, gap
 // analysis, and "highest_firm_tier_reached" calculation.
 export const TIER_LEVEL = {
-  bb: 6,
+  bb: 7,
+  elite_boutique: 6,
+  // Legacy combined value — ranked conservatively at the Mid-Market level
+  // until existing professional records are relabeled into the split tiers.
   elite_boutique_and_mm: 5,
+  mid_market: 5,
   boutique: 4,
   private_equity: 4,
   top_tier_law: 3,
@@ -324,11 +336,21 @@ export const UNI_TIER_RANKS: Record<UniversityTier, number> = {
 };
 
 // ----- Student profile (intake schema) -----
-export const TargetFirmTier = z.enum(['bb', 'elite_boutique_and_mm', 'boutique', 'any']);
+export const TargetFirmTier = z.enum(['bb', 'elite_boutique', 'mid_market', 'boutique', 'any']);
 export type TargetFirmTier = z.infer<typeof TargetFirmTier>;
 
-export const TargetGeography = z.enum(['sydney', 'melbourne']);
+export const TargetGeography = z.enum(['sydney', 'melbourne', 'perth', 'adelaide', 'brisbane']);
 export type TargetGeography = z.infer<typeof TargetGeography>;
+
+// Geographies with real professional data. Perth/Adelaide/Brisbane targets
+// fall back to matching against this whole set (see pool.ts) since there's
+// no dedicated professional data for them yet.
+export const AU_BROAD_MATCH_TARGETS: readonly TargetGeography[] = [
+  'perth', 'adelaide', 'brisbane',
+];
+export const AU_CONFIRMED_GEOGRAPHIES: readonly Geography[] = [
+  'sydney', 'melbourne', 'perth', 'adelaide', 'brisbane',
+];
 
 export const StudentProfileSchema = z.object({
   id: z.string(),
@@ -340,7 +362,7 @@ export const StudentProfileSchema = z.object({
   degree: z.string(),
   degree_type: DegreeType,
   majors: z.array(z.string()),
-  current_year: z.number().int().min(1).max(5),
+  current_year: z.number().int().min(1).max(6),
   expected_graduation_year: z.number().int().min(2020).max(2100),
   wam_band: WamBand,
   has_honours: z.boolean(),
@@ -442,7 +464,8 @@ export interface ComputedFields {
   // Experience aggregates
   has_ib_experience: boolean;
   has_bb_experience: boolean;
-  has_eb_mm_experience: boolean;
+  has_elite_boutique_experience: boolean;
+  has_mid_market_experience: boolean;
   has_boutique_experience: boolean;
   has_big4_advisory_experience: boolean;
   has_pe_experience: boolean;

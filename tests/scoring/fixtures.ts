@@ -104,5 +104,13 @@ export const LATERAL_BIG4_AUDIT: StudentProfile = {
   ],
 };
 
+/** Y6 student on an extended degree — expected stage = S1 (current_year now allows up to 6). */
+export const Y6_EXTENDED_DEGREE: StudentProfile = {
+  ...Y2_UNSW_COOP_HD_JPM,
+  id: 'student-test-y6-extended',
+  current_year: 6,
+  expected_graduation_year: 2027,
+};
+
 /** Fixed test date so time-sensitive computations are deterministic. */
 export const TEST_NOW = new Date('2026-05-08T00:00:00Z');
