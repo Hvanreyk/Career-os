@@ -8,16 +8,25 @@ import Link from 'next/link';
 
 const TIER_LABELS: Record<string, string> = {
   bb: 'Bulge Bracket',
-  elite_boutique_and_mm: 'Elite Boutique / MM',
+  elite_boutique: 'Elite Boutique',
+  mid_market: 'Mid-Market',
   boutique: 'Boutique',
   any: 'Any Level',
 };
 
+const GEO_LABELS: Record<string, string> = {
+  sydney: 'Sydney',
+  melbourne: 'Melbourne',
+  perth: 'Perth',
+  adelaide: 'Adelaide',
+  brisbane: 'Brisbane',
+};
+
 const WAM_LABELS: Record<string, string> = {
-  hd: 'High Distinction (75+)',
-  d: 'Distinction (65–74)',
-  c: 'Credit (55–64)',
-  p: 'Pass (50–54)',
+  hd: 'High Distinction (85+)',
+  d: 'Distinction (75–84)',
+  c: 'Credit (65–74)',
+  p: 'Pass (50–64)',
   unknown: 'Not specified',
 };
 
@@ -31,7 +40,7 @@ export default function ReviewPage() {
       href: '/onboard/goal',
       rows: [
         ['Target tier', TIER_LABELS[data.target_firm_tier] ?? data.target_firm_tier],
-        ['Target city', data.target_geography === 'sydney' ? 'Sydney' : 'Melbourne'],
+        ['Target city', GEO_LABELS[data.target_geography] ?? data.target_geography],
       ],
     },
     {

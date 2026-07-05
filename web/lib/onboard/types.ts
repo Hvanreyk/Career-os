@@ -2,8 +2,8 @@
 // Derivation (university_tier, role_relevance, signals from WAM, etc.)
 // happens in /api/generate-report before the profile is passed to score().
 
-export type TargetTier = 'bb' | 'elite_boutique_and_mm' | 'boutique' | 'any';
-export type TargetGeo = 'sydney' | 'melbourne';
+export type TargetTier = 'bb' | 'elite_boutique' | 'mid_market' | 'boutique' | 'any';
+export type TargetGeo = 'sydney' | 'melbourne' | 'perth' | 'adelaide' | 'brisbane';
 export type DegreeType = 'bachelor' | 'double_degree' | 'honours' | 'masters' | 'mba' | 'phd';
 export type WamBand = 'hd' | 'd' | 'c' | 'p' | 'unknown';
 export type HighSchoolType =
@@ -14,7 +14,7 @@ export type ExpType =
   | 'summer_internship' | 'winter_internship' | 'penultimate_internship'
   | 'internship' | 'part_time' | 'full_time' | 'casual' | 'grad_program';
 export type FirmTier =
-  | 'bb' | 'elite_boutique_and_mm' | 'boutique'
+  | 'bb' | 'elite_boutique' | 'mid_market' | 'boutique'
   | 'big4' | 'private_equity' | 'top_tier_law'
   | 'corporate' | 'startup' | 'government' | 'non_profit' | 'other';
 export type Industry =

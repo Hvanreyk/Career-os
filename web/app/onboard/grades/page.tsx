@@ -7,10 +7,10 @@ import { useOnboard } from '@/lib/onboard/context';
 import type { WamBand, HighSchoolType, AtarBand } from '@/lib/onboard/types';
 
 const WAMS: { value: WamBand; label: string; description: string }[] = [
-  { value: 'hd', label: 'High Distinction', description: '75 and above' },
-  { value: 'd', label: 'Distinction', description: '65 – 74' },
-  { value: 'c', label: 'Credit', description: '55 – 64' },
-  { value: 'p', label: 'Pass', description: '50 – 54' },
+  { value: 'hd', label: 'High Distinction', description: '85 and above' },
+  { value: 'd', label: 'Distinction', description: '75 – 84' },
+  { value: 'c', label: 'Credit', description: '65 – 74' },
+  { value: 'p', label: 'Pass', description: '50 – 64' },
   { value: 'unknown', label: 'Prefer not to say', description: '' },
 ];
 

@@ -14,6 +14,7 @@ import type {
   MatchResult,
   Stage,
   StudentProfile,
+  TargetFirmTier,
 } from './types';
 import { TIER_LEVEL, WAM_RANKS } from './types';
 import { societyRecommendationText, orgsFor } from './universities';
@@ -76,12 +77,12 @@ function topCurrentFirms(matches: MatchResult[], n: number): string[] {
     .map(([firm]) => firm);
 }
 
-/** All distinct firms at a given tier across all matches' experiences. */
-function firmsAtTier(matches: MatchResult[], tier: Experience['firm_tier']): string[] {
+/** All distinct firms across any of the given tiers. */
+function firmsAtTiers(matches: MatchResult[], tiers: Experience['firm_tier'][]): string[] {
   const seen = new Map<string, number>();
   for (const m of matches) {
     for (const e of m.professional.experiences) {
-      if (e.firm_tier === tier) {
+      if (tiers.includes(e.firm_tier)) {
         seen.set(e.firm, (seen.get(e.firm) ?? 0) + 1);
       }
     }
@@ -89,6 +90,27 @@ function firmsAtTier(matches: MatchResult[], tier: Experience['firm_tier']): str
   return [...seen.entries()]
     .sort((a, b) => b[1] - a[1])
     .map(([f]) => f);
+}
+
+/** Firm-tier values that count toward a given student target, for copy
+ * purposes. Elite Boutique / Mid-Market targets also match the legacy
+ * combined tier, since existing professional records haven't been split
+ * into the two new tiers yet. */
+function firmTiersForTarget(target: TargetFirmTier): Experience['firm_tier'][] {
+  switch (target) {
+    case 'elite_boutique': return ['elite_boutique', 'elite_boutique_and_mm'];
+    case 'mid_market': return ['mid_market', 'elite_boutique_and_mm'];
+    default: return ['bb'];
+  }
+}
+
+/** Short display label for a student's target tier. */
+function tierLabelForTarget(target: TargetFirmTier): string {
+  switch (target) {
+    case 'elite_boutique': return 'Elite Boutique';
+    case 'mid_market': return 'Mid-Market';
+    default: return 'BB';
+  }
 }
 
 /** Most-common first-experience firm (by tier filter). */
@@ -247,19 +269,18 @@ function generateS1Actions(
   // in their pre-FT career? (Snapshot at S1 is too early — most BB summers
   // happen in Y3, after the S1 cutoff.) We exclude their FT current role
   // by only counting non-full_time experiences.
+  const targetFirmTiers = firmTiersForTarget(student.target_firm_tier);
   const hadPenult = countMatches(
     reachedTarget,
     m =>
       m.professional.experiences.some(
         e =>
           (e.type === 'penultimate_internship' || e.type === 'summer_internship') &&
-          (e.firm_tier === 'bb' || e.firm_tier === 'elite_boutique_and_mm'),
+          (e.firm_tier === 'bb' || targetFirmTiers.includes(e.firm_tier)),
       ),
   );
-  const targetTierFirms = student.target_firm_tier === 'elite_boutique_and_mm'
-    ? firmsAtTier(reachedTarget, 'elite_boutique_and_mm').slice(0, 5)
-    : firmsAtTier(reachedTarget, 'bb').slice(0, 5);
-  const tierLabel = student.target_firm_tier === 'elite_boutique_and_mm' ? 'EB/MM' : 'BB';
+  const targetTierFirms = firmsAtTiers(reachedTarget, targetFirmTiers).slice(0, 5);
+  const tierLabel = tierLabelForTarget(student.target_firm_tier);
 
   actions.push({
     priority: 1,
@@ -267,7 +288,7 @@ function generateS1Actions(
     title: `Secure your penultimate summer at a ${tierLabel}`,
     description:
       `Of the ${reachedTarget.length} ${tierLabel}-reaching matches, ${hadPenult} had a penultimate ` +
-      `or summer internship at a ${tierLabel} or elite_boutique_and_mm firm. Apply to ` +
+      `or summer internship at a ${tierLabel} firm. Apply to ` +
       `${fmtList(targetTierFirms)} penultimate programs — apps open July ${student.expected_graduation_year - 1}.`,
     deadline: penultimateAppsDeadline(student, now),
     estimated_effort: 'high',
@@ -337,11 +358,8 @@ function generateS2Actions(
     const tl = targetTier === 'any' ? 0 : TIER_LEVEL[targetTier as keyof typeof TIER_LEVEL] ?? 0;
     return pl >= tl;
   });
-  const tierLabel = targetTier === 'elite_boutique_and_mm' ? 'EB/MM' : 'BB';
-  const targetFirms =
-    targetTier === 'elite_boutique_and_mm'
-      ? firmsAtTier(reached, 'elite_boutique_and_mm').slice(0, 6)
-      : firmsAtTier(reached, 'bb').slice(0, 6);
+  const tierLabel = tierLabelForTarget(targetTier);
+  const targetFirms = firmsAtTiers(reached, firmTiersForTarget(targetTier)).slice(0, 6);
 
   actions.push({
     priority: 1,
@@ -436,11 +454,8 @@ function generateS3Actions(
   });
 
   // 2) Hedge: lateral apps in case the conversion fails
-  const tierLabel = targetTier === 'elite_boutique_and_mm' ? 'EB/MM' : 'BB';
-  const altFirms = (targetTier === 'elite_boutique_and_mm'
-    ? firmsAtTier(reached, 'elite_boutique_and_mm')
-    : firmsAtTier(reached, 'bb')
-  ).slice(0, 5);
+  const tierLabel = tierLabelForTarget(targetTier);
+  const altFirms = firmsAtTiers(reached, firmTiersForTarget(targetTier)).slice(0, 5);
   actions.push({
     priority: 2,
     action_type: 'grad_pipeline_hedge',
@@ -575,4 +590,4 @@ export function generateActions(
 }
 
 // Re-export a couple of helpers for tests / index.ts
-export { topCurrentFirms, firmsAtTier, mostCommonFirstFirm, addMonths, isoDate, orgsFor };
+export { topCurrentFirms, firmsAtTiers, mostCommonFirstFirm, addMonths, isoDate, orgsFor };

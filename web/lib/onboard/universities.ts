@@ -43,6 +43,9 @@ export const UNIVERSITIES: University[] = [
   { name: 'University of Canberra', tier: 'other_au' },
   { name: 'Swinburne University', tier: 'other_au' },
   { name: 'Western Sydney University', tier: 'other_au' },
+  { name: 'Murdoch University', tier: 'other_au' },
+  { name: 'Edith Cowan University', tier: 'other_au', aliases: ['ECU'] },
+  { name: 'Flinders University', tier: 'other_au' },
   { name: 'Other Australian University', tier: 'other_au' },
 ];
 

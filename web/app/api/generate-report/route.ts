@@ -30,7 +30,7 @@ function deriveRoleFunction(industry: string): string {
 
 function deriveRelevance(firmTier: string, industry: string): number {
   if (firmTier === 'bb' && industry === 'ib') return 5;
-  if (firmTier === 'elite_boutique_and_mm' && industry === 'ib') return 5;
+  if ((firmTier === 'elite_boutique' || firmTier === 'mid_market') && industry === 'ib') return 5;
   if (firmTier === 'boutique' && industry === 'ib') return 4;
   if (firmTier === 'big4' && ['big4_advisory', 'big4_audit'].includes(industry)) return 3;
   if (firmTier === 'private_equity') return 4;
@@ -64,7 +64,10 @@ function buildStudentProfile(form: OnboardData, userId: string, email: string): 
   // (assume 4-year co-op or 3-year bachelor from now)
   const currentCalendarYear = new Date().getFullYear();
   const degreeLength = form.is_co_op ? 4 : form.degree_type === 'double_degree' ? 5 : form.degree_type === 'bachelor' ? 3 : 4;
-  const expectedGradYear = currentCalendarYear + (degreeLength - form.current_year);
+  // Clamp to at least 1 remaining year — an extended-duration student
+  // (e.g. Year 6 on a nominally 3-4 year degree) shouldn't get a graduation
+  // year in the past.
+  const expectedGradYear = currentCalendarYear + Math.max(degreeLength - form.current_year, 1);
 
   const experiences: StudentProfile['experiences'] = form.experiences.map((exp) => ({
     type: exp.type as StudentProfile['experiences'][number]['type'],
