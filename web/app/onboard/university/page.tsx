@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { StepShell } from '@/components/onboard/StepShell';
 import { ChoiceButton } from '@/components/onboard/ChoiceButton';
 import { useOnboard } from '@/lib/onboard/context';
-import { searchUniversities } from '@/lib/onboard/universities';
+import { canonicalizeUniversityName } from '@/lib/onboard/universities';
 import type { DegreeType } from '@/lib/onboard/types';
 import { X } from 'lucide-react';
 
@@ -21,11 +21,7 @@ const DEGREE_TYPES: { value: DegreeType; label: string }[] = [
 export default function UniversityPage() {
   const { data, update } = useOnboard();
   const router = useRouter();
-  const [uniQuery, setUniQuery] = useState(data.university);
-  const [showDropdown, setShowDropdown] = useState(false);
   const [majorInput, setMajorInput] = useState('');
-
-  const results = searchUniversities(uniQuery).slice(0, 6);
 
   const canContinue =
     data.university && data.degree && data.degree_type && data.current_year && data.majors.length > 0;
@@ -49,35 +45,13 @@ export default function UniversityPage() {
         {/* University */}
         <div>
           <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">University</label>
-          <div className="relative">
-            <input
-              value={uniQuery}
-              onChange={(e) => { setUniQuery(e.target.value); setShowDropdown(true); }}
-              onFocus={() => setShowDropdown(true)}
-              onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
-              placeholder="Search your university..."
-              className="w-full bg-navy-800/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-gold-400/40 transition-colors"
-            />
-            {showDropdown && results.length > 0 && (
-              <div className="absolute z-20 top-full left-0 right-0 mt-1 glass border border-white/10 rounded-xl overflow-hidden shadow-xl">
-                {results.map((u) => (
-                  <button
-                    key={u.name}
-                    type="button"
-                    onMouseDown={() => {
-                      update({ university: u.name });
-                      setUniQuery(u.name);
-                      setShowDropdown(false);
-                    }}
-                    className="w-full text-left px-4 py-3 text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
-                  >
-                    <span>{u.name}</span>
-                    <span className="ml-2 text-[10px] text-slate-600 uppercase">{u.tier}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <input
+            value={data.university}
+            onChange={(e) => update({ university: e.target.value })}
+            onBlur={(e) => update({ university: canonicalizeUniversityName(e.target.value) })}
+            placeholder="e.g. University of Sydney"
+            className="w-full bg-navy-800/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-gold-400/40 transition-colors"
+          />
         </div>
 
         {/* Degree name */}

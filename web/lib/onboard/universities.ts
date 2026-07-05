@@ -49,22 +49,37 @@ export const UNIVERSITIES: University[] = [
   { name: 'Other Australian University', tier: 'other_au' },
 ];
 
-export function getTier(universityName: string): UniversityTier {
-  const lower = universityName.toLowerCase();
-  const match = UNIVERSITIES.find(
-    (u) =>
-      u.name.toLowerCase() === lower ||
-      u.aliases?.some((a) => a.toLowerCase() === lower),
-  );
-  return match?.tier ?? 'other_au';
+// Case/whitespace/punctuation-insensitive key for matching user-typed input
+// against the list above. Deliberately not fuzzy/typo-tolerant — an
+// unrecognised name just falls through to the 'other_au' tier as free text.
+function normalize(input: string): string {
+  return input
+    .trim()
+    .toLowerCase()
+    .replace(/^the\s+/, '')
+    .replace(/[.,]/g, '')
+    .replace(/\s+/g, ' ');
 }
 
-export function searchUniversities(query: string): University[] {
-  if (!query.trim()) return UNIVERSITIES;
-  const lower = query.toLowerCase();
-  return UNIVERSITIES.filter(
+function findUniversity(universityName: string): University | undefined {
+  const norm = normalize(universityName);
+  if (!norm) return undefined;
+  return UNIVERSITIES.find(
     (u) =>
-      u.name.toLowerCase().includes(lower) ||
-      u.aliases?.some((a) => a.toLowerCase().includes(lower)),
+      normalize(u.name) === norm ||
+      u.aliases?.some((a) => normalize(a) === norm),
   );
+}
+
+export function getTier(universityName: string): UniversityTier {
+  return findUniversity(universityName)?.tier ?? 'other_au';
+}
+
+// Snaps a recognised (but differently-cased/worded) university name to its
+// canonical spelling, so two students who type variants of the same
+// institution end up with an identical stored value. Unrecognised input is
+// returned trimmed, unchanged, so free-typed universities still work.
+export function canonicalizeUniversityName(universityName: string): string {
+  const trimmed = universityName.trim();
+  return findUniversity(trimmed)?.name ?? trimmed;
 }
