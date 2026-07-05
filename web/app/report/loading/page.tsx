@@ -25,7 +25,9 @@ export default function ReportLoadingPage() {
     const run = async () => {
       const raw = localStorage.getItem('tos_profile');
       if (!raw) {
-        setError('Profile data not found. Please complete the form again.');
+        // No pending onboarding data (e.g. revisit, or the confirmation link was
+        // opened on another device). The dashboard shows the persisted report.
+        router.replace('/dashboard');
         return;
       }
 
@@ -61,8 +63,14 @@ export default function ReportLoadingPage() {
           throw new Error((body as { error?: string }).error ?? 'Report generation failed');
         }
 
-        const { reportId } = await createRes.json() as { reportId: string };
+        const { reportId, existing } = await createRes.json() as { reportId: string; existing?: boolean };
         localStorage.removeItem('tos_profile');
+
+        // Profile unchanged — the persisted report is reused, no regeneration.
+        if (existing) {
+          router.replace(`/report/${reportId}`);
+          return;
+        }
 
         // Phase 2 — process: run the LLM and flip status to completed.
         const processRes = await fetch(`/api/reports/${reportId}/process`, {

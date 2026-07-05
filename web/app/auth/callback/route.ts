@@ -1,15 +1,26 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import type { EmailOtpType } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
+
+// Only allow same-site relative redirect targets.
+function safeNext(next: string | null, fallback: string): string {
+  if (next && next.startsWith('/') && !next.startsWith('//')) return next;
+  return fallback;
+}
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/report/loading';
+  // Older/customised Supabase email templates link straight here with a
+  // token_hash instead of going through the PKCE code exchange.
+  const tokenHash = searchParams.get('token_hash');
+  const otpType = searchParams.get('type') as EmailOtpType | null;
+  const next = safeNext(searchParams.get('next'), '/dashboard');
 
-  if (!code) {
-    console.error('[auth/callback] No code in URL');
-    return NextResponse.redirect(`${origin}/onboard/signup?error=auth_failed`);
+  if (!code && !(tokenHash && otpType)) {
+    console.error('[auth/callback] No code or token_hash in URL');
+    return NextResponse.redirect(`${origin}/login?error=auth_failed`);
   }
 
   const cookieStore = await cookies();
@@ -37,11 +48,13 @@ export async function GET(request: Request) {
     },
   );
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { error } = code
+    ? await supabase.auth.exchangeCodeForSession(code)
+    : await supabase.auth.verifyOtp({ type: otpType!, token_hash: tokenHash! });
 
   if (error) {
-    console.error('[auth/callback] exchangeCodeForSession error:', error.message);
-    return NextResponse.redirect(`${origin}/onboard/signup?error=auth_failed`);
+    console.error('[auth/callback] session exchange error:', error.message);
+    return NextResponse.redirect(`${origin}/login?error=auth_failed`);
   }
 
   // Build the redirect and stamp all auth cookies onto it.

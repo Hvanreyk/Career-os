@@ -20,7 +20,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
 
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/onboard/goal');
+  if (!user) redirect(`/login?next=${encodeURIComponent(`/report/${id}`)}`);
 
   const serviceClient = createServiceClient();
 

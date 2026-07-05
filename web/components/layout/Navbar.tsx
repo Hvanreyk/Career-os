@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Menu, X, Compass, Calculator } from 'lucide-react';
+import { ChevronDown, Menu, X, Compass, Calculator, LayoutDashboard } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 const tools = [
   {
@@ -35,7 +36,18 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
   const pathname = usePathname();
+
+  // Track auth state so the navbar can switch between "Log in" and "Dashboard".
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => setSignedIn(!!user));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSignedIn(!!session?.user);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -156,6 +168,21 @@ export function Navbar() {
               </NavLink>
             ))}
 
+            {signedIn ? (
+              <Link
+                href="/dashboard"
+                className={`ml-1 flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  pathname.startsWith('/dashboard') ? 'text-gold-400' : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
+              </Link>
+            ) : (
+              <NavLink href="/login" active={pathname === '/login'}>
+                Log in
+              </NavLink>
+            )}
+
             <Link
               href="/tools/career-compass"
               className="ml-3 px-5 py-2 bg-gold-400 text-navy-950 font-semibold text-sm rounded-lg hover:bg-gold-300 transition-all shadow-[0_0_20px_rgba(212,175,55,0.25)] hover:shadow-[0_0_28px_rgba(212,175,55,0.4)]"
@@ -211,6 +238,13 @@ export function Navbar() {
                   {tool.label}
                 </Link>
               ))}
+              <Link
+                href={signedIn ? '/dashboard' : '/login'}
+                className="mt-2 px-4 py-3 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                {signedIn ? 'Dashboard' : 'Log in'}
+              </Link>
               <Link
                 href="/tools/career-compass"
                 className="mt-3 mx-4 py-3 text-center bg-gold-400 text-navy-950 font-semibold text-sm rounded-lg"

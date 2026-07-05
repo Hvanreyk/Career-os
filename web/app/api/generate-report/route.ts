@@ -108,6 +108,23 @@ function buildStudentProfile(form: OnboardData, userId: string, email: string): 
   };
 }
 
+// JSON-stable equality. Postgres jsonb re-orders object keys, so a plain
+// JSON.stringify comparison against a freshly built profile always differs;
+// sorting keys recursively makes the comparison order-independent.
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(',')}]`;
+  }
+  if (value !== null && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([, v]) => v !== undefined)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([k, v]) => `${JSON.stringify(k)}:${stableStringify(v)}`);
+    return `{${entries.join(',')}}`;
+  }
+  return JSON.stringify(value) ?? 'null';
+}
+
 // ─── Professional row mapping ─────────────────────────────────
 
 // Map a flat DB row (expN_* columns) into the engine's Professional shape.
@@ -221,8 +238,37 @@ export async function POST(request: Request) {
     // 3. Build StudentProfile
     const profile = buildStudentProfile(formData, user.id, user.email!);
 
-    // 4. Fetch professionals from Supabase
     const serviceClient = createServiceClient();
+
+    // 3b. Idempotency guard: if this exact profile was already scored and has a
+    // usable (non-error) report, return that report instead of regenerating.
+    // Reports persist per user — they are only regenerated when the profile
+    // actually changes.
+    const { data: existingProfileRow } = await serviceClient
+      .from('student_profiles')
+      .select('id, profile')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingProfileRow && stableStringify(existingProfileRow.profile) === stableStringify(profile)) {
+      const { data: existingReport } = await serviceClient
+        .from('reports')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('profile_id', existingProfileRow.id)
+        .neq('status', 'error')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingReport) {
+        return NextResponse.json({ reportId: existingReport.id, existing: true });
+      }
+    }
+
+    // 4. Fetch professionals from Supabase
     const { data: profRows, error: profError } = await serviceClient
       .from('professionals')
       .select('*');
@@ -255,16 +301,33 @@ export async function POST(request: Request) {
     // 5. Run scoring engine (fast, in-memory — safe to do inline)
     const scoringOutput = score(profile, professionals, { now: new Date() });
 
-    // 6. Persist the profile
-    const { data: savedProfile, error: profileError } = await serviceClient
-      .from('student_profiles')
-      .insert({ user_id: user.id, email: user.email, profile })
-      .select('id')
-      .single();
+    // 6. Persist the profile — one row per user. Updating (rather than
+    //    inserting a new row each run) keeps the user's profile stable;
+    //    old reports keep pointing at the same profile_id.
+    let profileId: string;
+    if (existingProfileRow) {
+      const { error: profileError } = await serviceClient
+        .from('student_profiles')
+        .update({ email: user.email, profile })
+        .eq('id', existingProfileRow.id);
 
-    if (profileError || !savedProfile) {
-      console.error('Failed to save profile:', profileError);
-      return NextResponse.json({ error: 'Failed to save profile' }, { status: 500 });
+      if (profileError) {
+        console.error('Failed to update profile:', profileError);
+        return NextResponse.json({ error: 'Failed to save profile' }, { status: 500 });
+      }
+      profileId = existingProfileRow.id;
+    } else {
+      const { data: savedProfile, error: profileError } = await serviceClient
+        .from('student_profiles')
+        .insert({ user_id: user.id, email: user.email, profile })
+        .select('id')
+        .single();
+
+      if (profileError || !savedProfile) {
+        console.error('Failed to save profile:', profileError);
+        return NextResponse.json({ error: 'Failed to save profile' }, { status: 500 });
+      }
+      profileId = savedProfile.id;
     }
 
     // 7. Create the report in 'processing' state. The LLM step runs separately
@@ -273,7 +336,7 @@ export async function POST(request: Request) {
       .from('reports')
       .insert({
         user_id: user.id,
-        profile_id: savedProfile.id,
+        profile_id: profileId,
         scoring_output: scoringOutput,
         llm_report: null,
         has_access: true,
