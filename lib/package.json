@@ -9,7 +9,12 @@
     "./scoring/types": "./scoring/types.ts",
     "./llm": "./llm/index.ts",
     "./llm/types": "./llm/types.ts",
-    "./db/xlsx": "./db/xlsx.ts"
+    "./db/xlsx": "./db/xlsx.ts",
+    "./courses": "./courses/index.ts",
+    "./courses/content": "./courses/content.ts",
+    "./courses/diagnostic": "./courses/diagnostic.ts",
+    "./courses/readiness": "./courses/readiness.ts",
+    "./courses/timeline": "./courses/timeline.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
