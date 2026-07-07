@@ -28,7 +28,7 @@ export const UniversityTier = z.enum([
 export type UniversityTier = z.infer<typeof UniversityTier>;
 
 export const DegreeType = z.enum([
-  'bachelor', 'honours', 'masters', 'mba', 'double_degree', 'phd',
+  'bachelor', 'honours', 'masters', 'mba', 'double_degree', 'combined_degree', 'phd',
 ]);
 export type DegreeType = z.infer<typeof DegreeType>;
 

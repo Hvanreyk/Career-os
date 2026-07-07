@@ -9,7 +9,7 @@ import { z } from 'zod';
 
 const TargetTier = z.enum(['bb', 'elite_boutique', 'mid_market', 'boutique', 'any']);
 const TargetGeo = z.enum(['sydney', 'melbourne', 'perth', 'adelaide', 'brisbane']);
-const DegreeType = z.enum(['bachelor', 'double_degree', 'honours', 'masters', 'mba', 'phd']);
+const DegreeType = z.enum(['bachelor', 'double_degree', 'combined_degree', 'honours', 'masters', 'mba', 'phd']);
 const WamBand = z.enum(['hd', 'd', 'c', 'p', 'unknown']);
 const HighSchoolType = z.enum([
   'gps', 'cas', 'aps', 'selective',
