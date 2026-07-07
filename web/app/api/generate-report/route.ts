@@ -7,7 +7,7 @@ import { score } from '@trajectoryos/core/scoring';
 import type { StudentProfile, Professional } from '@trajectoryos/core/scoring/types';
 import type { OnboardData } from '@/lib/onboard/types';
 import { OnboardDataSchema } from '@/lib/onboard/schema';
-import { getTier } from '@/lib/onboard/universities';
+import { getTier, normalizeUniversityName } from '@/lib/onboard/universities';
 
 // ─── Derivation helpers ───────────────────────────────────────
 
@@ -40,7 +40,8 @@ function deriveRelevance(firmTier: string, industry: string): number {
 }
 
 function buildStudentProfile(form: OnboardData, userId: string, email: string): StudentProfile {
-  const universityTier = getTier(form.university) as StudentProfile['university_tier'];
+  const universityName = normalizeUniversityName(form.university);
+  const universityTier = getTier(universityName) as StudentProfile['university_tier'];
 
   // Auto-derive signals from WAM and co-op
   const autoSignals: string[] = [...form.signals];
@@ -63,7 +64,15 @@ function buildStudentProfile(form: OnboardData, userId: string, email: string): 
   // Expected graduation year: current year of study + remaining years
   // (assume 4-year co-op or 3-year bachelor from now)
   const currentCalendarYear = new Date().getFullYear();
-  const degreeLength = form.is_co_op ? 4 : form.degree_type === 'double_degree' ? 5 : form.degree_type === 'bachelor' ? 3 : 4;
+  const degreeLength = form.is_co_op
+    ? 4
+    : form.degree_type === 'double_degree'
+    ? 5
+    : form.degree_type === 'combined_degree'
+    ? 4
+    : form.degree_type === 'bachelor'
+    ? 3
+    : 4;
   // Clamp to at least 1 remaining year — an extended-duration student
   // (e.g. Year 6 on a nominally 3-4 year degree) shouldn't get a graduation
   // year in the past.
@@ -85,7 +94,7 @@ function buildStudentProfile(form: OnboardData, userId: string, email: string): 
   return {
     id: userId,
     email,
-    university: form.university,
+    university: universityName,
     university_tier: universityTier,
     degree: form.degree,
     degree_type: form.degree_type as StudentProfile['degree_type'],

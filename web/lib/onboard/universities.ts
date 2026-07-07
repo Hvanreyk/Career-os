@@ -60,11 +60,28 @@ export function getTier(universityName: string): UniversityTier {
 }
 
 export function searchUniversities(query: string): University[] {
-  if (!query.trim()) return UNIVERSITIES;
-  const lower = query.toLowerCase();
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+  const lower = trimmed.toLowerCase();
   return UNIVERSITIES.filter(
     (u) =>
       u.name.toLowerCase().includes(lower) ||
       u.aliases?.some((a) => a.toLowerCase().includes(lower)),
   );
+}
+
+// Normalizes free-typed university names so that e.g. "University of Sydney",
+// "university of sydney" and "USYD" all resolve to the same canonical string
+// before being persisted/scored. Falls back to a whitespace-collapsed,
+// trimmed version of the input for universities outside the known list.
+export function normalizeUniversityName(input: string): string {
+  const trimmed = input.trim().replace(/\s+/g, ' ');
+  if (!trimmed) return trimmed;
+  const lower = trimmed.toLowerCase();
+  const match = UNIVERSITIES.find(
+    (u) =>
+      u.name.toLowerCase() === lower ||
+      u.aliases?.some((a) => a.toLowerCase() === lower),
+  );
+  return match?.name ?? trimmed;
 }

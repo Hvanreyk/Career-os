@@ -5,17 +5,42 @@ import { useRouter } from 'next/navigation';
 import { StepShell } from '@/components/onboard/StepShell';
 import { ChoiceButton } from '@/components/onboard/ChoiceButton';
 import { useOnboard } from '@/lib/onboard/context';
-import { searchUniversities } from '@/lib/onboard/universities';
+import { searchUniversities, normalizeUniversityName } from '@/lib/onboard/universities';
 import type { DegreeType } from '@/lib/onboard/types';
 import { X } from 'lucide-react';
 
 const YEARS = [1, 2, 3, 4, 5, 6];
-const DEGREE_TYPES: { value: DegreeType; label: string }[] = [
-  { value: 'bachelor', label: 'Bachelor' },
-  { value: 'double_degree', label: 'Double Degree' },
-  { value: 'honours', label: 'Honours' },
-  { value: 'masters', label: 'Masters' },
-  { value: 'mba', label: 'MBA' },
+const DEGREE_TYPES: { value: DegreeType; label: string; example: string }[] = [
+  {
+    value: 'bachelor',
+    label: 'Bachelor',
+    example: 'A single undergraduate degree, e.g. a Bachelor of Commerce.',
+  },
+  {
+    value: 'double_degree',
+    label: 'Double Degree',
+    example: 'An undergraduate bachelor\'s degree followed by a Master\'s or a clinical Doctorate — e.g. a Bachelor of Commerce/Laws, or Medicine (MD) and Dentistry pathways.',
+  },
+  {
+    value: 'combined_degree',
+    label: 'Combined Degree',
+    example: 'Two bachelor\'s degrees studied together at the same time, e.g. a Bachelor of Commerce and Bachelor of Science, or a Bachelor of Commerce and Bachelor of Advanced Studies (very common combination).',
+  },
+  {
+    value: 'honours',
+    label: 'Honours',
+    example: 'An extra year of research-based study after your bachelor\'s degree.',
+  },
+  {
+    value: 'masters',
+    label: 'Masters',
+    example: 'A postgraduate degree, e.g. a Master of Finance.',
+  },
+  {
+    value: 'mba',
+    label: 'MBA',
+    example: 'A Master of Business Administration, typically after work experience.',
+  },
 ];
 
 export default function UniversityPage() {
@@ -26,6 +51,14 @@ export default function UniversityPage() {
   const [majorInput, setMajorInput] = useState('');
 
   const results = searchUniversities(uniQuery).slice(0, 6);
+
+  const commitUniversity = () => {
+    const trimmed = uniQuery.trim();
+    if (!trimmed) return;
+    const normalized = normalizeUniversityName(trimmed);
+    update({ university: normalized });
+    setUniQuery(normalized);
+  };
 
   const canContinue =
     data.university && data.degree && data.degree_type && data.current_year && data.majors.length > 0;
@@ -54,7 +87,7 @@ export default function UniversityPage() {
               value={uniQuery}
               onChange={(e) => { setUniQuery(e.target.value); setShowDropdown(true); }}
               onFocus={() => setShowDropdown(true)}
-              onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+              onBlur={() => setTimeout(() => { setShowDropdown(false); commitUniversity(); }, 150)}
               placeholder="Search your university..."
               className="w-full bg-navy-800/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-gold-400/40 transition-colors"
             />
@@ -96,18 +129,24 @@ export default function UniversityPage() {
           <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">Degree type</label>
           <div className="grid grid-cols-3 gap-2">
             {DEGREE_TYPES.map((d) => (
-              <button
-                key={d.value}
-                type="button"
-                onClick={() => update({ degree_type: d.value })}
-                className={`py-2.5 rounded-xl text-xs font-medium border transition-all ${
-                  data.degree_type === d.value
-                    ? 'border-gold-400/60 bg-gold-400/10 text-gold-300'
-                    : 'border-white/10 text-slate-400 hover:border-white/25 hover:text-white'
-                }`}
-              >
-                {d.label}
-              </button>
+              <div key={d.value} className="group relative">
+                <button
+                  type="button"
+                  onClick={() => update({ degree_type: d.value })}
+                  className={`w-full py-2.5 rounded-xl text-xs font-medium border transition-all ${
+                    data.degree_type === d.value
+                      ? 'border-gold-400/60 bg-gold-400/10 text-gold-300'
+                      : 'border-white/10 text-slate-400 hover:border-white/25 hover:text-white'
+                  }`}
+                >
+                  {d.label}
+                </button>
+                <div className="pointer-events-none absolute z-30 bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="glass border border-white/10 rounded-lg px-3 py-2 text-[11px] leading-snug text-slate-300 shadow-xl">
+                    {d.example}
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         </div>

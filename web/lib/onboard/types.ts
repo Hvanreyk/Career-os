@@ -4,7 +4,7 @@
 
 export type TargetTier = 'bb' | 'elite_boutique' | 'mid_market' | 'boutique' | 'any';
 export type TargetGeo = 'sydney' | 'melbourne' | 'perth' | 'adelaide' | 'brisbane';
-export type DegreeType = 'bachelor' | 'double_degree' | 'honours' | 'masters' | 'mba' | 'phd';
+export type DegreeType = 'bachelor' | 'double_degree' | 'combined_degree' | 'honours' | 'masters' | 'mba' | 'phd';
 export type WamBand = 'hd' | 'd' | 'c' | 'p' | 'unknown';
 export type HighSchoolType =
   | 'gps' | 'cas' | 'aps' | 'selective'
