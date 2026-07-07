@@ -9,6 +9,7 @@
     "./scoring/types": "./scoring/types.ts",
     "./llm": "./llm/index.ts",
     "./llm/types": "./llm/types.ts",
+    "./llm/roadmap": "./llm/roadmap.ts",
     "./db/xlsx": "./db/xlsx.ts",
     "./courses": "./courses/index.ts",
     "./courses/content": "./courses/content.ts",
