@@ -1,5 +1,5 @@
-import { DIMENSION_LABELS, type Dimension } from '../courses/diagnostic.js';
-import type { RoadmapInput } from './roadmap.js';
+import { DIMENSION_LABELS, type Dimension } from '../courses/diagnostic';
+import type { RoadmapInput } from './roadmap';
 
 // Prompt builders for the recruiting roadmap. Same philosophy as
 // ./prompt.ts: the model only rephrases and schedules what the

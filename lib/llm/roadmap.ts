@@ -1,8 +1,8 @@
 import OpenAI from 'openai';
 import 'dotenv/config';
-import type { Readiness, FinalReadiness, QuizScores } from '../courses/readiness.js';
-import type { RecruitingCycle } from '../courses/timeline.js';
-import { buildRoadmapSystemPrompt, buildRoadmapUserMessage } from './roadmap-prompt.js';
+import type { Readiness, FinalReadiness, QuizScores } from '../courses/readiness';
+import type { RecruitingCycle } from '../courses/timeline';
+import { buildRoadmapSystemPrompt, buildRoadmapUserMessage } from './roadmap-prompt';
 
 // Personalised recruiting roadmap generator (Course 1, Module 9).
 // Mirrors generateReport in ./index.ts: env-driven model, JSON mode,

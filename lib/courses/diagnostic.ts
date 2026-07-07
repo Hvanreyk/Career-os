@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { StudentProfile } from '../scoring/types.js';
+import type { StudentProfile } from '../scoring/types';
 
 // ============================================================
 // Course diagnostic

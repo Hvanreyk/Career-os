@@ -3,7 +3,7 @@ import {
   DIMENSIONS,
   type Dimension,
   type DiagnosticAnswers,
-} from './diagnostic.js';
+} from './diagnostic';
 
 // ============================================================
 // Readiness scoring — deterministic, pure, unit-tested.
