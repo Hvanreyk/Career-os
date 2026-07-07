@@ -3,7 +3,7 @@ slug: is-ib-right-for-you
 title: Is investment banking right for you?
 est_minutes: 7
 region: au
-status: draft
+status: published
 last_reviewed: "2026-07-07"
 sources: []
 ---

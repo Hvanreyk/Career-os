@@ -1,0 +1,102 @@
+status: published
+questions:
+  - slug: q1
+    prompt: What is the central structural fact of Australian IB recruiting?
+    options:
+      - id: a
+        text: Graduate applications in final year are the main entry point
+      - id: b
+        text: The penultimate-year summer internship is the main door — return offers fill much of each graduate class
+      - id: c
+        text: Firms hire mostly through campus career fairs
+      - id: d
+        text: All hiring happens in November
+    correct: b
+    explanation: >-
+      Summer interns become the graduate class's first draft. Everything in
+      a sensible preparation plan works backwards from the internship
+      application window in penultimate year.
+
+  - slug: q2
+    prompt: Summer internship applications for major Australian programs typically open and close…
+    options:
+      - id: a
+        text: Open February–March, close March–April — often assessed on a rolling basis
+      - id: b
+        text: Open July, close December
+      - id: c
+        text: Open and close in November, when internships start
+      - id: d
+        text: They never close — applications are reviewed continuously all year
+    correct: a
+    explanation: >-
+      The typical window is early in the calendar year of penultimate year
+      (verify each firm — dates shift and some close early when full).
+      Rolling assessment makes week-one applications materially stronger.
+
+  - slug: q3
+    prompt: What is a recorded video interview primarily filtering for?
+    options:
+      - id: a
+        text: Deep technical mastery of LBO modelling
+      - id: b
+        text: Clear, structured, professional communication of motivation and behavioural answers on camera
+      - id: c
+        text: Camera and lighting equipment quality
+      - id: d
+        text: Typing speed
+    correct: b
+    explanation: >-
+      Early video stages test whether you can communicate a structured,
+      credible answer under light pressure. Technicals deepen in later
+      live interviews and assessment centres.
+
+  - slug: q4
+    prompt: In a group exercise at an assessment centre, assessors most reward candidates who…
+    options:
+      - id: a
+        text: Speak the most and control the discussion
+      - id: b
+        text: Advance the task while making the group work — building on others, summarising, including quiet members
+      - id: c
+        text: Stay silent to avoid mistakes
+      - id: d
+        text: Finish the task alone fastest
+    correct: b
+    explanation: >-
+      The exercise simulates a deal team. Visible contribution plus
+      collaboration is the pass; domination and passivity are both fails.
+
+  - slug: q5
+    prompt: How does boutique hiring differ from structured programs?
+    options:
+      - id: a
+        text: It runs year-round, is need-driven, and typically flows through networking rather than portals
+      - id: b
+        text: It uses larger assessment centres
+      - id: c
+        text: It has lower technical standards
+      - id: d
+        text: It's only open to final-year students
+    correct: a
+    explanation: >-
+      Boutiques hire when a seat opens — no fixed windows, often no portal.
+      Warm introductions and specific, well-timed outreach are the
+      application channel, and technical standards are as high or higher.
+
+  - slug: q6
+    prompt: Why is an off-cycle boutique internship so valuable for later summer-program applications?
+    options:
+      - id: a
+        text: It guarantees a bulge-bracket offer
+      - id: b
+        text: Lean teams give real deal exposure, producing exactly the evidenced experience structured applications reward
+      - id: c
+        text: It exempts you from psychometric testing
+      - id: d
+        text: Firms share candidate rankings with each other
+    correct: b
+    explanation: >-
+      Genuine transaction experience is the strongest possible resume
+      signal for a penultimate-year applicant — and boutiques are where
+      early-year students can realistically earn it.

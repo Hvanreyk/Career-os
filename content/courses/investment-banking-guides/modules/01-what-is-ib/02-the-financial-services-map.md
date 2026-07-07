@@ -3,7 +3,7 @@ slug: the-financial-services-map
 title: "The map: IB vs everything else in finance"
 est_minutes: 9
 region: au
-status: draft
+status: published
 last_reviewed: "2026-07-07"
 sources:
   - label: RBA — The Australian Financial System (Explainer)

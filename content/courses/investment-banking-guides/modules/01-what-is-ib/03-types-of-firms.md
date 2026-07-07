@@ -3,7 +3,7 @@ slug: types-of-firms
 title: "Bulge bracket to boutique: the types of firms"
 est_minutes: 8
 region: au
-status: draft
+status: published
 last_reviewed: "2026-07-07"
 sources:
   - label: Firm career pages (verify current presence and programs directly)

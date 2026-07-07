@@ -3,7 +3,7 @@ slug: what-investment-banks-do
 title: What investment banks actually do
 est_minutes: 8
 region: au
-status: draft
+status: published
 last_reviewed: "2026-07-07"
 sources:
   - label: ASIC — Australia's financial system overview
