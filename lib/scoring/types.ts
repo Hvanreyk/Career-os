@@ -552,7 +552,15 @@ export interface ScoringOutput {
   };
 
   match_summary: {
+    /** Whole database analysed before comparability filters. Optional
+     * because reports stored before this field existed lack it. */
+    total_professionals?: number;
+    /** Comparable peers after geography + cohort filters. */
     pool_size: number;
+    /** How many of the comparable pool are at/above the target tier —
+     * the base rate the fit band compares the matched cohort against.
+     * Optional: absent on reports stored before this field existed. */
+    pool_reached_target_count?: number;
     matched_count: number;
     reached_target_count: number;
     fit_band: FitBand;

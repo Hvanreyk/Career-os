@@ -25,6 +25,7 @@ export function buildUserMessage(output: ScoringOutput): string {
     stage,
     stage_description,
     match_summary,
+    target,
     top_paths,
     gaps,
     actions,
@@ -68,8 +69,9 @@ export function buildUserMessage(output: ScoringOutput): string {
 SCORING SUMMARY
   Stage: ${stage} — ${stage_description}
   Fit band: ${fitLabel}
-  Match pool: ${match_summary.pool_size} professionals
-  Reached target (BB or above): ${probability_data.reached_target} of ${probability_data.matched_count}
+  Match funnel: ${match_summary.total_professionals ?? match_summary.pool_size} profiles analysed → ${match_summary.pool_size} comparable (same city, same career-stage cohort) → ${match_summary.matched_count} closest matches
+  Reached target tier (${target.tier}): ${probability_data.reached_target} of ${probability_data.matched_count} matched profiles${probability_data.reached_one_below > 0 ? ` (a further ${probability_data.reached_one_below} reached one tier below)` : ''}
+  Base rate: ${match_summary.pool_reached_target_count ?? 'n/a'} of ${match_summary.pool_size} in the whole comparable pool reached the target tier — frame the student's matched-cohort rate relative to this, not as an absolute probability
   Low data warning: ${match_summary.low_data_warning} (pool < 20 professionals; be appropriately measured about probability claims)
   Next recruiting window: ${context.next_recruiting_window}
 
