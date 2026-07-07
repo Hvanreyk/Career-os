@@ -51,10 +51,11 @@ export function score(
   // 2. Stage
   const stage = classifyStage(student, computed);
 
-  // 3. Filtered pool
+  // 3. Filtered pool — comparable peers by geography + cohort. Tier is
+  // deliberately not filtered: reached_target_count downstream measures
+  // how many similar profiles actually made the target tier.
   const pool = filterPool(
     professionals,
-    student.target_firm_tier,
     student.target_geography,
     stage,
   );
@@ -69,23 +70,39 @@ export function score(
   const actions = generateActions(stage, student, computed, matches, now);
 
   // 8. Output structuring
-  return assembleOutput(student, stage, pool, matches, gaps, actions, now);
+  return assembleOutput(student, stage, professionals.length, pool, matches, gaps, actions, now);
 }
 
 // ============================================================
 // Output assembly
 // ============================================================
 
-function fitBand(matches: MatchResult[], reachedTarget: number): FitBand {
+/**
+ * Fit band = how the student's matched cohort compares to the *base rate*
+ * of reaching the target tier across the whole comparable pool. A ratio of
+ * 0.45 sounds low in absolute terms but is strong when only ~30% of the
+ * pool made the target ("lift" > 1). Absolute-ratio thresholds calibrated
+ * for the old tier-pre-filtered funnel (where ratio was always 1.0) would
+ * mislabel everyone as a reach.
+ */
+function fitBand(
+  matches: MatchResult[],
+  reachedTarget: number,
+  poolBaseRate: number,
+): FitBand {
   if (matches.length === 0) return 'long_shot';
   const ratio = reachedTarget / matches.length;
+  const lift = poolBaseRate > 0 ? ratio / poolBaseRate : ratio > 0 ? Infinity : 1;
   // Average distance among the top-5 — closer = more confident
   const top = matches.slice(0, 5);
   const avgDist = top.reduce((acc, m) => acc + m.distance, 0) / top.length;
 
-  if (ratio >= 0.6 && avgDist < 0.35) return 'strong_fit';
-  if (ratio >= 0.5 && avgDist < 0.5) return 'stretch_but_achievable';
-  if (ratio >= 0.3) return 'reach';
+  if (ratio >= 0.45 && lift >= 1.2 && avgDist < 0.35) return 'strong_fit';
+  // A saturated base rate (e.g. target tier 'any') can't produce lift; treat
+  // matching the base rate as achievable when the base rate itself is high.
+  if (ratio >= 0.45 && poolBaseRate >= 0.9 && avgDist < 0.35) return 'strong_fit';
+  if (ratio >= 0.3 && lift >= 0.9) return 'stretch_but_achievable';
+  if (ratio >= 0.15 || lift >= 0.5) return 'reach';
   return 'long_shot';
 }
 
@@ -132,6 +149,7 @@ function buildSummary(student: StudentProfile, fit: FitBand): string {
 function assembleOutput(
   student: StudentProfile,
   stage: Stage,
+  total_professionals: number,
   pool: Professional[],
   matches: MatchResult[],
   gaps: Gap[],
@@ -152,7 +170,13 @@ function assembleOutput(
     return lvl >= tgtLevel - 1 && lvl < tgtLevel;
   }).length;
 
-  const fit_band = fitBand(matches, reached_target_count);
+  // Base rate: how much of the whole comparable pool made the target tier.
+  const pool_reached_target_count = pool.filter(
+    p => (TIER_LEVEL[p.current_firm_tier as keyof typeof TIER_LEVEL] ?? 0) >= tgtLevel,
+  ).length;
+  const poolBaseRate = pool.length > 0 ? pool_reached_target_count / pool.length : 0;
+
+  const fit_band = fitBand(matches, reached_target_count, poolBaseRate);
 
   const top_paths = matches.slice(0, 5).map(m => ({
     path_summary: m.professional.path_summary ?? '—',
@@ -173,7 +197,9 @@ function assembleOutput(
     },
 
     match_summary: {
+      total_professionals,
       pool_size: pool.length,
+      pool_reached_target_count,
       matched_count: matches.length,
       reached_target_count,
       fit_band,

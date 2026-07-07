@@ -52,9 +52,11 @@ describe('computeDistance', () => {
   });
 
   it('skips wam feature when either side is unknown', () => {
+    // Force wam_band='unknown' on a real pro rather than relying on a
+    // specific row keeping that value as the dataset evolves.
     const pros = loadPros();
-    const p017 = pros.find(p => p.id === 'P017')!; // wam_band='unknown'
-    const snap = reconstructAtStage(p017, 'S1');
+    const unknownWamPro = { ...pros[0]!, wam_band: 'unknown' as const };
+    const snap = reconstructAtStage(unknownWamPro, 'S1');
     const sd = studentForDistance(
       { ...Y2_UNSW_COOP_HD_JPM, wam_band: 'hd' },
       computeFields({

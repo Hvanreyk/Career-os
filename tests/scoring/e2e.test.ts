@@ -17,11 +17,21 @@
 
 import { describe, it, expect } from 'vitest';
 import { score } from '../../lib/scoring/index.js';
+import { DEFAULT_K } from '../../lib/scoring/matcher.js';
+import { TIER_LEVEL } from '../../lib/scoring/types.js';
 import { loadPros, Y2_UNSW_COOP_HD_JPM, TEST_NOW } from './fixtures.js';
 
 describe('Phase 2 e2e — Y2 UNSW Co-op HD JPM student → BB Sydney', () => {
   const pros = loadPros();
   const out = score(Y2_UNSW_COOP_HD_JPM, pros, { now: TEST_NOW });
+
+  // Data-derived expectations — the dataset grows/gets relabeled over time.
+  const entrySydney = pros.filter(
+    p => p.current_geography === 'sydney' && p.years_to_current_role <= 3,
+  );
+  const seniorIds = pros
+    .filter(p => p.years_to_current_role > 3)
+    .map(p => p.id);
 
   it('classifies as stage S1', () => {
     expect(out.stage).toBe('S1');
@@ -29,14 +39,21 @@ describe('Phase 2 e2e — Y2 UNSW Co-op HD JPM student → BB Sydney', () => {
 
   it('senior cohort excluded (entry-level only — strict years_to_current_role <= 3)', () => {
     const matchedIds = out.top_paths.map(p => p.anonymised_profile_id);
-    for (const seniorId of ['P004', 'P005', 'P006', 'P009', 'P017']) {
+    for (const seniorId of seniorIds) {
       expect(matchedIds).not.toContain(seniorId);
     }
   });
 
-  it('pool size = 10 (BB-only entry-level Sydney; tier filter excludes EB-MM at BB target)', () => {
-    expect(out.match_summary.pool_size).toBe(10);
-    expect(out.match_summary.matched_count).toBe(10);
+  it('pool = all entry-level Sydney pros regardless of tier; matches capped at K (plus distance ties)', () => {
+    expect(out.match_summary.pool_size).toBe(entrySydney.length);
+    expect(out.match_summary.matched_count).toBeGreaterThanOrEqual(
+      Math.min(entrySydney.length, DEFAULT_K),
+    );
+    expect(out.match_summary.matched_count).toBeLessThanOrEqual(entrySydney.length);
+  });
+
+  it('total_professionals reports the whole database analysed', () => {
+    expect(out.match_summary.total_professionals).toBe(pros.length);
   });
 
   it('top matches include P007 Sophie Ellis and P008 Annie Yan', () => {
@@ -45,8 +62,8 @@ describe('Phase 2 e2e — Y2 UNSW Co-op HD JPM student → BB Sydney', () => {
     expect(top5).toContain('P008');
   });
 
-  it('low_data_warning is true (12 < K=20)', () => {
-    expect(out.match_summary.low_data_warning).toBe(true);
+  it('low_data_warning reflects whether fewer than K matches were found', () => {
+    expect(out.match_summary.low_data_warning).toBe(entrySydney.length < DEFAULT_K);
   });
 
   it('boutique_data_warning is false (target=bb)', () => {
@@ -68,10 +85,17 @@ describe('Phase 2 e2e — Y2 UNSW Co-op HD JPM student → BB Sydney', () => {
     expect(found).toBe(true);
   });
 
-  it('match counts are surfaced (e.g. "X of N reached BB")', () => {
-    expect(out.probability_data.matched_count).toBe(10);
-    // All 10 are BB by tier filter, so reached_target = 10.
-    expect(out.probability_data.reached_target).toBe(10);
+  it('reached_target counts matches at/above the BB target — no longer tautologically equal to matched_count', () => {
+    const { matched_count, reached_target } = out.probability_data;
+    expect(reached_target).toBeLessThanOrEqual(matched_count);
+    if (entrySydney.length <= DEFAULT_K) {
+      // Every comparable pro is matched, so the expected count is exactly
+      // the entry-level Sydney pros whose current tier ranks >= BB.
+      const reachedBB = entrySydney.filter(
+        p => (TIER_LEVEL[p.current_firm_tier as keyof typeof TIER_LEVEL] ?? 0) >= TIER_LEVEL.bb,
+      ).length;
+      expect(reached_target).toBe(reachedBB);
+    }
   });
 
   it('next recruiting window text mentions July with months count', () => {

@@ -89,8 +89,8 @@ export default function ReportClient({
   createdAt: string;
 }) {
   const fitCfg = FIT_CONFIG[report.match_summary.fit_band];
-  const successPct = report.match_summary.pool_size > 0
-    ? Math.round((report.match_summary.reached_target_count / report.match_summary.pool_size) * 100)
+  const successPct = report.match_summary.matched_count > 0
+    ? Math.round((report.match_summary.reached_target_count / report.match_summary.matched_count) * 100)
     : 0;
   const createdDate = new Date(createdAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -160,7 +160,7 @@ export default function ReportClient({
           <div className="text-xs text-slate-500 uppercase tracking-widest mb-4">Match Statistics</div>
           <div className="grid grid-cols-3 gap-4">
             {[
-              { label: 'Profiles analysed', value: report.match_summary.pool_size },
+              { label: 'Profiles analysed', value: report.match_summary.total_professionals ?? report.match_summary.pool_size },
               { label: 'Similar to you', value: report.match_summary.matched_count },
               { label: 'Reached target', value: report.match_summary.reached_target_count },
             ].map(({ label, value }) => (

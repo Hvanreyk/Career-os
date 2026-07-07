@@ -38,7 +38,7 @@ describe('classifyStage', () => {
     expect(classify(LATERAL_BIG4_AUDIT)).toBe('S5');
   });
 
-  it('Y6 extended-degree student (current_year now allows up to 6) → S1', () => {
-    expect(classify(Y6_EXTENDED_DEGREE)).toBe('S1');
+  it('Y6 extended-degree student graduating 2027 → S2 (Y3+ and July 2026 recruiting is <6 months from TEST_NOW)', () => {
+    expect(classify(Y6_EXTENDED_DEGREE)).toBe('S2');
   });
 });
