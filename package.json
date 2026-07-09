@@ -17,7 +17,9 @@
     "import": "tsx scripts/import-csv.ts",
     "import:reject-test": "tsx scripts/import-csv.ts --reject-test",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "seed:courses": "tsx scripts/seed-courses.ts",
+    "seed:courses:dry": "tsx scripts/seed-courses.ts --dry-run"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
@@ -30,6 +32,7 @@
     "@types/node": "^22.5.0",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",
-    "vitest": "^2.1.1"
+    "vitest": "^2.1.1",
+    "yaml": "^2.6.0"
   }
 }

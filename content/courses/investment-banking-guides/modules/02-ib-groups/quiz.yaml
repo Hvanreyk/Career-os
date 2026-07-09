@@ -1,0 +1,101 @@
+status: published
+questions:
+  - slug: q1
+    prompt: What is the core difference between coverage groups and product groups?
+    options:
+      - id: a
+        text: Coverage groups own sector client relationships; product groups own transaction-type execution
+      - id: b
+        text: Coverage groups are senior bankers; product groups are juniors
+      - id: c
+        text: Product groups only exist in the US
+      - id: d
+        text: Coverage groups execute deals; product groups market them
+    correct: a
+    explanation: >-
+      Coverage is organised by industry and owns relationships; product
+      groups (M&A, ECM, DCM, LevFin, Restructuring) own execution expertise
+      across industries. On deals they typically work together.
+
+  - slug: q2
+    prompt: Which group most directly runs an IPO?
+    options:
+      - id: a
+        text: DCM
+      - id: b
+        text: ECM
+      - id: c
+        text: Restructuring
+      - id: d
+        text: Leveraged Finance
+    correct: b
+    explanation: >-
+      Equity Capital Markets structures, prices and bookbuilds equity
+      offerings including IPOs. DCM is the debt equivalent.
+
+  - slug: q3
+    prompt: Why have M&A and LevFin historically been the strongest paths into private equity?
+    options:
+      - id: a
+        text: PE firms are legally required to hire from those teams
+      - id: b
+        text: Their day-to-day work — valuation and LBO/debt modelling — maps directly onto buyout analysis
+      - id: c
+        text: They have the shortest hours, leaving time to interview
+      - id: d
+        text: They are the only groups that exist in Australia
+    correct: b
+    explanation: >-
+      PE analysis is valuation plus leveraged capital structures — precisely
+      the M&A and LevFin toolkit. It's a tendency, not a rule; strong
+      analysts move into PE from other seats too.
+
+  - slug: q4
+    prompt: What does a Financial Sponsors coverage team do?
+    options:
+      - id: a
+        text: Covers private equity firms as repeat-transaction clients
+      - id: b
+        text: Sponsors the bank's graduate program
+      - id: c
+        text: Manages the bank's charity partnerships
+      - id: d
+        text: Covers government infrastructure agencies only
+    correct: a
+    explanation: >-
+      Sponsors teams serve PE firms, which transact constantly — giving the
+      group heavy deal flow and close ties to leveraged finance.
+
+  - slug: q5
+    prompt: Which statement about Australian IB team structure is most accurate?
+    options:
+      - id: a
+        text: Australian offices replicate the full New York group structure at scale
+      - id: b
+        text: Teams are smaller, the coverage/product split is softer, and generalist analyst programs are common
+      - id: c
+        text: Australia has coverage groups but no product capability
+      - id: d
+        text: All Australian analysts are allocated to one group in their application
+    correct: b
+    explanation: >-
+      Local teams are lean: coverage bankers often execute their own deals
+      and most graduate intakes are generalist, with allocation or rotation
+      after joining.
+
+  - slug: q6
+    prompt: Which pairing of group and typical work rhythm is correct?
+    options:
+      - id: a
+        text: "ECM: long six-month processes independent of markets"
+      - id: b
+        text: "DCM: high-volume, fast transactions for frequent issuers"
+      - id: c
+        text: "Restructuring: busiest in bull markets"
+      - id: d
+        text: "M&A: work clusters only around market windows"
+    correct: b
+    explanation: >-
+      DCM serves frequent issuers (banks, governments, large corporates)
+      with fast, standardised deals. ECM depends on market windows, M&A on
+      deal timelines, and restructuring on downturns.

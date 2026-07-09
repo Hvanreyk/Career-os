@@ -8,23 +8,31 @@ professionals, then an LLM turns the structured result into a personalised repor
 
 ```
 /                      root workspace — scoring/LLM engine, scripts, tests
-├── lib/               @trajectoryos/core — the shared engine (NO network/DB)
+├── lib/               @trajectoryos/core — the shared engine (NO network/DB/file I/O)
 │   ├── scoring/       8-layer scoring pipeline (pure functions)
-│   ├── llm/           OpenAI report generator (scoring output → markdown)
+│   ├── llm/           OpenAI generators (report + recruiting roadmap)
+│   ├── courses/       course engine: content-block schemas, diagnostic,
+│   │                  readiness scoring, AU recruiting timeline (all pure)
 │   └── db/            xlsx loader for the professional database
-├── scripts/           CSV/XLSX import + demos (run with tsx)
-├── tests/             vitest suites for the scoring engine
+├── content/           authored course content (human-editable YAML + markdown)
+│   └── courses/<slug>/  course.yaml + modules/NN-slug/{module.yaml,quiz.yaml,*.md}
+├── scripts/           CSV/XLSX import + course seeding + demos (run with tsx)
+├── tests/             vitest suites (scoring engine + course engine/content lint)
 ├── supabase/          SQL migrations (apply in order)
 └── web/               Next.js app (Netlify deploy target)
-    ├── app/           routes (App Router)
-    ├── components/    UI
-    └── lib/           web-only helpers (onboard form, supabase clients)
+    ├── app/           routes (App Router) incl. /resources course pages + /api/courses
+    ├── components/    UI (incl. components/courses/)
+    └── lib/           web-only helpers (onboard, supabase clients, courses/ queries)
 ```
 
 `lib/` is published to the workspace as **`@trajectoryos/core`** (see `lib/package.json`).
-- `web/` imports it as `@trajectoryos/core/scoring`, `/scoring/types`, `/llm`, `/llm/types`.
+- `web/` imports it as `@trajectoryos/core/scoring`, `/scoring/types`, `/llm`, `/llm/types`,
+  `/llm/roadmap`, and `/courses/*` (`content`, `diagnostic`, `readiness`, `timeline`).
   Next transpiles its TS source via `transpilePackages` in `web/next.config.ts`.
 - Root `scripts/` and `tests/` import the same files by **relative path** (`../lib/...`).
+- **Import extensions:** files *inside* `lib/` import each other **extensionless**
+  (`./prompt`, `../courses/readiness`) — Turbopack won't resolve `.js` specifiers here.
+  External importers in `scripts/`/`tests/` use `.js` (e.g. `../../lib/courses/readiness.js`).
 
 > History: web used to reach `lib/` through symlinks (`web/lib/scoring → ../../lib/scoring`).
 > Those break on Netlify/Vercel (target is outside the deploy root). The workspace
@@ -43,6 +51,34 @@ Onboarding wizard (`web/app/onboard/*`) collects a form into `localStorage`, the
      `completed`/`error`. Isolated so neither request risks a serverless timeout.
 3. **`/report/[id]`** renders the report, or `ReportPending` if it isn't
    `completed` (auto-resumes processing; supports retry).
+
+## Courses (the Resources section)
+
+The `/resources` hub lists **courses** built on a shared engine. Course 1,
+`investment-banking-guides`, ships on it; the other five sections stay
+"coming soon" placeholders until published.
+
+- **Content is authored as files** under `content/courses/<slug>/` (YAML +
+  markdown with fenced YAML directives: ```knowledge_check / callout / table /
+  profile_example). `scripts/lib/parse-course.ts` parses + strictly validates
+  against `lib/courses/content.ts`; `scripts/seed-courses.ts` idempotently
+  upserts into Supabase on natural keys (slugs). `status: draft|published` and
+  `last_reviewed` live in the files; publishing = flip to `published` + reseed.
+- **DB (migration 0006):** content tables (`courses`, `course_modules`,
+  `lessons`, `quiz_questions`) are published-only public read — EXCEPT
+  `quiz_questions`, which has RLS enabled with NO policies (answers are
+  service-role-only; the quiz page + grading route strip them). User tables
+  (`course_enrollments`, `lesson_progress`, `quiz_attempts`, `bank_targets`,
+  `course_roadmaps`) are owner-RLS; `quiz_attempts`/`course_roadmaps` are
+  owner-select-only and written server-side.
+- **Diagnostic → readiness** is deterministic (`lib/courses/{diagnostic,readiness}.ts`,
+  unit-tested), NOT LLM. The **roadmap** reuses the report two-phase pattern:
+  `POST /api/courses/[slug]/roadmap` (assembles a hashed input snapshot; reuses
+  an existing roadmap on identical hash) → `POST /api/roadmaps/[id]/process`
+  (LLM via `lib/llm/roadmap.ts`).
+- **Gating:** course overview + hub are public; lessons/quiz/diagnostic/tracker/
+  roadmap require login via `requireUser()` (`web/lib/auth.ts`), since the proxy's
+  prefix list can't express public/gated within one subtree.
 
 ## Conventions
 
@@ -70,6 +106,8 @@ npm run typecheck      # type-check engine+scripts and the web app
 npm run dev            # next dev (web)
 npm run build          # next build (web)
 npm run import:dry     # dry-run the professional DB import
+npm run seed:courses:dry  # validate all authored course content (no DB writes)
+npm run seed:courses      # upsert course content to Supabase (needs SUPABASE_* env)
 ```
 
 ## Deployment (Netlify)

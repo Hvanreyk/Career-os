@@ -1,0 +1,32 @@
+# Course 1 — Investment Banking Guides
+#
+# Editing guide (for founder review):
+#   * status: published | published — the hub only shows published courses.
+#   * last_reviewed: bump when you re-check time-sensitive facts.
+#   * modules: directory names under modules/, in display order.
+#   * After editing any file, run:  npm run seed:courses
+#     (or npm run seed:courses:dry to validate without writing).
+
+slug: investment-banking-guides
+title: Investment Banking Guides
+description: >-
+  A structured career roadmap that takes you from little knowledge of the
+  industry to understanding the work, choosing a pathway and building a
+  personalised Australian recruiting plan — with a diagnostic, readiness
+  score, bank target tracker and week-by-week roadmap.
+icon: briefcase
+tag: Career Roadmap
+region: au
+status: published
+sort_order: 0
+last_reviewed: "2026-07-07"
+modules:
+  - 01-what-is-ib
+  - 02-ib-groups
+  - 03-life-as-an-analyst
+  - 04-how-deals-work
+  - 05-technical-foundations
+  - 06-the-recruiting-process
+  - 07-building-a-competitive-profile
+  - 08-bank-and-role-selection
+  - 09-personalised-recruiting-roadmap
