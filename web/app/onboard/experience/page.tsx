@@ -16,30 +16,75 @@ const EXP_TYPES: { value: ExpType; label: string }[] = [
   { value: 'grad_program', label: 'Graduate Program' },
 ];
 
-const FIRM_TIERS: { value: FirmTier; label: string }[] = [
-  { value: 'bb', label: 'Bulge Bracket (BB)' },
-  { value: 'elite_boutique', label: 'Elite Boutique' },
-  { value: 'mid_market', label: 'Mid-Market' },
-  { value: 'boutique', label: 'Boutique' },
-  { value: 'big4', label: 'Big 4' },
-  { value: 'private_equity', label: 'Private Equity' },
-  { value: 'corporate', label: 'Corporate / Other' },
-  { value: 'government', label: 'Government' },
-  { value: 'other', label: 'Other' },
-];
-
-const INDUSTRIES: { value: Industry; label: string }[] = [
+// Area = industry. Picked first; it determines which firm-level options
+// make sense (e.g. IB shows BB/EB/MM/Boutique, Consulting shows MBB/Tier 2/
+// Big 4/Boutique). Keeps 'capital_markets' out of the picker (superseded by
+// 'global_markets') but the value stays valid in the schema for old data.
+const AREAS: { value: Industry; label: string }[] = [
   { value: 'ib', label: 'Investment Banking' },
-  { value: 'big4_advisory', label: 'Big 4 Advisory / M&A' },
-  { value: 'big4_audit', label: 'Big 4 Audit' },
+  { value: 'global_markets', label: 'Global Markets (Sales & Trading)' },
   { value: 'private_equity', label: 'Private Equity' },
-  { value: 'capital_markets', label: 'Capital Markets' },
+  { value: 'investment_management_equities', label: 'Investment Management — Equities' },
+  { value: 'investment_management_credit', label: 'Investment Management — Credit' },
+  { value: 'investment_management_real_estate', label: 'Investment Management — Real Estate' },
   { value: 'consulting', label: 'Consulting' },
+  { value: 'big4_audit', label: 'Accounting — Audit' },
+  { value: 'big4_advisory', label: 'Accounting — Advisory / M&A' },
   { value: 'corporate', label: 'Corporate Finance' },
   { value: 'law', label: 'Law' },
   { value: 'government', label: 'Government' },
   { value: 'other', label: 'Other' },
 ];
+
+const FIRM_TIER_LABELS: Record<FirmTier, string> = {
+  bb: 'Bulge Bracket (BB)',
+  elite_boutique: 'Elite Boutique',
+  mid_market: 'Mid-Market',
+  boutique: 'Boutique',
+  aus_big4_bank: 'Big 4 Australian Bank (CBA/NAB/Westpac/ANZ)',
+  mega_fund: 'Mega-Fund',
+  large_cap: 'Large-Cap',
+  global_manager: 'Global Asset Manager',
+  hedge_fund: 'Hedge Fund',
+  mbb: 'MBB',
+  tier2_consulting: 'Tier 2',
+  big4: 'Big 4',
+  mid_tier: 'Mid-Tier',
+  private_equity: 'Private Equity',
+  top_tier_law: 'Top-Tier',
+  corporate: 'Corporate / Other',
+  startup: 'Startup',
+  local_government: 'Local Government',
+  state_government: 'State Government',
+  federal_government: 'Federal Government',
+  government: 'Government',
+  non_profit: 'Non-Profit',
+  other: 'Other',
+};
+
+// Which firm-level options are offered for each area, in display order.
+// The first entry is used as the default when an area is selected.
+const AREA_FIRM_TIERS: Record<Industry, FirmTier[]> = {
+  ib: ['bb', 'elite_boutique', 'mid_market', 'boutique'],
+  global_markets: ['bb', 'elite_boutique', 'mid_market', 'boutique', 'aus_big4_bank'],
+  capital_markets: ['bb', 'elite_boutique', 'mid_market', 'boutique', 'aus_big4_bank'],
+  private_equity: ['mega_fund', 'large_cap', 'mid_market', 'boutique'],
+  investment_management_equities: ['global_manager', 'hedge_fund', 'boutique'],
+  investment_management_credit: ['global_manager', 'hedge_fund', 'boutique'],
+  investment_management_real_estate: ['global_manager', 'hedge_fund', 'boutique'],
+  consulting: ['mbb', 'tier2_consulting', 'big4', 'boutique'],
+  big4_audit: ['big4', 'mid_tier', 'boutique'],
+  big4_advisory: ['big4', 'mid_tier', 'boutique'],
+  corporate: ['corporate'],
+  law: ['top_tier_law', 'other'],
+  government: ['federal_government', 'state_government', 'local_government'],
+  non_profit: ['non_profit'],
+  other: ['other'],
+};
+
+function firmTiersForArea(area: Industry): { value: FirmTier; label: string }[] {
+  return AREA_FIRM_TIERS[area].map((value) => ({ value, label: FIRM_TIER_LABELS[value] }));
+}
 
 const HOW_OBTAINED: { value: HowObtained; label: string }[] = [
   { value: 'online_application', label: 'Online application' },
@@ -134,7 +179,24 @@ function ExperienceCard({
               />
             </div>
 
-            {/* Firm tier */}
+            {/* Area (industry) — picked first, drives the Firm level options below */}
+            <div>
+              <label className="text-xs text-slate-500 uppercase tracking-wider block mb-1.5">Area</label>
+              <select
+                value={exp.industry}
+                onChange={(e) => {
+                  const industry = e.target.value as Industry;
+                  const validTiers = AREA_FIRM_TIERS[industry];
+                  const firm_tier = validTiers.includes(exp.firm_tier) ? exp.firm_tier : validTiers[0];
+                  onUpdate({ ...exp, industry, firm_tier });
+                }}
+                className="w-full bg-navy-800/60 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-gold-400/40"
+              >
+                {AREAS.map((a) => <option key={a.value} value={a.value} className="bg-navy-900">{a.label}</option>)}
+              </select>
+            </div>
+
+            {/* Firm tier — options depend on the selected Area */}
             <div>
               <label className="text-xs text-slate-500 uppercase tracking-wider block mb-1.5">Firm level</label>
               <select
@@ -142,19 +204,7 @@ function ExperienceCard({
                 onChange={(e) => onUpdate({ ...exp, firm_tier: e.target.value as FirmTier })}
                 className="w-full bg-navy-800/60 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-gold-400/40"
               >
-                {FIRM_TIERS.map((t) => <option key={t.value} value={t.value} className="bg-navy-900">{t.label}</option>)}
-              </select>
-            </div>
-
-            {/* Industry */}
-            <div>
-              <label className="text-xs text-slate-500 uppercase tracking-wider block mb-1.5">Area</label>
-              <select
-                value={exp.industry}
-                onChange={(e) => onUpdate({ ...exp, industry: e.target.value as Industry })}
-                className="w-full bg-navy-800/60 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-gold-400/40"
-              >
-                {INDUSTRIES.map((i) => <option key={i.value} value={i.value} className="bg-navy-900">{i.label}</option>)}
+                {firmTiersForArea(exp.industry).map((t) => <option key={t.value} value={t.value} className="bg-navy-900">{t.label}</option>)}
               </select>
             </div>
 

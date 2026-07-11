@@ -14,10 +14,14 @@ import { getTier, normalizeUniversityName } from '@/lib/onboard/universities';
 function deriveRoleFunction(industry: string): string {
   const map: Record<string, string> = {
     ib: 'ib_coverage',
+    global_markets: 'sales_trading',
+    capital_markets: 'sales_trading',
     big4_advisory: 'transaction_services',
     big4_audit: 'audit',
     private_equity: 'pe_investment',
-    capital_markets: 'sales_trading',
+    investment_management_equities: 'asset_management',
+    investment_management_credit: 'asset_management',
+    investment_management_real_estate: 'asset_management',
     consulting: 'consulting',
     law: 'law',
     corporate: 'corp_finance',
@@ -28,14 +32,44 @@ function deriveRoleFunction(industry: string): string {
   return map[industry] ?? 'other';
 }
 
+const IM_INDUSTRIES = [
+  'investment_management_equities',
+  'investment_management_credit',
+  'investment_management_real_estate',
+];
+
 function deriveRelevance(firmTier: string, industry: string): number {
   if (firmTier === 'bb' && industry === 'ib') return 5;
   if ((firmTier === 'elite_boutique' || firmTier === 'mid_market') && industry === 'ib') return 5;
   if (firmTier === 'boutique' && industry === 'ib') return 4;
-  if (firmTier === 'big4' && ['big4_advisory', 'big4_audit'].includes(industry)) return 3;
-  if (firmTier === 'private_equity') return 4;
-  if (industry === 'consulting') return 3;
-  if (industry === 'capital_markets') return 3;
+
+  if (industry === 'global_markets' || industry === 'capital_markets') {
+    if (['bb', 'elite_boutique', 'mid_market'].includes(firmTier)) return 5;
+    if (firmTier === 'boutique' || firmTier === 'aus_big4_bank') return 4;
+    return 3;
+  }
+
+  if (industry === 'private_equity') {
+    if (firmTier === 'mega_fund' || firmTier === 'large_cap') return 5;
+    return 4;
+  }
+
+  if (IM_INDUSTRIES.includes(industry)) {
+    if (firmTier === 'global_manager' || firmTier === 'hedge_fund') return 4;
+    return 3;
+  }
+
+  if (industry === 'consulting') {
+    if (firmTier === 'mbb') return 5;
+    if (firmTier === 'tier2_consulting') return 4;
+    return 3;
+  }
+
+  if (['big4_advisory', 'big4_audit'].includes(industry)) {
+    if (firmTier === 'big4') return 3;
+    if (firmTier === 'mid_tier') return 2;
+  }
+
   return 2;
 }
 
