@@ -96,7 +96,7 @@ const HOW_OBTAINED: { value: HowObtained; label: string }[] = [
   { value: 'unknown', label: 'Other / not sure' },
 ];
 
-const DURATIONS = [1, 2, 3, 4, 6, 12];
+const DURATIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 24, 36];
 
 const BLANK_EXP: ExperienceEntry = {
   type: 'summer_internship',
