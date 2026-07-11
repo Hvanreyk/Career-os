@@ -22,13 +22,23 @@ const ExpType = z.enum([
 ]);
 const FirmTier = z.enum([
   'bb', 'elite_boutique', 'mid_market', 'boutique',
-  'big4', 'private_equity', 'top_tier_law',
-  'corporate', 'startup', 'government', 'non_profit', 'other',
+  'aus_big4_bank',
+  'mega_fund', 'large_cap',
+  'global_manager', 'hedge_fund',
+  'mbb', 'tier2_consulting',
+  'big4', 'mid_tier',
+  'private_equity', 'top_tier_law',
+  'corporate', 'startup',
+  'local_government', 'state_government', 'federal_government',
+  'government', 'non_profit', 'other',
 ]);
 const Industry = z.enum([
-  'ib', 'big4_advisory', 'big4_audit', 'corporate',
-  'law', 'private_equity', 'capital_markets',
-  'consulting', 'government', 'non_profit', 'other',
+  'ib', 'global_markets', 'capital_markets',
+  'private_equity',
+  'investment_management_equities', 'investment_management_credit',
+  'investment_management_real_estate',
+  'consulting', 'big4_advisory', 'big4_audit', 'corporate',
+  'law', 'government', 'non_profit', 'other',
 ]);
 const HowObtained = z.enum([
   'online_application', 'cold_email', 'society_referral',

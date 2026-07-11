@@ -54,17 +54,33 @@ export type ExpType = z.infer<typeof ExpType>;
 
 // 'elite_boutique_and_mm' is retained for backward compatibility with
 // existing records that predate the EB/MM split — see CurrentFirmTier.
+// 'government', 'non_profit' are retained for backward compatibility with
+// records predating the local/state/federal government split and the
+// removal of non-profit as a selectable onboarding area.
 export const ExpFirmTier = z.enum([
   'bb', 'elite_boutique', 'mid_market', 'elite_boutique_and_mm', 'boutique',
-  'big4', 'private_equity', 'top_tier_law',
-  'corporate', 'startup', 'government', 'non_profit',
+  'aus_big4_bank',
+  'mega_fund', 'large_cap',
+  'global_manager', 'hedge_fund',
+  'mbb', 'tier2_consulting',
+  'big4', 'mid_tier',
+  'private_equity', 'top_tier_law',
+  'corporate', 'startup',
+  'local_government', 'state_government', 'federal_government',
+  'government', 'non_profit',
   'other', 'unknown',
 ]);
 export type ExpFirmTier = z.infer<typeof ExpFirmTier>;
 
+// 'capital_markets' is retained for backward compatibility with existing
+// records that predate the 'global_markets' rename/split.
 export const ExpIndustry = z.enum([
-  'ib', 'big4_advisory', 'big4_audit', 'corporate', 'law',
-  'private_equity', 'capital_markets', 'consulting',
+  'ib', 'global_markets', 'capital_markets',
+  'private_equity',
+  'investment_management_equities', 'investment_management_credit',
+  'investment_management_real_estate',
+  'consulting', 'big4_advisory', 'big4_audit',
+  'corporate', 'law',
   'government', 'non_profit', 'other',
 ]);
 export type ExpIndustry = z.infer<typeof ExpIndustry>;
@@ -72,7 +88,7 @@ export type ExpIndustry = z.infer<typeof ExpIndustry>;
 export const ExpRoleFunction = z.enum([
   'ib_coverage', 'ib_product', 'transaction_services', 'advisory',
   'audit', 'corp_finance', 'sales_trading', 'pe_investment',
-  'law', 'consulting', 'other',
+  'asset_management', 'law', 'consulting', 'other',
 ]);
 export type ExpRoleFunction = z.infer<typeof ExpRoleFunction>;
 
@@ -295,17 +311,28 @@ export type Stage = z.infer<typeof Stage>;
 // analysis, and "highest_firm_tier_reached" calculation.
 export const TIER_LEVEL = {
   bb: 7,
+  mbb: 6,
   elite_boutique: 6,
+  mega_fund: 6,
   // Legacy combined value — ranked conservatively at the Mid-Market level
   // until existing professional records are relabeled into the split tiers.
   elite_boutique_and_mm: 5,
   mid_market: 5,
+  large_cap: 5,
+  global_manager: 5,
+  hedge_fund: 5,
+  tier2_consulting: 5,
   boutique: 4,
   private_equity: 4,
+  aus_big4_bank: 4,
   top_tier_law: 3,
   big4: 3,
+  mid_tier: 2,
   corporate: 2,
   government: 2,
+  state_government: 2,
+  federal_government: 3,
+  local_government: 1,
   startup: 1,
   non_profit: 1,
   other: 1,
