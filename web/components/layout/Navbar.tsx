@@ -114,7 +114,7 @@ export function Navbar() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.97 }}
                     transition={{ duration: 0.18, ease: 'easeOut' }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 glass rounded-xl border border-white/10 shadow-[0_16px_48px_rgba(0,0,0,0.6)] overflow-hidden"
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-navy-900 rounded-xl border border-white/10 shadow-[0_16px_48px_rgba(0,0,0,0.6)] overflow-hidden"
                   >
                     <div className="p-2">
                       {tools.map((tool) => {
@@ -210,7 +210,7 @@ export function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-x-0 top-16 z-40 glass border-b border-white/10 lg:hidden"
+            className="fixed inset-x-0 top-16 z-40 bg-navy-900 border-b border-white/10 lg:hidden"
           >
             <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col gap-1">
               {navLinks.map((link) => (

@@ -92,7 +92,7 @@ export default function UniversityPage() {
               className="w-full bg-navy-800/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-gold-400/40 transition-colors"
             />
             {showDropdown && results.length > 0 && (
-              <div className="absolute z-20 top-full left-0 right-0 mt-1 glass border border-white/10 rounded-xl overflow-hidden shadow-xl">
+              <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-navy-900 border border-white/10 rounded-xl overflow-hidden shadow-xl">
                 {results.map((u) => (
                   <button
                     key={u.name}
@@ -142,7 +142,7 @@ export default function UniversityPage() {
                   {d.label}
                 </button>
                 <div className="pointer-events-none absolute z-30 bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="glass border border-white/10 rounded-lg px-3 py-2 text-[11px] leading-snug text-slate-300 shadow-xl">
+                  <div className="bg-navy-900 border border-white/10 rounded-lg px-3 py-2 text-[11px] leading-snug text-slate-300 shadow-xl">
                     {d.example}
                   </div>
                 </div>
