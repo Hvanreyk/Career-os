@@ -12,6 +12,7 @@ import { requireUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { getCourseStructure } from '@/lib/courses/queries';
 import { DiagnosticWizard } from '@/components/courses/DiagnosticWizard';
+import { resourceHasCapability } from '@/lib/resources/catalog';
 
 export const metadata: Metadata = { title: 'Diagnostic' };
 export const dynamic = 'force-dynamic';
@@ -22,6 +23,7 @@ export default async function DiagnosticPage({
   params: Promise<{ courseSlug: string }>;
 }) {
   const { courseSlug } = await params;
+  if (!resourceHasCapability(courseSlug, 'diagnostic')) notFound();
   await requireUser(`/resources/${courseSlug}/diagnostic`);
 
   const structure = await getCourseStructure(courseSlug);

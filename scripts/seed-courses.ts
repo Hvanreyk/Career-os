@@ -17,6 +17,8 @@
  *   tsx scripts/seed-courses.ts --dry-run   # parse + validate only (content lint)
  *   tsx scripts/seed-courses.ts             # validate + upsert
  *   tsx scripts/seed-courses.ts --prune     # also delete orphaned DB rows
+ *   tsx scripts/seed-courses.ts --force-admin-overwrite
+ *                                             # replace Admin UI-owned rows
  */
 
 import { resolve } from 'node:path';
@@ -31,6 +33,7 @@ loadEnv();
 const argv = new Set(process.argv.slice(2));
 const DRY_RUN = argv.has('--dry-run');
 const PRUNE = argv.has('--prune');
+const FORCE_ADMIN_OVERWRITE = argv.has('--force-admin-overwrite');
 
 const CONTENT_ROOT = resolve(import.meta.dirname, '../content/courses');
 
@@ -61,6 +64,21 @@ async function upsertCourse(supabase: SupabaseClient, course: ParsedCourse): Pro
     0,
   );
 
+  const { data: existingCourse, error: existingCourseError } = await supabase
+    .from('courses')
+    .select('id, editorial_source')
+    .eq('slug', course.meta.slug)
+    .maybeSingle();
+  if (existingCourseError) {
+    fail(`courses ownership check (${course.meta.slug}): ${existingCourseError.message}`);
+  }
+  if (existingCourse?.editorial_source === 'admin' && !FORCE_ADMIN_OVERWRITE) {
+    fail(
+      `courses/${course.meta.slug} is owned by the Admin UI. ` +
+        'Use --force-admin-overwrite only if replacing those edits is intentional.',
+    );
+  }
+
   const { data: courseRow, error: courseErr } = await supabase
     .from('courses')
     .upsert(
@@ -75,6 +93,8 @@ async function upsertCourse(supabase: SupabaseClient, course: ParsedCourse): Pro
         est_minutes: totalMinutes,
         sort_order: course.meta.sort_order,
         last_reviewed_at: course.meta.last_reviewed ?? null,
+        editorial_source: 'file',
+        last_edited_by: null,
       },
       { onConflict: 'slug' },
     )
@@ -85,6 +105,22 @@ async function upsertCourse(supabase: SupabaseClient, course: ParsedCourse): Pro
 
   const moduleIdsBySlug = new Map<string, string>();
   for (const [i, mod] of course.modules.entries()) {
+    const { data: existingModule, error: existingModuleError } = await supabase
+      .from('course_modules')
+      .select('id, editorial_source')
+      .eq('course_id', courseId)
+      .eq('slug', mod.meta.slug)
+      .maybeSingle();
+    if (existingModuleError) {
+      fail(`course_modules ownership check (${course.meta.slug}/${mod.meta.slug}): ${existingModuleError.message}`);
+    }
+    if (existingModule?.editorial_source === 'admin' && !FORCE_ADMIN_OVERWRITE) {
+      fail(
+        `module ${course.meta.slug}/${mod.meta.slug} is owned by the Admin UI. ` +
+          'Use --force-admin-overwrite only if replacing those edits is intentional.',
+      );
+    }
+
     const { data: modRow, error: modErr } = await supabase
       .from('course_modules')
       .upsert(
@@ -96,6 +132,8 @@ async function upsertCourse(supabase: SupabaseClient, course: ParsedCourse): Pro
           status: mod.meta.status,
           sort_order: i,
           last_reviewed_at: mod.meta.last_reviewed ?? null,
+          editorial_source: 'file',
+          last_edited_by: null,
         },
         { onConflict: 'course_id,slug' },
       )
@@ -106,6 +144,23 @@ async function upsertCourse(supabase: SupabaseClient, course: ParsedCourse): Pro
     }
     const moduleId = modRow.id as string;
     moduleIdsBySlug.set(mod.meta.slug, moduleId);
+
+    const { data: adminLessons, error: adminLessonsError } = await supabase
+      .from('lessons')
+      .select('slug')
+      .eq('module_id', moduleId)
+      .eq('editorial_source', 'admin');
+    if (adminLessonsError) {
+      fail(`lessons ownership check (${course.meta.slug}/${mod.meta.slug}): ${adminLessonsError.message}`);
+    }
+    const authoredLessonSlugs = new Set(mod.lessons.map((lesson) => lesson.meta.slug));
+    const conflictingLesson = (adminLessons ?? []).find((row) => authoredLessonSlugs.has(row.slug));
+    if (conflictingLesson && !FORCE_ADMIN_OVERWRITE) {
+      fail(
+        `lesson ${course.meta.slug}/${mod.meta.slug}/${conflictingLesson.slug} is owned by the Admin UI. ` +
+          'Use --force-admin-overwrite only if replacing those edits is intentional.',
+      );
+    }
 
     const lessonRows = mod.lessons.map((lesson, j) => ({
       module_id: moduleId,
@@ -118,6 +173,8 @@ async function upsertCourse(supabase: SupabaseClient, course: ParsedCourse): Pro
       status: lesson.meta.status,
       sort_order: j,
       last_reviewed_at: lesson.meta.last_reviewed ?? null,
+      editorial_source: 'file',
+      last_edited_by: null,
     }));
     const { error: lessonErr } = await supabase
       .from('lessons')
@@ -127,6 +184,25 @@ async function upsertCourse(supabase: SupabaseClient, course: ParsedCourse): Pro
     }
 
     if (mod.quiz) {
+      const { data: adminQuestions, error: adminQuestionsError } = await supabase
+        .from('quiz_questions')
+        .select('slug')
+        .eq('module_id', moduleId)
+        .eq('editorial_source', 'admin');
+      if (adminQuestionsError) {
+        fail(`quiz ownership check (${course.meta.slug}/${mod.meta.slug}): ${adminQuestionsError.message}`);
+      }
+      const authoredQuestionSlugs = new Set(mod.quiz.questions.map((question) => question.slug));
+      const conflictingQuestion = (adminQuestions ?? []).find((row) =>
+        authoredQuestionSlugs.has(row.slug),
+      );
+      if (conflictingQuestion && !FORCE_ADMIN_OVERWRITE) {
+        fail(
+          `quiz question ${course.meta.slug}/${mod.meta.slug}/${conflictingQuestion.slug} is owned by the Admin UI. ` +
+            'Use --force-admin-overwrite only if replacing those edits is intentional.',
+        );
+      }
+
       const questionRows = mod.quiz.questions.map((q, k) => ({
         module_id: moduleId,
         slug: q.slug,
@@ -136,6 +212,8 @@ async function upsertCourse(supabase: SupabaseClient, course: ParsedCourse): Pro
         explanation: q.explanation,
         status: mod.quiz!.status,
         sort_order: k,
+        editorial_source: 'file',
+        last_edited_by: null,
       }));
       const { error: quizErr } = await supabase
         .from('quiz_questions')

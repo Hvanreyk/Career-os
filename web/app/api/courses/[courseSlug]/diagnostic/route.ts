@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { DiagnosticAnswersSchema } from '@trajectoryos/core/courses/diagnostic';
 import { computeReadiness } from '@trajectoryos/core/courses/readiness';
 import { createClient as createServerClient, createServiceClient } from '@/lib/supabase/server';
+import { resourceHasCapability } from '@/lib/resources/catalog';
 
 // Scores the course diagnostic (deterministic, no LLM) and stores the
 // answers + readiness on the user's enrollment.
@@ -20,6 +21,9 @@ export async function POST(
   { params }: { params: Promise<{ courseSlug: string }> },
 ) {
   const { courseSlug } = await params;
+  if (!resourceHasCapability(courseSlug, 'diagnostic')) {
+    return NextResponse.json({ error: 'Diagnostic not available' }, { status: 404 });
+  }
 
   let body: z.infer<typeof BodySchema>;
   try {
@@ -67,6 +71,13 @@ export async function POST(
     console.error('diagnostic: enrollment upsert failed:', upsertError);
     return NextResponse.json({ error: 'Failed to save your diagnostic' }, { status: 500 });
   }
+
+  await serviceClient.from('product_events').insert({
+    user_id: user.id,
+    event_name: 'diagnostic_completed',
+    resource_slug: courseSlug,
+    properties: { score: readiness.score },
+  });
 
   return NextResponse.json({ readiness });
 }

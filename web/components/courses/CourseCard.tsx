@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowUpRight, Clock } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { CourseProgressBar } from './CourseProgressBar';
-import { courseIcon } from './icons';
+import { CourseIcon } from './icons';
 import type { CourseRow } from '@/lib/courses/types';
 
 interface Props {
@@ -12,7 +12,6 @@ interface Props {
 }
 
 export function CourseCard({ course, progressPercent = null }: Props) {
-  const Icon = courseIcon(course.icon);
   const hours = course.est_minutes >= 60;
 
   return (
@@ -20,7 +19,7 @@ export function CourseCard({ course, progressPercent = null }: Props) {
       <GlassCard className="h-full flex flex-col group cursor-pointer" gold>
         <div className="flex items-start justify-between mb-5">
           <div className="w-11 h-11 rounded-xl bg-gold-400/10 flex items-center justify-center">
-            <Icon className="w-5 h-5 text-gold-400" />
+            <CourseIcon name={course.icon} className="w-5 h-5 text-gold-400" />
           </div>
           <div className="flex items-center gap-2">
             {course.tag && (

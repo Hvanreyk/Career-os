@@ -8,11 +8,9 @@ import {
   BookOpen,
   Users,
   Briefcase,
-  TrendingUp,
   Calendar,
   ArrowRight,
   BarChart2,
-  CheckCircle2,
 } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Career Compass' };

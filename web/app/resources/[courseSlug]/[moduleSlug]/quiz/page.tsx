@@ -5,6 +5,7 @@ import { ChevronLeft } from 'lucide-react';
 import { requireUser } from '@/lib/auth';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { QuizRunner } from '@/components/courses/QuizRunner';
+import { resourceHasCapability } from '@/lib/resources/catalog';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +25,7 @@ export async function generateMetadata({
 
 export default async function ModuleQuizPage({ params }: { params: Promise<Params> }) {
   const { courseSlug, moduleSlug } = await params;
+  if (!resourceHasCapability(courseSlug, 'quizzes')) notFound();
   const user = await requireUser(`/resources/${courseSlug}/${moduleSlug}/quiz`);
 
   // Course + module resolve through RLS (published rows only)…

@@ -10,9 +10,11 @@ import {
   Loader2,
   LogOut,
   RefreshCw,
+  ShieldCheck,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import type { StudentProfile } from '@trajectoryos/core/scoring/types';
+import { isAdminUser } from '@/lib/auth';
 
 export const metadata: Metadata = { title: 'Dashboard' };
 
@@ -239,6 +241,14 @@ export default async function DashboardPage() {
               >
                 Resources
               </Link>
+              {isAdminUser(user) && (
+                <Link
+                  href="/admin/resources"
+                  className="px-4 py-2 rounded-lg border border-gold-400/25 text-sm text-gold-300 hover:bg-gold-400/8 transition-colors flex items-center gap-2"
+                >
+                  <ShieldCheck className="w-4 h-4" /> Resource Admin
+                </Link>
+              )}
             </div>
           </div>
         </div>

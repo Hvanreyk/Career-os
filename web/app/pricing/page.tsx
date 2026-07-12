@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { FloatingOrbs } from '@/components/background/FloatingOrbs';
 import { AnimatedSection } from '@/components/ui/AnimatedSection';
-import { GlassCard } from '@/components/ui/GlassCard';
 import { CheckCircle2 } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Pricing' };

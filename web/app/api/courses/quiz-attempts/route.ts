@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient as createServerClient, createServiceClient } from '@/lib/supabase/server';
+import { resourceHasCapability } from '@/lib/resources/catalog';
 
 // Grades a module quiz server-side and records the attempt. The correct
 // answers live in quiz_questions, which has no RLS policies — only this
@@ -37,6 +38,14 @@ export async function POST(request: Request) {
     .eq('id', body.moduleId)
     .maybeSingle();
   if (!module || module.status !== 'published') {
+    return NextResponse.json({ error: 'Module not found' }, { status: 404 });
+  }
+  const { data: course } = await serviceClient
+    .from('courses')
+    .select('id, slug, status')
+    .eq('id', module.course_id)
+    .maybeSingle();
+  if (!course || course.status !== 'published' || !resourceHasCapability(course.slug, 'quizzes')) {
     return NextResponse.json({ error: 'Module not found' }, { status: 404 });
   }
 
@@ -76,6 +85,13 @@ export async function POST(request: Request) {
     console.error('quiz-attempts: insert failed:', insertError);
     return NextResponse.json({ error: 'Failed to save attempt' }, { status: 500 });
   }
+
+  await serviceClient.from('product_events').insert({
+    user_id: user.id,
+    event_name: 'quiz_completed',
+    resource_slug: course.slug,
+    properties: { module_id: module.id, score, total: questions.length },
+  });
 
   return NextResponse.json({ score, total: questions.length, results });
 }

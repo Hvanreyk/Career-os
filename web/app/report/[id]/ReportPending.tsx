@@ -17,20 +17,17 @@ export default function ReportPending({
   errorMessage: string | null;
 }) {
   const router = useRouter();
-  const [failed, setFailed] = useState(status === 'error');
   const [working, setWorking] = useState(status !== 'error');
   const started = useRef(false);
 
   const process = async () => {
     setWorking(true);
-    setFailed(false);
     try {
       const res = await fetch(`/api/reports/${id}/process`, { method: 'POST' });
       if (!res.ok) throw new Error('processing failed');
       router.refresh();
     } catch {
       setWorking(false);
-      setFailed(true);
     }
   };
 
@@ -39,7 +36,10 @@ export default function ReportPending({
   useEffect(() => {
     if (started.current) return;
     started.current = true;
-    if (status !== 'error') void process();
+    const timer = status !== 'error' ? window.setTimeout(() => void process(), 0) : null;
+    return () => {
+      if (timer !== null) window.clearTimeout(timer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -80,6 +80,47 @@ The `/resources` hub lists **courses** built on a shared engine. Course 1,
   roadmap require login via `requireUser()` (`web/lib/auth.ts`), since the proxy's
   prefix list can't express public/gated within one subtree.
 
+### Resource shell (Phase 0)
+
+The six product resources are registered explicitly in
+`web/lib/resources/catalog.ts`. A published course supplies the learning layer;
+the registry decides which product capabilities (diagnostic, bank tracker,
+roadmap, resume workshop, contacts, question bank, etc.) are valid for that
+resource. Always add a capability there before exposing its route. Do not infer
+specialised workspaces merely because a course row exists.
+
+Migration `0007_resource_shell_hardening.sql` adds:
+- parent-aware published-content RLS (a published lesson cannot leak from a
+  draft module/course),
+- editorial ownership and atomic revision snapshots,
+- unique/leased roadmap jobs to prevent duplicate LLM calls, and
+- a private `product_events` stream written through `/api/events`.
+
+### Resource Admin UI
+
+`/admin/resources` is protected by a secure page/API check against signed
+Supabase `app_metadata` (`role: "admin"` or `roles: ["admin"]`). Proxy only
+performs the optimistic signed-in check; every page and mutation re-checks the
+admin role close to the data source.
+
+The Admin UI can initialise any of the six resource courses, edit course/module
+metadata, visually edit common lesson blocks (with JSON fallback for complex
+blocks), preview lessons, edit quizzes, publish/draft content, and inspect the
+revision log. Admin edits set `editorial_source='admin'`; the file seed refuses
+to overwrite those rows unless the operator explicitly passes
+`--force-admin-overwrite`. This gives each row one declared editorial owner
+instead of silently allowing database/file drift.
+
+To grant the first admin, set the user's Supabase app metadata with the service
+role or SQL editor, then have them sign out/in to refresh their token:
+
+```sql
+update auth.users
+set raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb)
+  || '{"role":"admin"}'::jsonb
+where email = 'founder@example.com';
+```
+
 ## Conventions
 
 - **Trust boundaries are validated with zod.** The onboarding payload is parsed by
@@ -108,6 +149,8 @@ npm run build          # next build (web)
 npm run import:dry     # dry-run the professional DB import
 npm run seed:courses:dry  # validate all authored course content (no DB writes)
 npm run seed:courses      # upsert course content to Supabase (needs SUPABASE_* env)
+# Intentional recovery only: overwrite rows currently owned by the Admin UI
+npx tsx scripts/seed-courses.ts --force-admin-overwrite
 ```
 
 ## Deployment (Netlify)

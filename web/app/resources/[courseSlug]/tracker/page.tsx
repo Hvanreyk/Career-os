@@ -6,6 +6,7 @@ import { requireUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import type { BankTargetRow } from '@/lib/courses/types';
 import { BankTrackerTable } from '@/components/courses/BankTrackerTable';
+import { resourceHasCapability } from '@/lib/resources/catalog';
 
 export const metadata: Metadata = { title: 'Bank Target Tracker' };
 export const dynamic = 'force-dynamic';
@@ -16,6 +17,7 @@ export default async function TrackerPage({
   params: Promise<{ courseSlug: string }>;
 }) {
   const { courseSlug } = await params;
+  if (!resourceHasCapability(courseSlug, 'bank-tracker')) notFound();
   const user = await requireUser(`/resources/${courseSlug}/tracker`);
 
   const supabase = await createClient();

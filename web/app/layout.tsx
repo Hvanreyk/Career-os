@@ -26,7 +26,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable} h-full`}>
+    <html
+      lang="en"
+      data-scroll-behavior="smooth"
+      className={`${inter.variable} ${playfair.variable} h-full`}
+    >
       <body className="min-h-full flex flex-col bg-navy-950 text-slate-200 antialiased">
         <CursorGlow />
         <Navbar />
