@@ -142,7 +142,7 @@ export default function UniversityPage() {
                   {d.label}
                 </button>
                 <div className="pointer-events-none absolute z-30 bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="glass border border-white/10 rounded-lg px-3 py-2 text-[11px] leading-snug text-slate-300 shadow-xl">
+                  <div className="bg-navy-900 border border-white/10 rounded-lg px-3 py-2 text-[11px] leading-snug text-slate-300 shadow-xl">
                     {d.example}
                   </div>
                 </div>
