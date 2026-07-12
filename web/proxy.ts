@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 // Routes that require a signed-in user.
-const PROTECTED_PREFIXES = ['/dashboard', '/account'];
+const PROTECTED_PREFIXES = ['/dashboard', '/account', '/admin'];
 
 // Refreshes the Supabase auth session on every request (keeping cookies alive
 // for server components) and enforces access to protected routes.

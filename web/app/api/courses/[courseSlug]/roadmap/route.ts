@@ -4,22 +4,29 @@ import {
   AU_RECRUITING_CYCLES,
   AU_TIMELINE_LAST_REVIEWED,
 } from '@trajectoryos/core/courses/timeline';
-import type { RoadmapInput } from '@trajectoryos/core/llm/roadmap';
+import {
+  ROADMAP_GENERATION_VERSION,
+  type RoadmapInput,
+} from '@trajectoryos/core/llm/roadmap';
 import type { StudentProfile } from '@trajectoryos/core/scoring/types';
 import { createClient as createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { hashInput } from '@/lib/courses/hash';
+import { resourceHasCapability } from '@/lib/resources/catalog';
 
 // Phase 1 of roadmap generation (mirrors /api/generate-report →
 // /api/reports/[id]/process). Assembles the deterministic input
 // snapshot, and either returns an existing completed roadmap with the
-// same input hash (cost bound: one LLM generation per distinct input)
-// or inserts a 'processing' row for the process route to fill.
+// same versioned input hash (cost bound: one LLM generation per distinct
+// input) or inserts a 'pending' row for the process route to atomically claim.
 
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ courseSlug: string }> },
 ) {
   const { courseSlug } = await params;
+  if (!resourceHasCapability(courseSlug, 'roadmap')) {
+    return NextResponse.json({ error: 'Roadmap not available' }, { status: 404 });
+  }
 
   const supabase = await createServerClient();
   const {
@@ -124,6 +131,7 @@ export async function POST(
   const profile = (profileRow?.profile ?? null) as StudentProfile | null;
 
   const input: RoadmapInput = {
+    generation_version: ROADMAP_GENERATION_VERSION,
     today: new Date().toISOString().slice(0, 10),
     readiness,
     final_readiness: finalReadiness,
@@ -150,7 +158,7 @@ export async function POST(
     .eq('user_id', user.id)
     .eq('course_id', course.id)
     .eq('input_hash', inputHash)
-    .in('status', ['completed', 'processing'])
+    .in('status', ['completed', 'processing', 'pending'])
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -165,14 +173,39 @@ export async function POST(
       course_id: course.id,
       input,
       input_hash: inputHash,
-      status: 'processing',
+      status: 'pending',
+      generation_version: ROADMAP_GENERATION_VERSION,
     })
     .select('id')
     .single();
+  if (insertError?.code === '23505') {
+    const { data: raced } = await serviceClient
+      .from('course_roadmaps')
+      .select('id, status')
+      .eq('user_id', user.id)
+      .eq('course_id', course.id)
+      .eq('input_hash', inputHash)
+      .in('status', ['completed', 'processing', 'pending'])
+      .maybeSingle();
+    if (raced) {
+      return NextResponse.json({
+        roadmapId: raced.id,
+        status: raced.status,
+        existing: true,
+      });
+    }
+  }
   if (insertError || !inserted) {
     console.error('roadmap: insert failed:', insertError);
     return NextResponse.json({ error: 'Failed to start roadmap generation' }, { status: 500 });
   }
 
-  return NextResponse.json({ roadmapId: inserted.id, status: 'processing' });
+  await serviceClient.from('product_events').insert({
+    user_id: user.id,
+    event_name: 'roadmap_requested',
+    resource_slug: courseSlug,
+    properties: { roadmap_id: inserted.id },
+  });
+
+  return NextResponse.json({ roadmapId: inserted.id, status: 'pending' });
 }

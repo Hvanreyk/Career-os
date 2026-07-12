@@ -56,8 +56,11 @@ export function Navbar() {
   }, []);
 
   useEffect(() => {
-    setMobileOpen(false);
-    setToolsOpen(false);
+    const timer = window.setTimeout(() => {
+      setMobileOpen(false);
+      setToolsOpen(false);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [pathname]);
 
   return (

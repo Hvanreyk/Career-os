@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { StepShell } from '@/components/onboard/StepShell';
-import { ChoiceButton } from '@/components/onboard/ChoiceButton';
 import { useOnboard } from '@/lib/onboard/context';
 import { searchUniversities, normalizeUniversityName } from '@/lib/onboard/universities';
 import type { DegreeType } from '@/lib/onboard/types';

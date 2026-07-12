@@ -31,7 +31,7 @@ interface Props {
   courseSlug: string;
   initial: {
     id: string;
-    status: 'processing' | 'completed' | 'error';
+    status: 'pending' | 'processing' | 'completed' | 'error';
     errorMessage: string | null;
     sections: RoadmapSectionsView | null;
     createdAt: string;
@@ -76,9 +76,14 @@ export function RoadmapClient({ courseSlug, initial }: Props) {
     }
   }
 
-  // A roadmap stuck in 'processing' (interrupted tab) resumes once.
+  // A pending or interrupted processing roadmap resumes once. The server's
+  // atomic lease prevents this request racing another active invocation.
   useEffect(() => {
-    if (started.current || !initial || initial.status !== 'processing') return;
+    if (
+      started.current ||
+      !initial ||
+      !['pending', 'processing'].includes(initial.status)
+    ) return;
     started.current = true;
     setWorking(true);
     processRoadmap(initial.id)

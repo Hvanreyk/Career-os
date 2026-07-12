@@ -8,13 +8,14 @@ import { createClient } from '@/lib/supabase/server';
 import { getEnrollment } from '@/lib/courses/queries';
 import { ReadinessGauge } from '@/components/courses/ReadinessGauge';
 import { RoadmapClient, type RoadmapSectionsView } from '@/components/courses/RoadmapClient';
+import { resourceHasCapability } from '@/lib/resources/catalog';
 
 export const metadata: Metadata = { title: 'Recruiting Roadmap' };
 export const dynamic = 'force-dynamic';
 
 interface RoadmapRow {
   id: string;
-  status: 'processing' | 'completed' | 'error';
+  status: 'pending' | 'processing' | 'completed' | 'error';
   roadmap: { sections: RoadmapSectionsView } | null;
   error_message: string | null;
   created_at: string;
@@ -26,6 +27,7 @@ export default async function RoadmapPage({
   params: Promise<{ courseSlug: string }>;
 }) {
   const { courseSlug } = await params;
+  if (!resourceHasCapability(courseSlug, 'roadmap')) notFound();
   await requireUser(`/resources/${courseSlug}/roadmap`);
 
   const supabase = await createClient();

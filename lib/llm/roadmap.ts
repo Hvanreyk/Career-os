@@ -11,6 +11,8 @@ import { buildRoadmapSystemPrompt, buildRoadmapUserMessage } from './roadmap-pro
 const MODEL = process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
 const MAX_RETRIES = 2;
 const TIMEOUT_MS = 30_000;
+/** Bump whenever the prompt contract or result schema changes materially. */
+export const ROADMAP_GENERATION_VERSION = 'roadmap-v2';
 
 export class RoadmapError extends Error {
   constructor(message: string, readonly cause?: unknown) {
@@ -25,6 +27,7 @@ export class RoadmapError extends Error {
  * hash bounds LLM cost to one generation per distinct input.
  */
 export interface RoadmapInput {
+  generation_version: string;
   /** ISO date (yyyy-mm-dd) the plan starts from. */
   today: string;
   readiness: Readiness;

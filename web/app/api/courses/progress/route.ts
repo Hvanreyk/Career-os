@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient as createServerClient, createServiceClient } from '@/lib/supabase/server';
+import { resourceHasCapability } from '@/lib/resources/catalog';
 
 // Marks a lesson complete for the signed-in user. The lesson must be a
 // published lesson in a published module/course; course_id is resolved
@@ -47,6 +48,14 @@ export async function POST(request: Request) {
   if (!module || module.status !== 'published') {
     return NextResponse.json({ error: 'Lesson not found' }, { status: 404 });
   }
+  const { data: course } = await serviceClient
+    .from('courses')
+    .select('id, slug, status')
+    .eq('id', module.course_id)
+    .maybeSingle();
+  if (!course || course.status !== 'published' || !resourceHasCapability(course.slug, 'lessons')) {
+    return NextResponse.json({ error: 'Lesson not found' }, { status: 404 });
+  }
 
   // Auto-create the enrollment so students can start reading without
   // having taken the diagnostic first.
@@ -71,6 +80,13 @@ export async function POST(request: Request) {
     console.error('progress: upsert failed:', progressError);
     return NextResponse.json({ error: 'Failed to save progress' }, { status: 500 });
   }
+
+  await serviceClient.from('product_events').insert({
+    user_id: user.id,
+    event_name: 'lesson_completed',
+    resource_slug: course.slug,
+    properties: { lesson_id: lesson.id },
+  });
 
   return NextResponse.json({ ok: true });
 }

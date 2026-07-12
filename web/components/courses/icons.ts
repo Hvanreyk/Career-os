@@ -10,6 +10,7 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react';
+import { createElement } from 'react';
 
 // Courses store a lucide icon name (kebab-case) in courses.icon.
 // Keep this map small and explicit — add entries as courses need them.
@@ -27,4 +28,8 @@ const ICONS: Record<string, LucideIcon> = {
 
 export function courseIcon(name: string): LucideIcon {
   return ICONS[name] ?? BookOpen;
+}
+
+export function CourseIcon({ name, className }: { name: string; className?: string }) {
+  return createElement(ICONS[name] ?? BookOpen, { className });
 }

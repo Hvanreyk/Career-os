@@ -12,6 +12,8 @@ import {
 import { LessonRenderer } from '@/components/courses/LessonRenderer';
 import { MarkCompleteButton } from '@/components/courses/MarkCompleteButton';
 import { CourseProgressBar } from '@/components/courses/CourseProgressBar';
+import { TrackProductEvent } from '@/components/analytics/TrackProductEvent';
+import { resourceHasCapability } from '@/lib/resources/catalog';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +35,7 @@ export async function generateMetadata({
 
 export default async function LessonPage({ params }: { params: Promise<Params> }) {
   const { courseSlug, moduleSlug, lessonSlug } = await params;
+  if (!resourceHasCapability(courseSlug, 'lessons')) notFound();
   await requireUser(`/resources/${courseSlug}/${moduleSlug}/${lessonSlug}`);
 
   const [data, structure] = await Promise.all([
@@ -61,6 +64,11 @@ export default async function LessonPage({ params }: { params: Promise<Params> }
 
   return (
     <div className="min-h-screen bg-navy-950 px-6 pt-28 pb-24">
+      <TrackProductEvent
+        eventName="lesson_viewed"
+        resourceSlug={courseSlug}
+        properties={{ moduleSlug, lessonSlug }}
+      />
       <div className="max-w-3xl mx-auto">
         {/* Breadcrumb + progress */}
         <div className="mb-8">
