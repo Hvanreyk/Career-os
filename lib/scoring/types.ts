@@ -48,7 +48,8 @@ export type AtarBand = z.infer<typeof AtarBand>;
 
 export const ExpType = z.enum([
   'summer_internship', 'winter_internship', 'penultimate_internship',
-  'internship', 'part_time', 'full_time', 'casual', 'grad_program',
+  'internship', 'vacationer', 'cadetship',
+  'part_time', 'full_time', 'casual', 'grad_program',
 ]);
 export type ExpType = z.infer<typeof ExpType>;
 
@@ -57,6 +58,13 @@ export type ExpType = z.infer<typeof ExpType>;
 // 'government', 'non_profit' are retained for backward compatibility with
 // records predating the local/state/federal government split and the
 // removal of non-profit as a selectable onboarding area.
+// 'top_tier_law' displays as "Big 6" in onboarding — Australia's Big 6 law
+// firms ARE the top-tier firms, so the existing value covers that tier.
+// 'mid_tier_law'/'boutique_law' are distinct from the generic 'mid_tier'/
+// 'boutique' values (used by accounting/consulting/IB) since law-firm tier
+// rankings don't share the same scale.
+// 'asx50'..'small_private' are the firm-level options for the Operations
+// and Corporate Development onboarding areas.
 export const ExpFirmTier = z.enum([
   'bb', 'elite_boutique', 'mid_market', 'elite_boutique_and_mm', 'boutique',
   'aus_big4_bank',
@@ -64,7 +72,8 @@ export const ExpFirmTier = z.enum([
   'global_manager', 'hedge_fund',
   'mbb', 'tier2_consulting',
   'big4', 'mid_tier',
-  'private_equity', 'top_tier_law',
+  'private_equity', 'top_tier_law', 'mid_tier_law', 'boutique_law',
+  'asx50', 'asx100', 'asx200', 'large_private', 'medium_private', 'small_private',
   'corporate', 'startup',
   'local_government', 'state_government', 'federal_government',
   'government', 'non_profit',
@@ -74,12 +83,16 @@ export type ExpFirmTier = z.infer<typeof ExpFirmTier>;
 
 // 'capital_markets' is retained for backward compatibility with existing
 // records that predate the 'global_markets' rename/split.
+// 'corporate' (labelled "Corporate Finance") is retained for backward
+// compatibility but no longer offered in onboarding — students with a
+// corporate finance internship now select 'ib' instead.
 export const ExpIndustry = z.enum([
   'ib', 'global_markets', 'capital_markets',
   'private_equity',
   'investment_management_equities', 'investment_management_credit',
   'investment_management_real_estate',
   'consulting', 'big4_advisory', 'big4_audit',
+  'operations', 'corporate_development',
   'corporate', 'law',
   'government', 'non_profit', 'other',
 ]);
@@ -325,16 +338,24 @@ export const TIER_LEVEL = {
   boutique: 4,
   private_equity: 4,
   aus_big4_bank: 4,
+  asx50: 4,
   top_tier_law: 3,
   big4: 3,
+  asx100: 3,
+  mid_tier_law: 2,
   mid_tier: 2,
   corporate: 2,
   government: 2,
   state_government: 2,
   federal_government: 3,
+  asx200: 2,
+  large_private: 2,
+  boutique_law: 1,
+  medium_private: 1,
   local_government: 1,
   startup: 1,
   non_profit: 1,
+  small_private: 1,
   other: 1,
   unknown: 0,
   none: 0,

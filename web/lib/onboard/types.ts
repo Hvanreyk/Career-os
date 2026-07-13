@@ -12,7 +12,8 @@ export type HighSchoolType =
 export type AtarBand = '99_plus' | '98_99' | '95_98' | '90_95' | '85_90' | 'below_85' | 'unknown';
 export type ExpType =
   | 'summer_internship' | 'winter_internship' | 'penultimate_internship'
-  | 'internship' | 'part_time' | 'full_time' | 'casual' | 'grad_program';
+  | 'internship' | 'vacationer' | 'cadetship'
+  | 'part_time' | 'full_time' | 'casual' | 'grad_program';
 export type FirmTier =
   | 'bb' | 'elite_boutique' | 'mid_market' | 'boutique'
   | 'aus_big4_bank'
@@ -20,7 +21,8 @@ export type FirmTier =
   | 'global_manager' | 'hedge_fund'
   | 'mbb' | 'tier2_consulting'
   | 'big4' | 'mid_tier'
-  | 'private_equity' | 'top_tier_law'
+  | 'private_equity' | 'top_tier_law' | 'mid_tier_law' | 'boutique_law'
+  | 'asx50' | 'asx100' | 'asx200' | 'large_private' | 'medium_private' | 'small_private'
   | 'corporate' | 'startup'
   | 'local_government' | 'state_government' | 'federal_government'
   | 'government' | 'non_profit' | 'other';
@@ -29,7 +31,9 @@ export type Industry =
   | 'private_equity'
   | 'investment_management_equities' | 'investment_management_credit'
   | 'investment_management_real_estate'
-  | 'consulting' | 'big4_advisory' | 'big4_audit' | 'corporate'
+  | 'consulting' | 'big4_advisory' | 'big4_audit'
+  | 'operations' | 'corporate_development'
+  | 'corporate'
   | 'law' | 'government' | 'non_profit' | 'other';
 export type HowObtained =
   | 'online_application' | 'cold_email' | 'society_referral'
