@@ -25,6 +25,8 @@ function deriveRoleFunction(industry: string): string {
     consulting: 'consulting',
     law: 'law',
     corporate: 'corp_finance',
+    corporate_development: 'corp_finance',
+    operations: 'other',
     government: 'other',
     non_profit: 'other',
     other: 'other',
@@ -68,6 +70,17 @@ function deriveRelevance(firmTier: string, industry: string): number {
   if (['big4_advisory', 'big4_audit'].includes(industry)) {
     if (firmTier === 'big4') return 3;
     if (firmTier === 'mid_tier') return 2;
+  }
+
+  if (industry === 'law') {
+    if (firmTier === 'top_tier_law') return 3;
+    if (firmTier === 'mid_tier_law') return 2;
+    if (firmTier === 'boutique_law') return 2;
+  }
+
+  if (industry === 'operations' || industry === 'corporate_development') {
+    if (['asx50', 'asx100'].includes(firmTier)) return 3;
+    if (['asx200', 'large_private'].includes(firmTier)) return 2;
   }
 
   return 2;

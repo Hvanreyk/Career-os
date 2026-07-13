@@ -11,6 +11,8 @@ const EXP_TYPES: { value: ExpType; label: string }[] = [
   { value: 'summer_internship', label: 'Summer Internship' },
   { value: 'winter_internship', label: 'Winter Internship' },
   { value: 'penultimate_internship', label: 'Penultimate Year Internship' },
+  { value: 'vacationer', label: 'Vacationer' },
+  { value: 'cadetship', label: 'Cadetship' },
   { value: 'part_time', label: 'Part-time Role' },
   { value: 'full_time', label: 'Full-time Role' },
   { value: 'grad_program', label: 'Graduate Program' },
@@ -30,7 +32,8 @@ const AREAS: { value: Industry; label: string }[] = [
   { value: 'consulting', label: 'Consulting' },
   { value: 'big4_audit', label: 'Accounting — Audit' },
   { value: 'big4_advisory', label: 'Accounting — Advisory / M&A' },
-  { value: 'corporate', label: 'Corporate Finance' },
+  { value: 'operations', label: 'Operations' },
+  { value: 'corporate_development', label: 'Corporate Development' },
   { value: 'law', label: 'Law' },
   { value: 'government', label: 'Government' },
   { value: 'other', label: 'Other' },
@@ -51,7 +54,15 @@ const FIRM_TIER_LABELS: Record<FirmTier, string> = {
   big4: 'Big 4',
   mid_tier: 'Mid-Tier',
   private_equity: 'Private Equity',
-  top_tier_law: 'Top-Tier',
+  top_tier_law: 'Big 6',
+  mid_tier_law: 'Mid-Tier',
+  boutique_law: 'Boutique',
+  asx50: 'ASX50',
+  asx100: 'ASX100',
+  asx200: 'ASX200',
+  large_private: 'Large Private',
+  medium_private: 'Medium Private',
+  small_private: 'Small Private',
   corporate: 'Corporate / Other',
   startup: 'Startup',
   local_government: 'Local Government',
@@ -75,8 +86,10 @@ const AREA_FIRM_TIERS: Record<Industry, FirmTier[]> = {
   consulting: ['mbb', 'tier2_consulting', 'big4', 'boutique'],
   big4_audit: ['big4', 'mid_tier', 'boutique'],
   big4_advisory: ['big4', 'mid_tier', 'boutique'],
+  operations: ['asx50', 'asx100', 'asx200', 'large_private', 'medium_private', 'small_private'],
+  corporate_development: ['asx50', 'asx100', 'asx200', 'large_private', 'medium_private', 'small_private'],
   corporate: ['corporate'],
-  law: ['top_tier_law', 'other'],
+  law: ['top_tier_law', 'mid_tier_law', 'boutique_law', 'other'],
   government: ['federal_government', 'state_government', 'local_government'],
   non_profit: ['non_profit'],
   other: ['other'],
@@ -121,7 +134,7 @@ function ExperienceCard({
   onDelete: () => void;
 }) {
   const [open, setOpen] = useState(true);
-  const isInternship = ['summer_internship', 'winter_internship', 'penultimate_internship', 'internship'].includes(exp.type);
+  const isInternship = ['summer_internship', 'winter_internship', 'penultimate_internship', 'internship', 'vacationer'].includes(exp.type);
   const currentYear = new Date().getFullYear();
 
   return (

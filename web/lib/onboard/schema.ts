@@ -18,7 +18,8 @@ const HighSchoolType = z.enum([
 const AtarBand = z.enum(['99_plus', '98_99', '95_98', '90_95', '85_90', 'below_85', 'unknown']);
 const ExpType = z.enum([
   'summer_internship', 'winter_internship', 'penultimate_internship',
-  'internship', 'part_time', 'full_time', 'casual', 'grad_program',
+  'internship', 'vacationer', 'cadetship',
+  'part_time', 'full_time', 'casual', 'grad_program',
 ]);
 const FirmTier = z.enum([
   'bb', 'elite_boutique', 'mid_market', 'boutique',
@@ -27,7 +28,8 @@ const FirmTier = z.enum([
   'global_manager', 'hedge_fund',
   'mbb', 'tier2_consulting',
   'big4', 'mid_tier',
-  'private_equity', 'top_tier_law',
+  'private_equity', 'top_tier_law', 'mid_tier_law', 'boutique_law',
+  'asx50', 'asx100', 'asx200', 'large_private', 'medium_private', 'small_private',
   'corporate', 'startup',
   'local_government', 'state_government', 'federal_government',
   'government', 'non_profit', 'other',
@@ -37,7 +39,9 @@ const Industry = z.enum([
   'private_equity',
   'investment_management_equities', 'investment_management_credit',
   'investment_management_real_estate',
-  'consulting', 'big4_advisory', 'big4_audit', 'corporate',
+  'consulting', 'big4_advisory', 'big4_audit',
+  'operations', 'corporate_development',
+  'corporate',
   'law', 'government', 'non_profit', 'other',
 ]);
 const HowObtained = z.enum([

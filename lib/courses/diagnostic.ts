@@ -237,7 +237,12 @@ export function prefillFromProfile(
   // prof_experience — from the strongest experience on record.
   const tiers = new Set(profile.experiences.map((e) => e.firm_tier));
   const frontOffice = ['bb', 'elite_boutique', 'mid_market', 'elite_boutique_and_mm', 'boutique', 'private_equity'];
-  const financeAdjacent = ['big4', 'top_tier_law', 'corporate'];
+  const financeAdjacent = [
+    'big4',
+    'top_tier_law', 'mid_tier_law', 'boutique_law',
+    'asx50', 'asx100', 'asx200',
+    'corporate',
+  ];
   const signals = new Set<string>(profile.signals);
   if (frontOffice.some((t) => tiers.has(t as never))) {
     prefill.prof_experience = 'e';
