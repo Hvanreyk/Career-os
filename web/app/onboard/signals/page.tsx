@@ -8,6 +8,7 @@ const SIGNAL_GROUPS = [
   {
     label: 'Academic achievements',
     options: [
+      { value: 'honours', label: 'Honours' },
       { value: 'deans_list', label: "Dean's List" },
       { value: 'first_in_class', label: 'First in class / subject' },
       { value: 'subject_top_10_finance', label: 'Top 10 in Finance subject' },

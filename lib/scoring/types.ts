@@ -131,7 +131,7 @@ export const SignalTag = z.enum([
   'wam_hd', 'wam_distinction', 'wam_top_10',
   'subject_top_10_finance', 'subject_top_10_law',
   'first_in_class', 'deans_list', 'university_medal', 'faculty_prize',
-  'honours_first_class',
+  'honours', 'honours_first_class',
   // ATAR / school
   'atar_99_plus', 'school_dux', 'hsc_distinguished_achiever', 'selective_school',
   // Society / leadership

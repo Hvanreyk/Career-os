@@ -26,11 +26,6 @@ const DEGREE_TYPES: { value: DegreeType; label: string; example: string }[] = [
     example: 'Two bachelor\'s degrees studied together at the same time, e.g. a Bachelor of Commerce and Bachelor of Science, or a Bachelor of Commerce and Bachelor of Advanced Studies (very common combination).',
   },
   {
-    value: 'honours',
-    label: 'Honours',
-    example: 'An extra year of research-based study after your bachelor\'s degree.',
-  },
-  {
     value: 'masters',
     label: 'Masters',
     example: 'A postgraduate degree, e.g. a Master of Finance.',
