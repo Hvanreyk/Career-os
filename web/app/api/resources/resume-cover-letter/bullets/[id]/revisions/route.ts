@@ -8,6 +8,13 @@ const BodySchema = z.object({
   receipt: z.string().min(1).max(100000),
 });
 
+/**
+ * Saves a revised resume bullet after validating the revision and its critique receipt.
+ *
+ * @param request - The request containing the revised bullet text and critique receipt.
+ * @param params - The route parameters containing the bullet identifier.
+ * @returns A response containing the saved revision, or an error describing why it could not be saved.
+ */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const result = await getResumeApiContext();
   if (result.response) return result.response;

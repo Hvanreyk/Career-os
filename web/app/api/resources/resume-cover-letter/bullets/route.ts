@@ -9,6 +9,11 @@ const BodySchema = z.object({
   sortOrder: z.number().int().min(0).max(1000).default(0),
 });
 
+/**
+ * Creates a resume bullet for a section owned by the authenticated user.
+ *
+ * @returns An HTTP response containing the created bullet, or an error response if the request is invalid, the section is unavailable, or creation fails.
+ */
 export async function POST(request: Request) {
   const result = await getResumeApiContext();
   if (result.response) return result.response;

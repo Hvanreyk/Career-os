@@ -43,6 +43,15 @@ interface Props {
   initialData: ResumeWorkspaceData;
 }
 
+/**
+ * Sends a request to the resume and cover letter API.
+ *
+ * @param path - The API endpoint path.
+ * @param method - The HTTP method.
+ * @param body - Optional request payload serialized as JSON.
+ * @returns The parsed response data, or `undefined` for a `204 No Content` response.
+ * @throws An error containing the server message when the response is unsuccessful.
+ */
 async function api<T>(path: string, method: string, body?: unknown): Promise<T> {
   const response = await fetch(`${API}${path}`, {
     method,
@@ -60,6 +69,11 @@ async function api<T>(path: string, method: string, body?: unknown): Promise<T> 
   return response.json() as Promise<T>;
 }
 
+/**
+ * Renders the resume editor and AI-assisted bullet critique workspace.
+ *
+ * @param initialData - The initial resume, sections, bullets, and saved revisions to display.
+ */
 export function ResumeWorkshop({ initialData }: Props) {
   const initialSelected = initialData.bullets[0] ?? null;
   const [resume, setResume] = useState<ResumeRow | null>(initialData.resume);

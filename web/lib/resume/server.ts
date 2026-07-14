@@ -19,6 +19,11 @@ export type ResumeContextResult =
   | { context: ResumeApiContext; response?: never }
   | { context?: never; response: NextResponse };
 
+/**
+ * Authenticates the requester and verifies access to the published resume workshop.
+ *
+ * @returns An authenticated resume API context on success, or an HTTP error response when access is unavailable.
+ */
 export async function getResumeApiContext(): Promise<ResumeContextResult> {
   const user = await getRequestUser();
   if (!user) {
@@ -39,10 +44,23 @@ export async function getResumeApiContext(): Promise<ResumeContextResult> {
   return { context: { user, service, course: { id: course.id, slug: course.slug } } };
 }
 
+/**
+ * Creates a SHA-256 hash for a resume bullet.
+ *
+ * @param text - The resume bullet text to hash
+ * @returns The SHA-256 digest as a hexadecimal string
+ */
 export function hashResumeBullet(text: string): string {
   return createHash('sha256').update(text).digest('hex');
 }
 
+/**
+ * Records a resume-related product event for the authenticated user.
+ *
+ * @param context - The authenticated resume API context.
+ * @param eventName - The name of the event to record.
+ * @param properties - Additional event properties.
+ */
 export async function recordResumeEvent(
   context: ResumeApiContext,
   eventName: string,
@@ -57,6 +75,11 @@ export async function recordResumeEvent(
   if (error) console.error(`resume event insert failed (${eventName}):`, error.message);
 }
 
+/**
+ * Determines the daily limit for resume critiques from environment configuration.
+ *
+ * @returns The configured integer limit from 1 through 1000, or `25` when the configuration is invalid or absent.
+ */
 export function getResumeCritiqueDailyLimit(): number {
   const value = Number(process.env.RESUME_CRITIQUE_DAILY_LIMIT ?? '25');
   return Number.isInteger(value) && value >= 1 && value <= 1000 ? value : 25;

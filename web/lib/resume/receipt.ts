@@ -18,6 +18,12 @@ export interface CritiqueReceiptPayload {
   expiresAt: number;
 }
 
+/**
+ * Retrieves the secret used to sign critique receipts.
+ *
+ * @returns The configured receipt secret
+ * @throws Error If `CRITIQUE_RECEIPT_SECRET` is missing or contains fewer than 32 characters
+ */
 function receiptSecret(): string {
   const secret = process.env.CRITIQUE_RECEIPT_SECRET;
   if (!secret || secret.length < 32) {
@@ -26,10 +32,22 @@ function receiptSecret(): string {
   return secret;
 }
 
+/**
+ * Generates a base64url-encoded HMAC-SHA256 signature for an encoded payload.
+ *
+ * @param encodedPayload - The payload to sign.
+ * @returns The base64url-encoded signature.
+ */
 function signature(encodedPayload: string): string {
   return createHmac('sha256', receiptSecret()).update(encodedPayload).digest('base64url');
 }
 
+/**
+ * Creates a signed receipt containing a critique payload and its validity period.
+ *
+ * @param payload - The critique receipt data without issuance and expiration timestamps
+ * @returns The signed receipt and its expiration time as an ISO timestamp
+ */
 export function createCritiqueReceipt(
   payload: Omit<CritiqueReceiptPayload, 'issuedAt' | 'expiresAt'>,
 ): { receipt: string; expiresAt: string } {
@@ -53,6 +71,14 @@ export class ReceiptError extends Error {
   }
 }
 
+/**
+ * Verifies a signed critique receipt and validates its contents and expiration.
+ *
+ * @param receipt - The signed receipt to verify.
+ * @returns The validated critique receipt payload.
+ * @throws `ReceiptError` with code `INVALID` when the receipt is malformed, unsigned, or contains invalid data.
+ * @throws `ReceiptError` with code `EXPIRED` when the receipt has expired.
+ */
 export function verifyCritiqueReceipt(receipt: string): CritiqueReceiptPayload {
   const [encoded, suppliedSignature, extra] = receipt.split('.');
   if (!encoded || !suppliedSignature || extra) throw new ReceiptError('INVALID');

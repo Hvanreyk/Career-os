@@ -8,6 +8,11 @@ const UpdateSchema = z.object({
   sortOrder: z.number().int().min(0).max(1000).optional(),
 }).refine((value) => Object.keys(value).length > 0);
 
+/**
+ * Updates a resume section owned by the authenticated user.
+ *
+ * @returns A response containing the updated section, or an error response for invalid input, update failures, or a missing section.
+ */
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const result = await getResumeApiContext();
   if (result.response) return result.response;
@@ -33,6 +38,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   return NextResponse.json({ section: data });
 }
 
+/**
+ * Deletes a resume section belonging to the authenticated user.
+ *
+ * @param params - Route parameters containing the section ID.
+ * @returns An empty response with status 204 when the section is deleted; otherwise, an error response.
+ */
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const result = await getResumeApiContext();
   if (result.response) return result.response;

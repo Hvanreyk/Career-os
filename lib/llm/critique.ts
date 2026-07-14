@@ -32,6 +32,11 @@ export interface CritiqueResult {
   usage: { input_tokens: number; output_tokens: number };
 }
 
+/**
+ * Builds the system prompt for generating constructive, factually grounded critiques of Australian finance resume bullets.
+ *
+ * @returns The system prompt text
+ */
 export function buildCritiqueSystemPrompt(): string {
   return [
     'You are an Australian finance-careers coach critiquing one resume bullet.',
@@ -50,6 +55,12 @@ export function buildCritiqueSystemPrompt(): string {
   ].join('\n');
 }
 
+/**
+ * Builds the user message containing the resume bullet and its section context.
+ *
+ * @param input - The resume bullet and the section information used to contextualize it.
+ * @returns A formatted message containing the section kind, heading, and delimited student bullet.
+ */
 export function buildCritiqueUserMessage(input: CritiqueInput): string {
   return [
     `Section kind: ${input.sectionKind}`,
@@ -61,6 +72,13 @@ export function buildCritiqueUserMessage(input: CritiqueInput): string {
   ].join('\n');
 }
 
+/**
+ * Generates a structured critique of a resume bullet for an Australian finance resume.
+ *
+ * @param input - The bullet and resume section context to critique
+ * @returns The parsed critique, model identifier, and token usage
+ * @throws `CritiqueError` if the bullet is invalid, the API key is missing, or the critique request fails
+ */
 export async function generateResumeCritique(input: CritiqueInput): Promise<CritiqueResult> {
   const bullet = input.bullet.trim();
   if (!bullet || bullet.length > RESUME_BULLET_MAX_LENGTH) {

@@ -34,6 +34,12 @@ const ACTIONS: Partial<Record<ResourceCapability, ResourceActionDefinition>> = {
   },
 };
 
+/**
+ * Derives the available actions for a resource from its capabilities.
+ *
+ * @param resource - The resource whose capabilities determine the available actions.
+ * @returns The action definitions corresponding to the resource's supported capabilities.
+ */
 export function getResourceActions(resource: ResourceDefinition): ResourceActionDefinition[] {
   return resource.capabilities.flatMap((capability) => {
     const action = ACTIONS[capability];

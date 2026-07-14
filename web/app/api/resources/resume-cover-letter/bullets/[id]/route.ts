@@ -8,6 +8,13 @@ const UpdateSchema = z.object({
   sortOrder: z.number().int().min(0).max(1000).optional(),
 }).refine((value) => Object.keys(value).length > 0);
 
+/**
+ * Updates a resume bullet for the authenticated user.
+ *
+ * @param request - The request containing the bullet fields to update
+ * @param params - Route parameters containing the bullet identifier
+ * @returns The updated bullet, or an error response if validation or the update fails
+ */
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const result = await getResumeApiContext();
   if (result.response) return result.response;
@@ -33,6 +40,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   return NextResponse.json({ bullet: data });
 }
 
+/**
+ * Deletes a resume bullet owned by the authenticated user.
+ *
+ * @param params - Route parameters containing the bullet identifier.
+ * @returns An empty response with status 204 when the bullet is deleted, or an error response when validation or deletion fails.
+ */
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const result = await getResumeApiContext();
   if (result.response) return result.response;

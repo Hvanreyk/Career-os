@@ -9,6 +9,12 @@ const BodySchema = z.object({
   sortOrder: z.number().int().min(0).max(1000).default(0),
 });
 
+/**
+ * Creates a section for an authenticated user's resume.
+ *
+ * @param request - Request containing the resume ID and section details
+ * @returns A response containing the created section, or an error response for invalid input, a missing resume, or a creation failure
+ */
 export async function POST(request: Request) {
   const result = await getResumeApiContext();
   if (result.response) return result.response;

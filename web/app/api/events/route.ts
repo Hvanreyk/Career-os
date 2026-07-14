@@ -25,6 +25,12 @@ const BodySchema = z.object({
   properties: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).default({}),
 });
 
+/**
+ * Records a validated browser analytics event.
+ *
+ * @param request - The incoming request containing the event payload
+ * @returns An empty response on success or an error response when validation or recording fails
+ */
 export async function POST(request: Request) {
   const origin = request.headers.get('origin');
   if (origin) {

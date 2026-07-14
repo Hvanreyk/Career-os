@@ -10,6 +10,12 @@ const UpdateSchema = z.object({
   status: z.enum(['draft', 'current']).optional(),
 }).refine((value) => Object.keys(value).length > 0);
 
+/**
+ * Creates a resume for the authenticated user.
+ *
+ * @param request - The request containing the resume title.
+ * @returns The created resume, or the existing resume when one already exists.
+ */
 export async function POST(request: Request) {
   const result = await getResumeApiContext();
   if (result.response) return result.response;
@@ -34,6 +40,12 @@ export async function POST(request: Request) {
   return NextResponse.json({ resume: data }, { status: 201 });
 }
 
+/**
+ * Updates the authenticated user's resume.
+ *
+ * @param request - The request containing the resume fields to update.
+ * @returns The updated resume, or an error response if the input is invalid, the update fails, or no resume is found.
+ */
 export async function PATCH(request: Request) {
   const result = await getResumeApiContext();
   if (result.response) return result.response;
@@ -52,6 +64,11 @@ export async function PATCH(request: Request) {
   return NextResponse.json({ resume: data });
 }
 
+/**
+ * Deletes the authenticated user's resume data.
+ *
+ * @returns An empty response with status 204 on success.
+ */
 export async function DELETE() {
   const result = await getResumeApiContext();
   if (result.response) return result.response;

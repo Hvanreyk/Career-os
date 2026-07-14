@@ -14,6 +14,11 @@ import {
 
 const BodySchema = z.object({ bulletId: z.uuid() });
 
+/**
+ * Gets the current date in the Australia/Sydney time zone.
+ *
+ * @returns The current date formatted as `YYYY-MM-DD`
+ */
 function sydneyDate(): string {
   const parts = new Intl.DateTimeFormat('en-AU', {
     timeZone: 'Australia/Sydney',
@@ -25,6 +30,11 @@ function sydneyDate(): string {
   return `${value.year}-${value.month}-${value.day}`;
 }
 
+/**
+ * Retrieves the authenticated user's daily resume critique quota and remaining count.
+ *
+ * @returns The daily critique limit and the number of critiques remaining for the current Sydney date.
+ */
 export async function GET() {
   const result = await getResumeApiContext();
   if (result.response) return result.response;
@@ -35,6 +45,12 @@ export async function GET() {
   return NextResponse.json({ limit, remaining: Math.max(limit - (data?.count ?? 0), 0) });
 }
 
+/**
+ * Generates a signed AI critique for an authenticated user's resume bullet.
+ *
+ * @param request - The request containing a UUID `bulletId` in its JSON body.
+ * @returns A response containing the critique, signed receipt, expiration time, and remaining daily quota.
+ */
 export async function POST(request: Request) {
   const result = await getResumeApiContext();
   if (result.response) return result.response;

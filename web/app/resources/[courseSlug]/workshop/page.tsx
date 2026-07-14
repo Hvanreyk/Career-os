@@ -12,6 +12,11 @@ import { createClient } from '@/lib/supabase/server';
 export const metadata: Metadata = { title: 'AI Resume Workshop' };
 export const dynamic = 'force-dynamic';
 
+/**
+ * Renders the authenticated AI resume workshop for a course.
+ *
+ * @param params - Route parameters containing the course slug.
+ */
 export default async function ResumeWorkshopPage({ params }: { params: Promise<{ courseSlug: string }> }) {
   const { courseSlug } = await params;
   if (!resourceHasCapability(courseSlug, 'resume-workshop')) notFound();

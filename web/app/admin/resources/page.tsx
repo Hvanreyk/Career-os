@@ -34,10 +34,23 @@ const FUNNEL_STAGES = [
   { label: 'Bullet revised', events: ['bullet_revised'] },
 ] as const;
 
+/**
+ * Selects a date string when it uses the `YYYY-MM-DD` format.
+ *
+ * @param value - The date string to validate.
+ * @param fallback - The date string to use when `value` is missing or invalid.
+ * @returns `value` when it matches the `YYYY-MM-DD` format, otherwise `fallback`.
+ */
 function safeDate(value: string | undefined, fallback: string): string {
   return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : fallback;
 }
 
+/**
+ * Displays the admin resource management page and resume activation funnel.
+ *
+ * @param searchParams - Optional date range used to filter funnel events.
+ * @returns The rendered admin resources page.
+ */
 export default async function AdminResourcesPage({
   searchParams,
 }: {

@@ -39,6 +39,11 @@ export async function generateMetadata({
   return { title: structure?.course.title ?? 'Course' };
 }
 
+/**
+ * Renders the course overview with course details, lesson progress, available actions, and diagnostic options.
+ *
+ * @param params - Route parameters containing the course slug.
+ */
 export default async function CourseOverviewPage({
   params,
 }: {
