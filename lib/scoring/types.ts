@@ -86,12 +86,18 @@ export type ExpFirmTier = z.infer<typeof ExpFirmTier>;
 // 'corporate' (labelled "Corporate Finance") is retained for backward
 // compatibility but no longer offered in onboarding — students with a
 // corporate finance internship now select 'ib' instead.
+// 'operations' is retained for backward compatibility but no longer offered
+// in onboarding (removed as a selectable Area — students with an operations
+// background now select 'corporate_development' or 'other').
+// 'big4_advisory' now represents the M&A/transaction-services split of Big 4
+// advisory work; 'big4_business_advisory' is the newer, non-deal-facing
+// split. Both feed the same 'has_big4_advisory_experience' signal.
 export const ExpIndustry = z.enum([
-  'ib', 'global_markets', 'capital_markets',
+  'ib', 'global_markets', 'capital_markets', 'equity_research',
   'private_equity',
   'investment_management_equities', 'investment_management_credit',
   'investment_management_real_estate',
-  'consulting', 'big4_advisory', 'big4_audit',
+  'consulting', 'big4_advisory', 'big4_business_advisory', 'big4_audit',
   'operations', 'corporate_development',
   'corporate', 'law',
   'government', 'non_profit', 'other',
@@ -99,7 +105,7 @@ export const ExpIndustry = z.enum([
 export type ExpIndustry = z.infer<typeof ExpIndustry>;
 
 export const ExpRoleFunction = z.enum([
-  'ib_coverage', 'ib_product', 'transaction_services', 'advisory',
+  'ib_coverage', 'ib_product', 'equity_research', 'transaction_services', 'advisory',
   'audit', 'corp_finance', 'sales_trading', 'pe_investment',
   'asset_management', 'law', 'consulting', 'other',
 ]);

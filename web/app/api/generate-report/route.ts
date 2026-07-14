@@ -16,7 +16,9 @@ function deriveRoleFunction(industry: string): string {
     ib: 'ib_coverage',
     global_markets: 'sales_trading',
     capital_markets: 'sales_trading',
+    equity_research: 'equity_research',
     big4_advisory: 'transaction_services',
+    big4_business_advisory: 'advisory',
     big4_audit: 'audit',
     private_equity: 'pe_investment',
     investment_management_equities: 'asset_management',
@@ -41,9 +43,9 @@ const IM_INDUSTRIES = [
 ];
 
 function deriveRelevance(firmTier: string, industry: string): number {
-  if (firmTier === 'bb' && industry === 'ib') return 5;
-  if ((firmTier === 'elite_boutique' || firmTier === 'mid_market') && industry === 'ib') return 5;
-  if (firmTier === 'boutique' && industry === 'ib') return 4;
+  if (firmTier === 'bb' && (industry === 'ib' || industry === 'equity_research')) return 5;
+  if ((firmTier === 'elite_boutique' || firmTier === 'mid_market') && (industry === 'ib' || industry === 'equity_research')) return 5;
+  if (firmTier === 'boutique' && (industry === 'ib' || industry === 'equity_research')) return 4;
 
   if (industry === 'global_markets' || industry === 'capital_markets') {
     if (['bb', 'elite_boutique', 'mid_market'].includes(firmTier)) return 5;
@@ -67,7 +69,7 @@ function deriveRelevance(firmTier: string, industry: string): number {
     return 3;
   }
 
-  if (['big4_advisory', 'big4_audit'].includes(industry)) {
+  if (['big4_advisory', 'big4_business_advisory', 'big4_audit'].includes(industry)) {
     if (firmTier === 'big4') return 3;
     if (firmTier === 'mid_tier') return 2;
   }
@@ -101,7 +103,7 @@ function buildStudentProfile(form: OnboardData, userId: string, email: string): 
   for (const exp of form.experiences) {
     if (exp.industry === 'private_equity') autoSignals.push('has_pe_internship');
     if (exp.industry === 'big4_audit') autoSignals.push('has_big4_audit');
-    if (exp.industry === 'big4_advisory') autoSignals.push('has_big4_advisory');
+    if (exp.industry === 'big4_advisory' || exp.industry === 'big4_business_advisory') autoSignals.push('has_big4_advisory');
     if (exp.industry === 'consulting') autoSignals.push('has_consulting_experience');
     if (exp.how_obtained === 'society_referral') autoSignals.push('fin_society_committee');
   }

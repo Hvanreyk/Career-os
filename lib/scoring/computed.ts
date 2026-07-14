@@ -80,7 +80,7 @@ export function computeFields(input: ComputeInput): ComputedFields {
   const has_pe_experience = experiences.some(e => e.industry === 'private_equity');
   const has_law_experience = experiences.some(e => e.industry === 'law');
   const has_big4_advisory_experience = experiences.some(
-    e => e.industry === 'big4_advisory' && e.role_relevance >= 3,
+    e => (e.industry === 'big4_advisory' || e.industry === 'big4_business_advisory') && e.role_relevance >= 3,
   );
 
   // Firm-tier booleans

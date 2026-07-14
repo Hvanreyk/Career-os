@@ -159,7 +159,7 @@ function hadFeatureEver(m: MatchResult, key: keyof ComputedFields): boolean {
       return ['fin_society_committee', 'investment_society_committee', 'investment_society_president',
               'consulting_society_committee', 'society_committee'].some(s => sigs.has(s));
     case 'has_big4_advisory_experience':
-      return exps.some(e => e.industry === 'big4_advisory' && e.role_relevance >= 3);
+      return exps.some(e => (e.industry === 'big4_advisory' || e.industry === 'big4_business_advisory') && e.role_relevance >= 3);
     case 'has_pe_experience':
       return exps.some(e => e.industry === 'private_equity');
     case 'is_co_op_program':

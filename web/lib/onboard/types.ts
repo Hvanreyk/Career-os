@@ -27,11 +27,11 @@ export type FirmTier =
   | 'local_government' | 'state_government' | 'federal_government'
   | 'government' | 'non_profit' | 'other';
 export type Industry =
-  | 'ib' | 'global_markets' | 'capital_markets'
+  | 'ib' | 'global_markets' | 'capital_markets' | 'equity_research'
   | 'private_equity'
   | 'investment_management_equities' | 'investment_management_credit'
   | 'investment_management_real_estate'
-  | 'consulting' | 'big4_advisory' | 'big4_audit'
+  | 'consulting' | 'big4_advisory' | 'big4_business_advisory' | 'big4_audit'
   | 'operations' | 'corporate_development'
   | 'corporate'
   | 'law' | 'government' | 'non_profit' | 'other';
