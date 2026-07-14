@@ -15,4 +15,8 @@ alter table professionals
 alter table professionals
   add constraint professionals_degree_type_check
   check (degree_type in
-    ('bachelor','honours','masters','mba','double_degree','combined_degree','phd'));
+    ('bachelor','honours','masters','mba','double_degree','combined_degree','phd'))
+  not valid;
+
+alter table professionals
+  validate constraint professionals_degree_type_check;
