@@ -21,18 +21,20 @@ const EXP_TYPES: { value: ExpType; label: string }[] = [
 // Area = industry. Picked first; it determines which firm-level options
 // make sense (e.g. IB shows BB/EB/MM/Boutique, Consulting shows MBB/Tier 2/
 // Big 4/Boutique). Keeps 'capital_markets' out of the picker (superseded by
-// 'global_markets') but the value stays valid in the schema for old data.
+// 'global_markets') and 'operations' out of the picker (removed as a
+// selectable Area) but both values stay valid in the schema for old data.
 const AREAS: { value: Industry; label: string }[] = [
   { value: 'ib', label: 'Investment Banking' },
   { value: 'global_markets', label: 'Global Markets (Sales & Trading)' },
+  { value: 'equity_research', label: 'Equity Research' },
   { value: 'private_equity', label: 'Private Equity' },
   { value: 'investment_management_equities', label: 'Investment Management — Equities' },
   { value: 'investment_management_credit', label: 'Investment Management — Credit' },
   { value: 'investment_management_real_estate', label: 'Investment Management — Real Estate' },
   { value: 'consulting', label: 'Consulting' },
   { value: 'big4_audit', label: 'Accounting — Audit' },
-  { value: 'big4_advisory', label: 'Accounting — Advisory / M&A' },
-  { value: 'operations', label: 'Operations' },
+  { value: 'big4_advisory', label: 'Accounting — M&A' },
+  { value: 'big4_business_advisory', label: 'Accounting — Business Advisory' },
   { value: 'corporate_development', label: 'Corporate Development' },
   { value: 'law', label: 'Law' },
   { value: 'government', label: 'Government' },
@@ -75,10 +77,13 @@ const FIRM_TIER_LABELS: Record<FirmTier, string> = {
 
 // Which firm-level options are offered for each area, in display order.
 // The first entry is used as the default when an area is selected.
+// 'operations' has no entry in AREAS (removed as a selectable Area) but
+// still needs a mapping here to satisfy Record<Industry, ...> for old data.
 const AREA_FIRM_TIERS: Record<Industry, FirmTier[]> = {
   ib: ['bb', 'elite_boutique', 'mid_market', 'boutique'],
   global_markets: ['bb', 'elite_boutique', 'mid_market', 'boutique', 'aus_big4_bank'],
   capital_markets: ['bb', 'elite_boutique', 'mid_market', 'boutique', 'aus_big4_bank'],
+  equity_research: ['bb', 'elite_boutique', 'mid_market', 'boutique'],
   private_equity: ['mega_fund', 'large_cap', 'mid_market', 'boutique'],
   investment_management_equities: ['global_manager', 'hedge_fund', 'boutique'],
   investment_management_credit: ['global_manager', 'hedge_fund', 'boutique'],
@@ -86,6 +91,7 @@ const AREA_FIRM_TIERS: Record<Industry, FirmTier[]> = {
   consulting: ['mbb', 'tier2_consulting', 'big4', 'boutique'],
   big4_audit: ['big4', 'mid_tier', 'boutique'],
   big4_advisory: ['big4', 'mid_tier', 'boutique'],
+  big4_business_advisory: ['big4', 'mid_tier', 'boutique'],
   operations: ['asx50', 'asx100', 'asx200', 'large_private', 'medium_private', 'small_private'],
   corporate_development: ['asx50', 'asx100', 'asx200', 'large_private', 'medium_private', 'small_private'],
   corporate: ['corporate'],
