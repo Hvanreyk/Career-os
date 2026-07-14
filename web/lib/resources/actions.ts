@@ -1,0 +1,42 @@
+import type { ResourceCapability, ResourceDefinition } from './catalog';
+
+export type ResourceActionIcon = 'landmark' | 'map' | 'file-text';
+
+export interface ResourceActionDefinition {
+  capability: ResourceCapability;
+  title: string;
+  description: string;
+  path: string;
+  icon: ResourceActionIcon;
+}
+
+const ACTIONS: Partial<Record<ResourceCapability, ResourceActionDefinition>> = {
+  'bank-tracker': {
+    capability: 'bank-tracker',
+    title: 'Bank target tracker',
+    description: 'Build and manage your target list (Module 8 workspace)',
+    path: 'tracker',
+    icon: 'landmark',
+  },
+  roadmap: {
+    capability: 'roadmap',
+    title: 'Personalised roadmap',
+    description: 'Your week-by-week recruiting plan (unlocks after the diagnostic)',
+    path: 'roadmap',
+    icon: 'map',
+  },
+  'resume-workshop': {
+    capability: 'resume-workshop',
+    title: 'AI resume workshop',
+    description: 'Build your master resume and improve individual bullets with AI critique',
+    path: 'workshop',
+    icon: 'file-text',
+  },
+};
+
+export function getResourceActions(resource: ResourceDefinition): ResourceActionDefinition[] {
+  return resource.capabilities.flatMap((capability) => {
+    const action = ACTIONS[capability];
+    return action ? [action] : [];
+  });
+}

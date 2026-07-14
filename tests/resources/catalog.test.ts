@@ -4,6 +4,7 @@ import {
   getResourceDefinition,
   resourceHasCapability,
 } from '../../web/lib/resources/catalog.js';
+import { getResourceActions } from '../../web/lib/resources/actions.js';
 
 describe('resource catalogue', () => {
   it('defines exactly six unique resource slugs', () => {
@@ -27,5 +28,16 @@ describe('resource catalogue', () => {
 
   it('returns null for unregistered resources', () => {
     expect(getResourceDefinition('not-a-resource')).toBeNull();
+  });
+});
+
+describe('resource actions', () => {
+  it('maps the resume-workshop capability to the protected workshop route', () => {
+    const resource = getResourceDefinition('resume-cover-letter');
+    expect(resource).not.toBeNull();
+    expect(getResourceActions(resource!)).toContainEqual(expect.objectContaining({
+      capability: 'resume-workshop',
+      path: 'workshop',
+    }));
   });
 });

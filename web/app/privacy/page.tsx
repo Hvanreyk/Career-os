@@ -22,7 +22,11 @@ const sections = [
   },
   {
     title: 'Third-Party Services',
-    body: 'TrajectoryOS integrates with third-party services including Supabase (database and authentication) and payment processors. These services have their own privacy policies and data practices. We only share the data necessary for these services to function.',
+    body: 'TrajectoryOS integrates with third-party services including Supabase for database and authentication, OpenAI for features you deliberately ask to generate, and payment processors. In the AI Resume Workshop, the resume bullet you select is sent to OpenAI only when you request critique. Unsaved critique is not retained in the TrajectoryOS database. These services have their own privacy policies and data practices, and we share only the data needed for the requested feature to function.',
+  },
+  {
+    title: 'Resume Workshop Data',
+    body: 'Your master resume, sections, bullets and explicitly saved AI-assisted revisions remain private to your account. Product analytics record feature names and counts, not resume or critique text. You can delete all content-bearing workshop data from the workshop at any time. A text-free daily usage counter may remain briefly to enforce the daily AI critique limit.',
   },
   {
     title: 'Contact Us',

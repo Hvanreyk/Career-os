@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 
 interface Props {
-  eventName: 'resource_viewed' | 'lesson_viewed';
+  eventName: 'resource_viewed' | 'lesson_viewed' | 'resume_workshop_opened';
   resourceSlug: string;
   properties?: Record<string, string | number | boolean | null>;
 }
@@ -33,4 +33,3 @@ export function TrackProductEvent({ eventName, resourceSlug, properties = {} }: 
 
   return null;
 }
-
