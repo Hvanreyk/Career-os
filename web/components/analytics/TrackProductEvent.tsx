@@ -3,13 +3,21 @@
 import { useEffect, useRef } from 'react';
 
 interface Props {
-  eventName: 'resource_viewed' | 'lesson_viewed';
+  eventName: 'resource_viewed' | 'lesson_viewed' | 'resume_workshop_opened';
   resourceSlug: string;
   properties?: Record<string, string | number | boolean | null>;
 }
 
 const STORAGE_KEY = 'trajectoryos_anonymous_id';
 
+/**
+ * Tracks a product analytics event for a resource.
+ *
+ * @param eventName - The product event to track.
+ * @param resourceSlug - The slug identifying the resource.
+ * @param properties - Additional event properties.
+ * @returns `null`, because the component renders no UI.
+ */
 export function TrackProductEvent({ eventName, resourceSlug, properties = {} }: Props) {
   const sent = useRef(false);
 
@@ -33,4 +41,3 @@ export function TrackProductEvent({ eventName, resourceSlug, properties = {} }: 
 
   return null;
 }
-

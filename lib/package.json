@@ -10,6 +10,8 @@
     "./llm": "./llm/index.ts",
     "./llm/types": "./llm/types.ts",
     "./llm/roadmap": "./llm/roadmap.ts",
+    "./llm/critique": "./llm/critique.ts",
+    "./resume/types": "./resume/types.ts",
     "./db/xlsx": "./db/xlsx.ts",
     "./courses": "./courses/index.ts",
     "./courses/content": "./courses/content.ts",

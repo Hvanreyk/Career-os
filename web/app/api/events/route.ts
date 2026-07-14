@@ -4,15 +4,19 @@ import { getRequestUser } from '@/lib/auth';
 import { getResourceDefinition } from '@/lib/resources/catalog';
 import { createServiceClient } from '@/lib/supabase/server';
 
+// Only non-mutating browser events are accepted here. Mutation events are
+// written by their authenticated server routes after the operation succeeds.
 const EVENT_NAMES = [
   'resource_viewed',
   'lesson_viewed',
-  'lesson_completed',
-  'diagnostic_completed',
-  'quiz_completed',
-  'roadmap_requested',
-  'roadmap_completed',
+  'resume_workshop_opened',
 ] as const;
+
+const PROPERTY_KEYS: Record<(typeof EVENT_NAMES)[number], readonly string[]> = {
+  resource_viewed: [],
+  lesson_viewed: ['moduleSlug', 'lessonSlug'],
+  resume_workshop_opened: [],
+};
 
 const BodySchema = z.object({
   eventName: z.enum(EVENT_NAMES),
@@ -21,6 +25,12 @@ const BodySchema = z.object({
   properties: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).default({}),
 });
 
+/**
+ * Records a validated browser analytics event.
+ *
+ * @param request - The incoming request containing the event payload
+ * @returns An empty response on success or an error response when validation or recording fails
+ */
 export async function POST(request: Request) {
   const origin = request.headers.get('origin');
   if (origin) {
@@ -39,6 +49,18 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: 'Invalid event' }, { status: 400 });
   if (parsed.data.resourceSlug && !getResourceDefinition(parsed.data.resourceSlug)) {
     return NextResponse.json({ error: 'Unknown resource' }, { status: 400 });
+  }
+  const allowedKeys = PROPERTY_KEYS[parsed.data.eventName];
+  const propertyKeys = Object.keys(parsed.data.properties);
+  if (propertyKeys.some((key) => !allowedKeys.includes(key))) {
+    return NextResponse.json({ error: 'Invalid event properties' }, { status: 400 });
+  }
+  if (parsed.data.eventName === 'lesson_viewed') {
+    const slug = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+    const { moduleSlug, lessonSlug } = parsed.data.properties;
+    if (typeof moduleSlug !== 'string' || typeof lessonSlug !== 'string' || !slug.test(moduleSlug) || !slug.test(lessonSlug)) {
+      return NextResponse.json({ error: 'Invalid lesson event' }, { status: 400 });
+    }
   }
   if (JSON.stringify(parsed.data.properties).length > 4000) {
     return NextResponse.json({ error: 'Event properties too large' }, { status: 400 });

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { ArrowRight, BookOpen, Clock, Gauge, Landmark, Map } from 'lucide-react';
+import { ArrowRight, BookOpen, Clock, FileText, Gauge, Landmark, Map } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import {
   getCourseStructure,
@@ -17,6 +17,13 @@ import {
   getResourceDefinition,
   resourceHasCapability,
 } from '@/lib/resources/catalog';
+import { getResourceActions, type ResourceActionIcon } from '@/lib/resources/actions';
+
+const ACTION_ICONS: Record<ResourceActionIcon, typeof Map> = {
+  landmark: Landmark,
+  map: Map,
+  'file-text': FileText,
+};
 
 // Public overview page: anyone can see the course structure; progress,
 // readiness and continue-links appear for signed-in users.
@@ -32,6 +39,11 @@ export async function generateMetadata({
   return { title: structure?.course.title ?? 'Course' };
 }
 
+/**
+ * Renders the course overview with course details, lesson progress, available actions, and diagnostic options.
+ *
+ * @param params - Route parameters containing the course slug.
+ */
 export default async function CourseOverviewPage({
   params,
 }: {
@@ -57,15 +69,14 @@ export default async function CourseOverviewPage({
   const done = allLessons.filter(({ lesson }) => completed.has(lesson.id)).length;
   const progressPercent = allLessons.length ? (done / allLessons.length) * 100 : 0;
   const canUseDiagnostic = resourceHasCapability(resource, 'diagnostic');
-  const canUseTracker = resourceHasCapability(resource, 'bank-tracker');
-  const canUseRoadmap = resourceHasCapability(resource, 'roadmap');
+  const resourceActions = getResourceActions(resource);
 
   // "Continue" goes to the first incomplete lesson.
   const nextUp = allLessons.find(({ lesson }) => !completed.has(lesson.id));
   const continueHref = nextUp
     ? `/resources/${course.slug}/${nextUp.moduleSlug}/${nextUp.lesson.slug}`
-    : canUseRoadmap
-      ? `/resources/${course.slug}/roadmap`
+    : resourceActions[0]
+      ? `/resources/${course.slug}/${resourceActions[0].path}`
       : `/resources/${course.slug}`;
 
   const readiness = enrollment?.readiness ?? null;
@@ -176,40 +187,26 @@ export default async function CourseOverviewPage({
         </div>
 
         {/* Workspaces */}
-        {user && (canUseTracker || canUseRoadmap) && (
+        {user && resourceActions.length > 0 && (
           <div className="grid sm:grid-cols-2 gap-4 mb-8">
-            {canUseTracker && (
+            {resourceActions.map((action) => {
+              const Icon = ACTION_ICONS[action.icon];
+              return (
               <Link
-                href={`/resources/${course.slug}/tracker`}
+                key={action.capability}
+                href={`/resources/${course.slug}/${action.path}`}
                 className="glass border border-white/8 rounded-2xl p-5 hover:border-gold-400/25 transition-colors group flex items-center gap-4"
               >
                 <div className="w-10 h-10 rounded-xl bg-white/5 text-slate-300 flex items-center justify-center group-hover:bg-gold-400/10 group-hover:text-gold-400 transition-colors shrink-0">
-                  <Landmark className="w-5 h-5" />
+                  <Icon className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-white font-semibold text-sm">Bank target tracker</div>
-                  <p className="text-slate-500 text-xs mt-0.5">
-                    Build and manage your target list (Module 8 workspace)
-                  </p>
+                  <div className="text-white font-semibold text-sm">{action.title}</div>
+                  <p className="text-slate-500 text-xs mt-0.5">{action.description}</p>
                 </div>
               </Link>
-            )}
-            {canUseRoadmap && (
-              <Link
-                href={`/resources/${course.slug}/roadmap`}
-                className="glass border border-white/8 rounded-2xl p-5 hover:border-gold-400/25 transition-colors group flex items-center gap-4"
-              >
-                <div className="w-10 h-10 rounded-xl bg-white/5 text-slate-300 flex items-center justify-center group-hover:bg-gold-400/10 group-hover:text-gold-400 transition-colors shrink-0">
-                  <Map className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-white font-semibold text-sm">Personalised roadmap</div>
-                  <p className="text-slate-500 text-xs mt-0.5">
-                    Your week-by-week recruiting plan (unlocks after the diagnostic)
-                  </p>
-                </div>
-              </Link>
-            )}
+              );
+            })}
           </div>
         )}
 

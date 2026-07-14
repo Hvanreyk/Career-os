@@ -1,0 +1,26 @@
+status: draft
+questions:
+  - slug: q1
+    prompt: What should a cover letter add beyond the resume?
+    options:
+      - { id: a, text: Reasoning that connects your evidence to the role and firm }
+      - { id: b, text: A copy of every resume bullet }
+      - { id: c, text: Unverifiable claims about firm culture }
+    correct: a
+    explanation: The letter should explain relevance rather than duplicate the resume.
+  - slug: q2
+    prompt: Which is suitable firm-specific evidence?
+    options:
+      - { id: a, text: A current role description }
+      - { id: b, text: A generic prestige claim }
+      - { id: c, text: An invented conversation }
+    correct: a
+    explanation: Use current and attributable sources.
+  - slug: q3
+    prompt: What does the Phase 1 AI workshop critique?
+    options:
+      - { id: a, text: Resume bullets }
+      - { id: b, text: Full cover letters }
+      - { id: c, text: PDF formatting }
+    correct: a
+    explanation: Cover-letter AI and document review are out of scope for Phase 1.
