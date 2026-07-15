@@ -86,7 +86,9 @@ describe('networking migration', () => {
 
   it('deletes quota-usage state as part of the full data deletion', () => {
     const start = migration.indexOf('create or replace function delete_all_networking_data');
+    expect(start).toBeGreaterThanOrEqual(0);
     const end = migration.indexOf('$$;', start);
+    expect(end).toBeGreaterThan(start);
     expect(migration.slice(start, end)).toContain('delete from networking_review_daily_usage');
   });
 
