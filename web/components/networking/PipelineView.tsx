@@ -32,14 +32,8 @@ interface Props {
 }
 
 /**
- * Displays networking contacts in stage columns with attention filters.
- *
- * Moving a card updates its stage label only; it does not log interactions or complete follow-ups.
- *
- * @param base - The path prefix used for contact links
- * @param contacts - The contacts displayed on the stage board
- * @param planContacts - Outreach and follow-up data used for attention filters
- * @param followUps - Follow-up records used to identify overdue contacts
+ * Stage board. Moving a card sets the explicit stage only — it never
+ * creates interactions or completes follow-ups.
  */
 export function PipelineView({ base, contacts, planContacts, followUps }: Props) {
   const router = useRouter();
@@ -75,12 +69,6 @@ export function PipelineView({ base, contacts, planContacts, followUps }: Props)
 
   const filtered = contacts.filter(matchesAttention);
 
-  /**
-   * Updates a contact's relationship stage and refreshes the view.
-   *
-   * @param contactId - The contact whose stage should be updated
-   * @param stage - The new relationship stage
-   */
   async function moveStage(contactId: string, stage: RelationshipStage) {
     setBusyId(contactId);
     setError(null);

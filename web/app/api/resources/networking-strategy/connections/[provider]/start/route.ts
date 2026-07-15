@@ -5,9 +5,8 @@ import { buildAuthorizeUrl, getProviderConfig } from '@/lib/networking/providers
 import { getNetworkingApiContext } from '@/lib/networking/server';
 
 /**
- * Initiates the OAuth authorization-code flow with PKCE for a networking provider.
- *
- * @returns A redirect to the provider's authorization endpoint, or a 404 response when the provider is unknown or disabled.
+ * Starts the OAuth authorization-code + PKCE flow for a provider.
+ * 404s when the provider is not enabled for this deployment.
  */
 export async function GET(_request: Request, { params }: { params: Promise<{ provider: string }> }) {
   const result = await getNetworkingApiContext();

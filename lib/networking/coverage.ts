@@ -62,13 +62,6 @@ export interface CoverageSummary {
 
 const INACTIVE_TARGET_STATUSES = new Set(['rejected', 'closed']);
 
-/**
- * Calculates the whole-day difference between two ISO date strings.
- *
- * @param nowIso - The reference date and time
- * @param dateIso - The date and time to compare with the reference
- * @returns The number of whole days from `nowIso` to `dateIso`
- */
 function daysBetween(nowIso: string, dateIso: string): number {
   const ms = new Date(dateIso).getTime() - new Date(nowIso).getTime();
   return Math.floor(ms / 86_400_000);

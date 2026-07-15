@@ -81,23 +81,10 @@ export function MessageLabView({ contacts, messages, initialContactId, initialCh
   const facts = useMemo(() => factsText.split('\n').map((f) => f.trim()).filter(Boolean).slice(0, 8), [factsText]);
   const availablePurposes = PURPOSES.filter((p) => p.channel === 'both' || p.channel === channel);
 
-  /**
-   * Filters message purposes to those available for the specified channel.
-   *
-   * @param nextChannel - The channel for which to select available purposes.
-   * @returns The purposes supported by `nextChannel` or available across channels.
-   */
   function purposesForChannel(nextChannel: MessageChannel) {
     return PURPOSES.filter((p) => p.channel === 'both' || p.channel === nextChannel);
   }
 
-  /**
-   * Changes the message channel and updates the purpose when necessary.
-   *
-   * Clears the current message identifier and review or send-related outputs.
-   *
-   * @param nextChannel - The channel to select
-   */
   function changeChannel(nextChannel: MessageChannel) {
     setChannel(nextChannel);
     if (!purposesForChannel(nextChannel).some((p) => p.value === purpose)) {
@@ -107,20 +94,12 @@ export function MessageLabView({ contacts, messages, initialContactId, initialCh
     resetOutputs();
   }
 
-  /**
-   * Clears the current review, blocking issues, and sent confirmation.
-   */
   function resetOutputs() {
     setReview(null);
     setBlockingIssues([]);
     setSentConfirmation(false);
   }
 
-  /**
-   * Ensures a message record exists and returns its identifier.
-   *
-   * @returns The existing message identifier or the identifier of the newly created message
-   */
   async function ensureMessage(): Promise<string> {
     if (messageId) return messageId;
     const created = await networkingApi<{ id: string }>('/messages', 'POST', {
@@ -135,9 +114,6 @@ export function MessageLabView({ contacts, messages, initialContactId, initialCh
     return created.id;
   }
 
-  /**
-   * Saves the current message content and context as a draft.
-   */
   async function saveDraft() {
     setBusy('save');
     setError(null);
@@ -155,9 +131,6 @@ export function MessageLabView({ contacts, messages, initialContactId, initialCh
     }
   }
 
-  /**
-   * Generates an AI-assisted draft for the current message and updates the editor with its subject and body.
-   */
   async function aiDraft() {
     setBusy('ai_draft');
     setError(null);
@@ -178,11 +151,6 @@ export function MessageLabView({ contacts, messages, initialContactId, initialCh
     }
   }
 
-  /**
-   * Runs preflight checks and requests an AI review for the current message.
-   *
-   * If preflight checks fail, records the blocking issues without requesting a review.
-   */
   async function runReview() {
     setBusy('review');
     setError(null);
@@ -209,12 +177,6 @@ export function MessageLabView({ contacts, messages, initialContactId, initialCh
     }
   }
 
-  /**
-   * Applies a selected rewrite to the message draft.
-   *
-   * @param rewriteSubject - The rewritten message subject
-   * @param rewriteBody - The rewritten message body
-   */
   function applyRewrite(rewriteSubject: string, rewriteBody: string) {
     setSubject(rewriteSubject);
     setBody(rewriteBody);
@@ -222,29 +184,16 @@ export function MessageLabView({ contacts, messages, initialContactId, initialCh
     setReview(null);
   }
 
-  /**
-   * Builds a mailto link for the selected contact.
-   *
-   * @returns A mailto URL containing the current subject and body, or an empty string when the contact has no email address.
-   */
   function mailtoHref(): string {
     if (!contact?.email) return '';
     const params = new URLSearchParams({ subject, body });
     return `mailto:${contact.email}?${params.toString().replace(/\+/g, '%20')}`;
   }
 
-  /**
-   * Copies the current message body to the clipboard.
-   */
   async function copyBody() {
     await navigator.clipboard.writeText(body).catch(() => undefined);
   }
 
-  /**
-   * Records the message as sent and optionally schedules a follow-up.
-   *
-   * @param channelAction - The action used to send or mark the message as sent.
-   */
   async function logSent(channelAction: 'mailto' | 'copy' | 'linkedin_copy') {
     setBusy('send');
     setError(null);

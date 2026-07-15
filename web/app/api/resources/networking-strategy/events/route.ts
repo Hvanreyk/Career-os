@@ -3,9 +3,8 @@ import { NetworkingEventInputSchema } from '@trajectoryos/core/networking/types'
 import { getNetworkingApiContext, recordNetworkingEvent } from '@/lib/networking/server';
 
 /**
- * Creates a networking event for the authenticated user.
- *
- * @returns A `201` response containing the event ID, a `400` response for invalid input, or a `500` response if creation fails.
+ * Creates a networking event (career fair, info session, insight day)
+ * for pre-event prep and rapid post-event contact capture.
  */
 export async function POST(request: Request) {
   const result = await getNetworkingApiContext();

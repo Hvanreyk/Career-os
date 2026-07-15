@@ -34,10 +34,10 @@ const URL_PATTERN = /https?:\/\/[^\s)>\]]+/gi;
 const SHORTENER_HOSTS = ['bit.ly', 'tinyurl.com', 'goo.gl', 't.co', 'ow.ly', 'rb.gy'];
 
 /**
- * Runs deterministic validation checks on a saved message draft.
+ * Runs deterministic checks on a saved draft.
  *
- * @param input - The draft content and messaging context to validate.
- * @returns Detected issues, with blocking issues ordered before warnings. An empty array indicates no issues.
+ * @returns Issues ordered blocks-first. An empty array means clear to
+ *   review or send.
  */
 export function runPreflight(input: PreflightInput): PreflightIssue[] {
   const issues: PreflightIssue[] = [];
@@ -130,12 +130,7 @@ export function runPreflight(input: PreflightInput): PreflightIssue[] {
   return issues;
 }
 
-/**
- * Determines whether preflight results are acceptable for sending or review.
- *
- * @param issues - The issues detected during preflight
- * @returns `true` if no issue has `block` severity, `false` otherwise.
- */
+/** True when no blocking issue is present. */
 export function preflightPasses(issues: PreflightIssue[]): boolean {
   return !issues.some((issue) => issue.severity === 'block');
 }

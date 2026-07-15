@@ -5,9 +5,11 @@ import {
 } from '@/lib/networking/server';
 
 /**
- * Deletes the requester's stored networking data and records the deletion event.
- *
- * @returns A JSON response with `{ ok: true }` after successful deletion, or an error response when the request context or deletion cannot be completed.
+ * Deletes ALL of the requester's networking data: contacts (cascading
+ * to interactions, follow-ups, chats, target links, messages and
+ * reviews), events, introductions, send attempts, connections and
+ * their sync jobs. Sent emails and external calendar events are not
+ * recalled — that is disclosed in the UI before confirmation.
  */
 export async function DELETE() {
   const result = await getNetworkingApiContext();

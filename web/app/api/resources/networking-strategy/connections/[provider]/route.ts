@@ -8,12 +8,9 @@ import {
 } from '@/lib/networking/server';
 
 /**
- * Disconnects a networking provider for the current user.
- *
- * Attempts provider-side token revocation when supported, then removes the
- * local connection and records the disconnection event.
- *
- * @returns A response indicating success, an unknown provider or missing connection, or a local deletion failure.
+ * Disconnects a provider: revokes access at the provider where
+ * supported, then deletes the local tokens and sync jobs. Sent email
+ * and existing calendar events are never recalled.
  */
 export async function DELETE(_request: Request, { params }: { params: Promise<{ provider: string }> }) {
   const result = await getNetworkingApiContext();

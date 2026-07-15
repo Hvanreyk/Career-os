@@ -19,12 +19,8 @@ interface Props {
 }
 
 /**
- * Displays target-firm coverage and aggregated alumni placement patterns.
- *
- * @param base - Base URL used to build the contacts page link
- * @param coverage - Per-firm coverage data
- * @param alumni - Aggregated alumni intelligence, or `null` when unavailable
- * @param university - University used to match alumni records
+ * Coverage grid + aggregate alumni intelligence. Everything shown is
+ * deterministic and reconstructable by the student — no opaque scores.
  */
 export function TargetMapView({ base, coverage, alumni, university }: Props) {
   return (

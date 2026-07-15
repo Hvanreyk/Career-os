@@ -6,9 +6,7 @@ import { getNetworkingApiContext } from '@/lib/networking/server';
 const IdSchema = z.uuid();
 
 /**
- * Updates a networking event owned by the authenticated user.
- *
- * @returns An empty success response when the event is updated, or an error response for invalid input, update failures, or a missing event.
+ * Updates a networking event (mark attended, edit notes).
  */
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const result = await getNetworkingApiContext();

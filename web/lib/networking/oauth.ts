@@ -10,12 +10,6 @@ import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypt
 const STATE_LIFETIME_SECONDS = 10 * 60;
 export const OAUTH_STATE_COOKIE = 'networking_oauth_state';
 
-/**
- * Retrieves the secret used to sign and verify OAuth state values.
- *
- * @returns A configured secret containing at least 32 characters
- * @throws If neither supported environment variable provides a secret of sufficient length
- */
 function stateSecret(): string {
   const secret = process.env.NETWORKING_OAUTH_STATE_SECRET ?? process.env.CRITIQUE_RECEIPT_SECRET;
   if (!secret || secret.length < 32) {
@@ -39,12 +33,7 @@ export function createPkce(): { codeVerifier: string; codeChallenge: string; non
   return { codeVerifier, codeChallenge, nonce: randomBytes(24).toString('base64url') };
 }
 
-/**
- * Creates a signed, short-lived OAuth state value for cookie storage.
- *
- * @param payload - The OAuth state data to protect.
- * @returns The base64url-encoded state payload and its HMAC signature.
- */
+/** Serialises and signs the state payload for the cookie. */
 export function sealOauthState(payload: Omit<OauthStatePayload, 'expiresAt'>): string {
   const full: OauthStatePayload = {
     ...payload,
@@ -56,11 +45,8 @@ export function sealOauthState(payload: Omit<OauthStatePayload, 'expiresAt'>): s
 }
 
 /**
- * Verifies an OAuth state cookie against the expected callback context.
- *
- * @param cookieValue - The signed OAuth state cookie value
- * @param expected - The user, provider, and nonce required in the state payload
- * @returns The validated OAuth state payload, or `null` if the value is malformed, invalid, mismatched, or expired
+ * Verifies the state cookie and checks it matches the callback's user,
+ * provider and state nonce. Returns null on any mismatch or expiry.
  */
 export function openOauthState(
   cookieValue: string,

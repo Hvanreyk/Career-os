@@ -49,19 +49,15 @@ const MICROSOFT_SCOPES = [
   'offline_access',
 ];
 
-/**
- * Gets the configured site URL without a trailing slash.
- *
- * @returns The configured site URL, or `http://localhost:3000` when none is set.
- */
 function siteUrl(): string {
   return (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 }
 
 /**
- * Resolves the OAuth configuration for an enabled provider.
- *
- * @returns The provider configuration when enablement and required credentials are present, or `null` otherwise.
+ * Returns the provider's OAuth configuration, or null when the
+ * provider is not enabled for this deployment. Enablement requires
+ * BOTH the feature flag (NETWORKING_PROVIDERS_ENABLED) and complete
+ * credentials, so a half-configured provider stays off.
  */
 export function getProviderConfig(provider: NetworkingProvider): ProviderConfig | null {
   const enabled = (process.env.NETWORKING_PROVIDERS_ENABLED ?? '')
@@ -106,13 +102,7 @@ export function enabledProviders(): NetworkingProvider[] {
   return (['google', 'microsoft'] as const).filter((provider) => getProviderConfig(provider) !== null);
 }
 
-/**
- * Builds an OAuth authorization URL with the configured scopes and PKCE parameters.
- *
- * @param config - Provider OAuth configuration used to populate the authorization request
- * @param params - Authorization state and PKCE code challenge
- * @returns The provider authorization URL
- */
+/** Builds the provider authorization URL for the PKCE code flow. */
 export function buildAuthorizeUrl(
   config: ProviderConfig,
   params: { state: string; codeChallenge: string },
@@ -141,14 +131,8 @@ export interface TokenExchangeResult {
 }
 
 /**
- * Exchanges an authorization code for provider tokens and identifies the connected account.
- *
- * @param provider - The OAuth provider associated with the authorization code
- * @param config - OAuth endpoints and credentials for the provider
- * @param code - The authorization code to exchange
- * @param codeVerifier - The PKCE verifier used for the authorization request
- * @returns The access token, optional refresh token, connected account email, and granted scopes
- * @throws `ProviderError` if the token request fails or the response lacks an access token
+ * Exchanges an authorization code for tokens and resolves the
+ * connected account's email address.
  */
 export async function exchangeCode(
   provider: NetworkingProvider,
@@ -197,12 +181,9 @@ export async function exchangeCode(
   };
 }
 
-/**
- * Extracts the payload claims from a JWT without verifying its signature.
- *
- * @param jwt - The JWT to decode
- * @returns The decoded payload claims, or `null` if the JWT is malformed or its payload is not valid JSON.
- */
+/** Decodes JWT claims WITHOUT signature verification — the token came
+ * directly from the provider's token endpoint over TLS, so this is
+ * only used to read the account email, never for authentication. */
 function decodeJwtClaims(jwt: string): Record<string, unknown> | null {
   const parts = jwt.split('.');
   if (parts.length !== 3 || !parts[1]) return null;
@@ -213,13 +194,6 @@ function decodeJwtClaims(jwt: string): Record<string, unknown> | null {
   }
 }
 
-/**
- * Retrieves the connected account's email address from the provider.
- *
- * @param provider - The OAuth provider whose account information is requested
- * @param accessToken - The provider access token
- * @returns The account email address, or an empty string when it is unavailable
- */
 async function fetchAccountEmail(provider: NetworkingProvider, accessToken: string): Promise<string> {
   const url = provider === 'google'
     ? 'https://openidconnect.googleapis.com/v1/userinfo'
@@ -231,9 +205,9 @@ async function fetchAccountEmail(provider: NetworkingProvider, accessToken: stri
 }
 
 /**
- * Attempts to revoke a Google refresh token.
- *
- * @param refreshToken - The refresh token to revoke
+ * Revokes a refresh token at the provider. Microsoft has no public
+ * revocation endpoint for this flow — deleting the local token stops
+ * all app access, and users can revoke consent in their account portal.
  */
 export async function revokeToken(
   provider: NetworkingProvider,

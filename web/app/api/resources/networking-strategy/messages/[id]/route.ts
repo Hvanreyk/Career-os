@@ -19,10 +19,9 @@ const UpdateSchema = z.object({
 });
 
 /**
- * Updates a user-owned message and invalidates its review when the subject or body changes.
- *
- * @param params - Route parameters containing the message UUID.
- * @returns An HTTP response indicating whether the update succeeded.
+ * Edits a draft. If the message was reviewed and the content changes,
+ * the reviewed state is invalidated (back to draft) so a stale review
+ * can never accompany different text.
  */
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const result = await getNetworkingApiContext('message-review');

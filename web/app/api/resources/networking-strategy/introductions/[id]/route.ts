@@ -11,9 +11,7 @@ const UpdateSchema = z.object({
 });
 
 /**
- * Updates the authenticated user's warm introduction status or notes.
- *
- * @returns A JSON response indicating whether the update succeeded or why it failed.
+ * Updates a warm introduction's status or notes.
  */
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const result = await getNetworkingApiContext();

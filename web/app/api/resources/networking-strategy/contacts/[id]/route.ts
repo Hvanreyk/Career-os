@@ -91,9 +91,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 }
 
 /**
- * Deletes an owned networking contact.
- *
- * @returns An HTTP response indicating whether the contact was deleted successfully.
+ * Deletes a contact and (via cascade) its interactions, follow-ups,
+ * messages, reviews, chats and target links.
  */
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const result = await getNetworkingApiContext();

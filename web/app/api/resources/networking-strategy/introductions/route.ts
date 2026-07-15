@@ -7,9 +7,7 @@ import {
 } from '@/lib/networking/server';
 
 /**
- * Records a warm introduction between the user's contacts or a named person.
- *
- * @returns An HTTP response containing the created introduction ID, or an error message when validation or persistence fails.
+ * Records a warm-introduction chain: who can introduce you, to whom.
  */
 export async function POST(request: Request) {
   const result = await getNetworkingApiContext();

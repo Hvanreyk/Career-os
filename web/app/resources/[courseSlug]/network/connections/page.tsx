@@ -17,11 +17,8 @@ interface ConnectionRow {
 }
 
 /**
- * Renders the networking connections page for a course.
- *
- * @param params - Route parameters containing the course slug
- * @param searchParams - Query parameters containing the optional connection status
- * @returns The connections view with configured providers and connection data
+ * Provider connections: honest "not configured" state when no
+ * credentials exist, connect/health/disconnect once they do.
  */
 export default async function NetworkConnectionsPage({
   params,

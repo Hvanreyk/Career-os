@@ -9,7 +9,7 @@ import {
 const IdSchema = z.uuid();
 
 /**
- * Updates a follow-up's kind, due date, reason, or status.
+ * Completes, snoozes, cancels or reschedules a follow-up.
  */
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const result = await getNetworkingApiContext();

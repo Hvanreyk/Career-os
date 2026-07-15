@@ -78,9 +78,8 @@ interface Props {
 }
 
 /**
- * Renders a contact detail page with relationship management, interaction tracking, follow-ups, coffee chats, introductions, notes, and message drafts.
- *
- * @param props - Contact data and related records used to render and manage the page.
+ * Full contact record: identity + stage, quick actions, next action,
+ * coffee chats (prep/debrief), warm introductions and the timeline.
  */
 export function ContactDetail(props: Props) {
   const { base, contact, interactions, followUps, messages, chats, introductions, targets, linkedTargetIds, otherContacts } = props;
@@ -100,22 +99,11 @@ export function ContactDetail(props: Props) {
   const [debrief, setDebrief] = useState({ learned: '', referral_offered: false, names: '', promises_made: '', outcome: '' });
   const [droppedNames, setDroppedNames] = useState<string[]>([]);
 
-  /**
-   * Computes the calendar date a specified number of days from now.
-   *
-   * @param days - The number of days to add to the current date
-   * @returns The resulting date in `YYYY-MM-DD` format
-   */
   function defaultDue(days: number): string {
     const date = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
     return date.toISOString().slice(0, 10);
   }
 
-  /**
-   * Executes a network mutation while managing loading and error state.
-   *
-   * @param action - The asynchronous operation to execute
-   */
   async function run(action: () => Promise<void>) {
     setBusy(true);
     setError(null);
@@ -132,9 +120,6 @@ export function ContactDetail(props: Props) {
   const patchContact = (body: Record<string, unknown>) =>
     run(async () => { await networkingApi(`/contacts/${contact.id}`, 'PATCH', body); });
 
-  /**
-   * Deletes the contact and navigates to the contacts list after confirmation.
-   */
   async function deleteContact() {
     if (!window.confirm(`Delete ${contact.full_name} and their entire timeline? This cannot be undone.`)) return;
     await run(async () => { await networkingApi(`/contacts/${contact.id}`, 'DELETE'); });

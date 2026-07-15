@@ -114,12 +114,6 @@ export function buildNetworkingSystemPrompt(mode: 'draft' | 'review'): string {
   ].join('\n');
 }
 
-/**
- * Builds labeled context lines from networking message details.
- *
- * @param input - The message context used to populate contact, fact, ask, and interaction sections
- * @returns The formatted context lines
- */
 function contextLines(input: NetworkingMessageContext): string[] {
   return [
     `Channel: ${input.channel}`,
@@ -179,11 +173,9 @@ function client(): OpenAI {
 }
 
 /**
- * Generates a structured networking message draft from student-supplied context.
+ * Generates a first draft from student-supplied structured facts.
  *
- * @param input - The contact, relationship, purpose, and student-provided message context
- * @returns The generated draft, model identifier, and token usage
- * @throws `NetworkingLlmError` if configuration is missing, the request fails, or no usable draft is returned
+ * @throws `NetworkingLlmError` when configuration or the request fails
  */
 export async function generateNetworkingDraft(
   input: NetworkingMessageContext,
@@ -215,10 +207,9 @@ export async function generateNetworkingDraft(
 }
 
 /**
- * Reviews a saved networking message and produces a structured qualitative critique.
+ * Reviews a saved draft and returns a structured, qualitative critique.
  *
- * @returns The review output, model identifier, and token usage.
- * @throws `NetworkingLlmError` if the message body is invalid or the review request fails.
+ * @throws `NetworkingLlmError` when the draft is invalid or the request fails
  */
 export async function generateNetworkingReview(
   input: NetworkingReviewInput,

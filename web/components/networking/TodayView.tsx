@@ -39,13 +39,8 @@ interface Props {
 }
 
 /**
- * Renders the Today queue with summary metrics, timeline notices, recommended actions, and follow-up controls.
- *
- * @param plan - The weekly plan containing queue actions, metrics, notices, and recommendations
- * @param base - The base path used to construct navigation links
- * @param contactCount - The number of contacts to display in the summary
- * @param coveredTargets - The number of covered targets
- * @param totalTargets - The total number of targets
+ * Renders the Today queue with one-click completion for follow-ups and
+ * deep links into the contact, chat and Message Lab flows.
  */
 export function TodayView({ plan, base, contactCount, coveredTargets, totalTargets }: Props) {
   const router = useRouter();
@@ -55,11 +50,6 @@ export function TodayView({ plan, base, contactCount, coveredTargets, totalTarge
   const actionKey = (action: PlanAction, index: number) =>
     `${action.type}-${action.followUpId ?? action.chatId ?? action.contactId ?? action.targetId ?? index}`;
 
-  /**
-   * Marks a follow-up as completed and refreshes the current view.
-   *
-   * @param followUpId - The identifier of the follow-up to complete
-   */
   async function completeFollowUp(followUpId: string) {
     setBusyId(followUpId);
     setError(null);
@@ -73,11 +63,6 @@ export function TodayView({ plan, base, contactCount, coveredTargets, totalTarge
     }
   }
 
-  /**
-   * Snoozes a follow-up for two days and refreshes the view after the update.
-   *
-   * @param followUpId - The identifier of the follow-up to snooze
-   */
   async function snoozeFollowUp(followUpId: string) {
     setBusyId(followUpId);
     setError(null);
@@ -92,12 +77,6 @@ export function TodayView({ plan, base, contactCount, coveredTargets, totalTarge
     }
   }
 
-  /**
-   * Builds a navigation URL for a plan action.
-   *
-   * @param action - The plan action whose identifiers determine the destination.
-   * @returns A contact URL, target map URL, or contacts URL.
-   */
   function actionHref(action: PlanAction): string {
     if (action.contactId) return `${base}/contacts/${action.contactId}`;
     if (action.targetId) return `${base}/target-map`;

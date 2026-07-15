@@ -21,11 +21,10 @@ const BodySchema = z.object({
 });
 
 /**
- * Logs a manually sent networking message, updates its state, advances the contact stage, and optionally schedules a follow-up.
- *
- * @param request - The request containing optional send-channel and follow-up details.
- * @param params - A promise resolving to the message identifier.
- * @returns A response containing the updated stage and optional follow-up identifier.
+ * Manual send path: the student sent the message themselves (mail
+ * client or LinkedIn) and logs it. Creates the immutable sent
+ * interaction, marks the message sent (channel 'manual'), advances the
+ * stage, and optionally schedules the next follow-up in one step.
  */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const result = await getNetworkingApiContext('message-review');

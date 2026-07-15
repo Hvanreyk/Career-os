@@ -86,10 +86,7 @@ const RECRUITER_QUESTIONS: PrepQuestion[] = [
 ];
 
 /**
- * Selects coffee-chat questions appropriate for a contact's seniority.
- *
- * @param seniority - The contact's role or seniority category
- * @returns The corresponding question bank, or the junior question bank for unsupported values
+ * Returns the question bank calibrated to a contact's seniority.
  */
 export function prepQuestionsFor(seniority: ContactSeniority): PrepQuestion[] {
   switch (seniority) {
@@ -116,10 +113,8 @@ export interface PrepSheet {
 }
 
 /**
- * Creates an editable prep sheet populated with role-appropriate questions.
- *
- * @param seniority - The contact's seniority, used to select the questions.
- * @returns A prep sheet with four questions and empty research notes and personal ask.
+ * Builds an empty prep sheet seeded with role-appropriate questions.
+ * The student edits and owns the result; nothing here is mandatory.
  */
 export function buildPrepSheet(seniority: ContactSeniority): PrepSheet {
   return {

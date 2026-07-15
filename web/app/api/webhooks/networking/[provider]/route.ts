@@ -11,13 +11,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 // networking_sync_jobs. Full Google OIDC push validation and
 // Microsoft lifecycle handling harden in the provider slice before
 // any flag is enabled in production (see PHASE_2_PLAN.md).
-/**
- * Receives and acknowledges networking webhook notifications for an enabled provider.
- *
- * @param request - The incoming webhook request.
- * @param params - The dynamic provider route parameters.
- * @returns A validation response, an error response, or a successful acknowledgment.
- */
+// ============================================================
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ provider: string }> }) {
   const { provider: rawProvider } = await params;

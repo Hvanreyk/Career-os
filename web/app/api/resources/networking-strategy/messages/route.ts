@@ -7,9 +7,7 @@ import {
 } from '@/lib/networking/server';
 
 /**
- * Creates and saves a Message Lab draft for an owned contact.
- *
- * @returns An HTTP response containing the saved draft ID or an error message.
+ * Saves a new Message Lab draft.
  */
 export async function POST(request: Request) {
   const result = await getNetworkingApiContext('message-review');

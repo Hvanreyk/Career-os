@@ -35,32 +35,20 @@ export const STAGE_LABELS: Record<RelationshipStage, string> = {
   dormant: 'Dormant',
 };
 
-/**
- * Determines the forward-progression rank of a relationship stage.
- *
- * @param stage - The relationship stage to rank
- * @returns The stage's zero-based position in the progression ladder, or `-1` for `dormant`
- */
+/** Progress rank. 'dormant' sits outside the forward ladder. */
 export function stageRank(stage: RelationshipStage): number {
   if (stage === 'dormant') return -1;
   return STAGE_ORDER.indexOf(stage);
 }
 
-/**
- * Compares the progression of two relationship stages.
- *
- * @param a - The stage to evaluate
- * @param b - The reference stage
- * @returns `true` if `a` is at least as advanced as `b`, `false` otherwise.
- */
+/** True when `a` is at least as far along the ladder as `b`. */
 export function stageAtLeast(a: RelationshipStage, b: RelationshipStage): boolean {
   return stageRank(a) >= stageRank(b);
 }
 
 /**
- * Determines the minimum relationship stage implied by an interaction.
- *
- * @returns The implied relationship stage, or `null` when the interaction provides no stage signal.
+ * The minimum stage implied by logging an interaction, or null when the
+ * interaction carries no stage signal (notes, events, introductions).
  */
 export function stageImpliedByInteraction(
   type: InteractionType,
