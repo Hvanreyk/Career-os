@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { FollowUpKindSchema, type FollowUpKind } from '@trajectoryos/core/networking/types';
 import {
+  firstRow,
   getNetworkingApiContext,
   loadOwnedContact,
   maybeRecordActivation,
@@ -33,7 +34,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { id } = await params;
   if (!IdSchema.safeParse(id).success) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
-  const parsed = BodySchema.safeParse(await request.json().catch(() => ({})));
+  const rawBody = await request.text();
+  let body: unknown = {};
+  if (rawBody.trim()) {
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    }
+  }
+  const parsed = BodySchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
 
   const { data: message } = await context.service
@@ -57,13 +67,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     p_occurred_at: now,
   });
   if (error) return NextResponse.json({ error: 'Could not log the sent message' }, { status: 500 });
-  const outcome = Array.isArray(rows) ? rows[0] : rows;
+  const outcome = firstRow(rows);
   if (!outcome || !outcome.claimed) {
     return NextResponse.json({ error: 'This message is already logged as sent' }, { status: 409 });
   }
   const stage = outcome.stage;
 
+  // The message send itself already committed atomically above and is
+  // irreversible from here — a failure scheduling the optional follow-up
+  // must not read as the whole request failing, but must not be silently
+  // swallowed either. Surface it so the client can offer a retry.
   let followUpId: string | null = null;
+  let followUpScheduleFailed = false;
   const followup = parsed.data.followup;
   if (followup) {
     const { data: followUpRows, error: followUpError } = await context.service.rpc('schedule_networking_followup', {
@@ -73,13 +88,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       p_due_at: followup.due_at,
       p_reason: followup.reason,
     });
-    const followUpOutcome = Array.isArray(followUpRows) ? followUpRows[0] : followUpRows;
+    const followUpOutcome = firstRow(followUpRows);
     if (!followUpError && followUpOutcome) {
       followUpId = followUpOutcome.id;
       await recordNetworkingEvent(context, 'networking_followup_scheduled', {
         kind: followup.kind,
         rescheduled: followUpOutcome.rescheduled,
       });
+    } else {
+      followUpScheduleFailed = true;
     }
   }
 
@@ -92,5 +109,5 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     await recordNetworkingEvent(context, 'networking_linkedin_copy_used', { purpose: message.purpose });
   }
   await maybeRecordActivation(context);
-  return NextResponse.json({ ok: true, stage, followUpId });
+  return NextResponse.json({ ok: true, stage, followUpId, followUpScheduleFailed });
 }

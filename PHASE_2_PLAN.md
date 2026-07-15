@@ -199,6 +199,16 @@ inert):
   place this pattern *does* apply — `lib/networking/alumni.ts` reading
   the externally-imported `professionals` table — already validates
   defensively, matching the existing professional-DB convention.)
+- `contacts/[id]` PATCH commits field edits and target-link replacement
+  (`replace_networking_contact_targets`) as two separate operations, not
+  one transaction — narrower than it sounds: target replacement is
+  already atomic on its own (fixed in the RPC batch), so the residual
+  risk is only "field edits land but a same-request target change
+  doesn't" on a rare mid-request failure, not corrupted data. Fusing
+  both into one RPC (mirroring `create_networking_contact_with_targets`)
+  is straightforward but non-trivial given PATCH's partial-update
+  semantics (distinguishing "field omitted" from "field cleared" through
+  a SQL parameter list); deferred rather than rushed.
 
 Rollback: disable provider/product flags, unpublish the course. Never destroy
 user data during rollback.

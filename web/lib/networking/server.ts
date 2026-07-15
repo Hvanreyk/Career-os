@@ -13,6 +13,17 @@ import { createServiceClient } from '@/lib/supabase/server';
 
 export const NETWORKING_RESOURCE_SLUG = 'networking-strategy';
 
+/**
+ * Normalises a Supabase `.rpc()` result into its single row. A
+ * `returns table (...)` function comes back as an array; a scalar
+ * `returns` function comes back as the value itself — callers across
+ * the networking routes hit both shapes depending on the RPC.
+ */
+export function firstRow<T>(rows: T | T[] | null | undefined): T | null {
+  if (Array.isArray(rows)) return rows[0] ?? null;
+  return rows ?? null;
+}
+
 type ServiceClient = ReturnType<typeof createServiceClient>;
 
 export interface NetworkingOwnerContext {

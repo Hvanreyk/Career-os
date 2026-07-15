@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { ChatDebriefSchema, CHAT_NOTES_MAX } from '@trajectoryos/core/networking/types';
 import {
+  firstRow,
   getNetworkingApiContext,
   loadOwnedContact,
   recordNetworkingEvent,
@@ -54,15 +55,19 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!contact) return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
 
   if (input.action === 'cancel') {
-    if (chat.status !== 'scheduled') {
-      return NextResponse.json({ error: 'Only scheduled chats can be cancelled' }, { status: 422 });
-    }
-    const { error } = await context.service
+    // Scoping the update to status='scheduled' (not just the earlier
+    // pre-fetch) makes this atomic against a concurrent complete/cancel:
+    // only a chat still scheduled at the instant of this write is affected.
+    const { data: cancelled, error } = await context.service
       .from('networking_coffee_chats')
       .update({ status: 'cancelled' })
       .eq('id', id)
-      .eq('user_id', context.user.id);
+      .eq('user_id', context.user.id)
+      .eq('status', 'scheduled')
+      .select('id')
+      .maybeSingle();
     if (error) return NextResponse.json({ error: 'Could not cancel the chat' }, { status: 500 });
+    if (!cancelled) return NextResponse.json({ error: 'Only scheduled chats can be cancelled' }, { status: 409 });
     return NextResponse.json({ ok: true });
   }
 
@@ -75,12 +80,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (input.notes !== undefined) update.notes = input.notes;
     if (input.prep !== undefined) update.prep = input.prep;
     if (Object.keys(update).length === 0) return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
-    const { error } = await context.service
+    const { data: updated, error } = await context.service
       .from('networking_coffee_chats')
       .update(update)
       .eq('id', id)
-      .eq('user_id', context.user.id);
+      .eq('user_id', context.user.id)
+      .eq('status', 'scheduled')
+      .select('id')
+      .maybeSingle();
     if (error) return NextResponse.json({ error: 'Could not update the chat' }, { status: 500 });
+    if (!updated) return NextResponse.json({ error: 'Only scheduled chats can be edited' }, { status: 409 });
     return NextResponse.json({ ok: true });
   }
 
@@ -98,7 +107,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     p_debrief: debrief.data,
   });
   if (completeError) return NextResponse.json({ error: 'Could not complete the chat' }, { status: 500 });
-  const outcome = Array.isArray(rows) ? rows[0] : rows;
+  const outcome = firstRow(rows);
   if (!outcome || !outcome.chat_found) return NextResponse.json({ error: 'Coffee chat not found' }, { status: 404 });
   if (!outcome.was_scheduled) {
     return NextResponse.json({ error: 'This chat is not in a completable state' }, { status: 409 });

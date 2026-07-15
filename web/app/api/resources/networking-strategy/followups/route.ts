@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { FollowUpInputSchema } from '@trajectoryos/core/networking/types';
 import {
+  firstRow,
   getNetworkingApiContext,
   maybeRecordActivation,
   recordNetworkingEvent,
@@ -32,12 +33,12 @@ export async function POST(request: Request) {
     p_reason: input.reason,
   });
   if (error) {
-    if (error.message?.includes('CONTACT_NOT_FOUND')) {
+    if (error.code === 'P0002') {
       return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
     }
     return NextResponse.json({ error: 'Could not schedule the follow-up' }, { status: 500 });
   }
-  const outcome = Array.isArray(rows) ? rows[0] : rows;
+  const outcome = firstRow(rows);
   if (!outcome) return NextResponse.json({ error: 'Could not schedule the follow-up' }, { status: 500 });
 
   await recordNetworkingEvent(context, 'networking_followup_scheduled', {

@@ -709,7 +709,7 @@ begin
   if not exists (
     select 1 from networking_contacts where id = p_contact_id and user_id = p_user_id
   ) then
-    raise exception 'CONTACT_NOT_FOUND';
+    raise exception 'CONTACT_NOT_FOUND' using errcode = 'P0002';
   end if;
 
   delete from networking_contact_targets
@@ -751,7 +751,7 @@ begin
   if not exists (
     select 1 from networking_contacts where id = p_contact_id and user_id = p_user_id
   ) then
-    raise exception 'CONTACT_NOT_FOUND';
+    raise exception 'CONTACT_NOT_FOUND' using errcode = 'P0002';
   end if;
 
   insert into networking_followups (user_id, contact_id, kind, due_at, reason, status)
@@ -802,7 +802,7 @@ begin
   for update;
 
   if not found then
-    raise exception 'CONTACT_NOT_FOUND';
+    raise exception 'CONTACT_NOT_FOUND' using errcode = 'P0002';
   end if;
 
   insert into networking_coffee_chats (
@@ -988,6 +988,7 @@ security definer
 set search_path = public
 as $$
 begin
+  delete from networking_review_daily_usage where user_id = p_user_id;
   delete from networking_introductions where user_id = p_user_id;
   delete from networking_contacts where user_id = p_user_id;
   delete from networking_events where user_id = p_user_id;

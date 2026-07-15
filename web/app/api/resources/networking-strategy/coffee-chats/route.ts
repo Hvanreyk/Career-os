@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { buildPrepSheet } from '@trajectoryos/core/networking';
 import { CoffeeChatInputSchema, type ContactSeniority } from '@trajectoryos/core/networking/types';
 import {
+  firstRow,
   getNetworkingApiContext,
   loadOwnedContact,
   recordNetworkingEvent,
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
     p_prep: buildPrepSheet(contact.seniority as ContactSeniority),
   });
   if (error) return NextResponse.json({ error: 'Could not schedule the coffee chat' }, { status: 500 });
-  const created = Array.isArray(rows) ? rows[0] : rows;
+  const created = firstRow(rows);
   if (!created) return NextResponse.json({ error: 'Could not schedule the coffee chat' }, { status: 500 });
 
   await recordNetworkingEvent(context, 'networking_coffee_chat_scheduled', {

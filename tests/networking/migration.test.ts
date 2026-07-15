@@ -79,8 +79,15 @@ describe('networking migration', () => {
       'delete_all_networking_data',
     ]) {
       expect(migration).toContain(`create or replace function ${fn}(`);
+      expect(migration).toContain(`revoke all on function ${fn}(`);
       expect(migration).toContain(`grant execute on function ${fn}(`);
     }
+  });
+
+  it('deletes quota-usage state as part of the full data deletion', () => {
+    const start = migration.indexOf('create or replace function delete_all_networking_data');
+    const end = migration.indexOf('$$;', start);
+    expect(migration.slice(start, end)).toContain('delete from networking_review_daily_usage');
   });
 
   it('upserts follow-ups through the one-active partial unique index, not a read-then-write race', () => {
