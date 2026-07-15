@@ -9,10 +9,10 @@ import { createClient } from '@/lib/supabase/server';
 export const dynamic = 'force-dynamic';
 
 /**
- * Shared shell for the networking workspace: capability + login gate,
- * course header and tab navigation. The user-scoped courses read only
- * returns published courses, so a draft course 404s here just as it
- * does at the API layer.
+ * Renders the authenticated networking workspace for a course.
+ *
+ * @param children - The workspace content rendered below the navigation.
+ * @param params - Route parameters containing the course slug.
  */
 export default async function NetworkLayout({
   children,

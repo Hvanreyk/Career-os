@@ -22,6 +22,13 @@ export class TokenCryptoError extends Error {
   }
 }
 
+/**
+ * Loads and validates the 32-byte encryption key for a specified version.
+ *
+ * @param version - The encryption key version to load
+ * @returns The decoded encryption key
+ * @throws `TokenCryptoError` if the key is not configured or is not 32 bytes
+ */
 function keyForVersion(version: number): Buffer {
   const current = Number(process.env.NETWORKING_TOKEN_KEY_VERSION ?? '1');
   const raw = version === current
@@ -45,12 +52,22 @@ export interface TokenAad {
   connectionId: string;
 }
 
+/**
+ * Encodes token authentication context as a UTF-8 buffer.
+ *
+ * @param aad - The user, provider, and connection identifiers to encode.
+ * @returns The UTF-8 encoded authentication context.
+ */
 function aadBuffer(aad: TokenAad): Buffer {
   return Buffer.from(`${aad.userId}|${aad.provider}|${aad.connectionId}`, 'utf8');
 }
 
 /**
- * Encrypts a refresh token. Output format: base64(iv).base64(tag).base64(ciphertext)
+ * Encrypts a token and associates it with the active encryption key version.
+ *
+ * @param plaintext - The token value to encrypt
+ * @param aad - Context authenticated with the encrypted token
+ * @returns The encoded ciphertext and the key version used for encryption
  */
 export function encryptToken(plaintext: string, aad: TokenAad): { ciphertext: string; keyVersion: number } {
   const keyVersion = currentKeyVersion();
@@ -67,8 +84,13 @@ export function encryptToken(plaintext: string, aad: TokenAad): { ciphertext: st
 }
 
 /**
- * Decrypts a refresh token; throws when the ciphertext, key version or
- * authenticated context does not match.
+ * Decrypts a refresh token using its key version and authenticated context.
+ *
+ * @param ciphertext - The token ciphertext encoded as base64 IV, authentication tag, and encrypted data.
+ * @param keyVersion - The version of the key used to encrypt the token.
+ * @param aad - The authenticated context associated with the token.
+ * @returns The decrypted refresh token.
+ * @throws TokenCryptoError If the ciphertext is malformed, the key is invalid, or decryption authentication fails.
  */
 export function decryptToken(ciphertext: string, keyVersion: number, aad: TokenAad): string {
   const [ivB64, tagB64, dataB64, extra] = ciphertext.split('.');

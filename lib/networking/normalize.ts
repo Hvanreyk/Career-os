@@ -9,11 +9,10 @@
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 /**
- * Normalises an email address for storage and duplicate matching.
+ * Normalizes an email address for storage and duplicate matching.
  *
- * @param raw - The email as entered by the student
- * @returns The lowercased, trimmed address, or null when the value is
- *   empty or not a plausible address
+ * @param raw - The email address as entered by the user
+ * @returns The lowercased, trimmed address, or `null` if the value is empty or invalid
  */
 export function normalizeEmail(raw: string): string | null {
   const value = raw.trim().toLowerCase();
@@ -23,14 +22,12 @@ export function normalizeEmail(raw: string): string | null {
 }
 
 /**
- * Normalises a LinkedIn profile URL to a canonical form.
+ * Normalizes a LinkedIn personal profile URL to a canonical form.
  *
- * Accepts bare slugs ("in/jane-doe"), missing protocols, regional
- * subdomains (au.linkedin.com), query strings and trailing slashes.
+ * Accepts profile slugs, missing protocols, regional subdomains, query strings, and trailing slashes.
  *
- * @param raw - The URL or fragment as entered by the student
- * @returns `https://www.linkedin.com/in/<slug>` (slug lowercased), or
- *   null when the value is empty or not a personal profile URL
+ * @param raw - The entered URL or profile fragment
+ * @returns The canonical profile URL, or `null` for empty or invalid values
  */
 export function normalizeLinkedinUrl(raw: string): string | null {
   let value = raw.trim();
@@ -46,11 +43,11 @@ export function normalizeLinkedinUrl(raw: string): string | null {
 }
 
 /**
- * Normalises a name+firm pair for weak duplicate matching during import.
+ * Creates a weak duplicate-matching key from a contact's name and firm.
  *
  * @param fullName - The contact's full name
- * @param firm - The contact's firm (may be empty)
- * @returns A lowercase whitespace-collapsed `name|firm` key
+ * @param firm - The contact's firm
+ * @returns A lowercase key containing the whitespace-collapsed name and firm separated by `|`
  */
 export function nameFirmKey(fullName: string, firm: string): string {
   const clean = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');

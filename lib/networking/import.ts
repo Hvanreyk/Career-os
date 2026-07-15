@@ -22,11 +22,11 @@ export interface CsvParseResult {
 }
 
 /**
- * Minimal RFC-4180 CSV parser (quotes, escaped quotes, CRLF).
+ * Parses CSV text into trimmed headers and data rows.
  *
- * @param text - Raw CSV text
- * @returns Header row plus data rows
- * @throws Error when the file is empty or exceeds IMPORT_MAX_ROWS data rows
+ * @param text - The raw CSV text
+ * @returns The first non-empty row as headers and the remaining non-empty rows
+ * @throws Error if the file contains no non-empty rows or exceeds the data-row limit
  */
 export function parseCsv(text: string): CsvParseResult {
   const rows: string[][] = [];
@@ -162,12 +162,17 @@ export interface ImportPreview {
 }
 
 /**
- * Validates parsed CSV content and classifies duplicates.
+ * Builds a preview of valid CSV import rows and classifies duplicates.
  *
- * Duplicate precedence: normalized email, then normalized LinkedIn URL,
- * then case-insensitive name+firm. In-file duplicates collapse to the
- * first occurrence. A row with a malformed email/LinkedIn value imports
- * with that field dropped rather than failing the whole row.
+ * In-file duplicates are collapsed to their first occurrence. Existing contacts
+ * are matched by normalized email, normalized LinkedIn URL, then name and firm.
+ * Invalid email or LinkedIn values are omitted from the candidate rather than
+ * invalidating the row.
+ *
+ * @param text - The CSV content to preview
+ * @param existing - Existing contacts used for duplicate detection
+ * @returns Valid candidates, row-level errors, duplicate classifications, unmapped headers, and the total row count
+ * @throws Error if the CSV has no rows, exceeds the import row limit, or has no recognized name column
  */
 export function buildImportPreview(
   text: string,
@@ -259,8 +264,9 @@ export function buildImportPreview(
 }
 
 /**
- * Escapes a value for CSV export, neutralising spreadsheet formula
- * injection (cells starting with = + - @ or a tab get a leading ').
+ * Prepares a cell value for safe CSV export.
+ *
+ * @returns A CSV-safe value with spreadsheet formula prefixes neutralized and special characters escaped.
  */
 export function csvCell(value: string): string {
   let safe = value;
@@ -269,7 +275,13 @@ export function csvCell(value: string): string {
   return safe;
 }
 
-/** Serialises rows to CSV with formula-safe cells. */
+/**
+ * Serializes headers and rows into CSV text with formula-safe, escaped cells.
+ *
+ * @param headers - The CSV header row
+ * @param rows - The CSV data rows
+ * @returns CSV text containing the headers followed by the data rows
+ */
 export function toCsv(headers: string[], rows: string[][]): string {
   return [headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\n');
 }

@@ -13,7 +13,9 @@ const TABS = [
 ];
 
 /**
- * Networking workspace navigation tabs.
+ * Renders navigation tabs for a networking workspace.
+ *
+ * @param base - The base path prefixed to each tab URL
  */
 export function NetworkNav({ base }: { base: string }) {
   const pathname = usePathname();

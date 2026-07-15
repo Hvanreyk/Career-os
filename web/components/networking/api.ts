@@ -1,9 +1,13 @@
 const API = '/api/resources/networking-strategy';
 
 /**
- * Client fetch helper for the networking API routes.
+ * Sends a request to a networking API route.
  *
- * @throws Error with the server-supplied message on failure
+ * @param path - The API route path appended to the networking API base URL
+ * @param method - The HTTP method for the request
+ * @param body - The optional request payload, serialized as JSON
+ * @returns The parsed response data, or `undefined` for a 204 response
+ * @throws An error containing the server-supplied message when the request fails
  */
 export async function networkingApi<T>(path: string, method: string, body?: unknown): Promise<T> {
   const response = await fetch(`${API}${path}`, {

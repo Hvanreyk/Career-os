@@ -9,9 +9,10 @@ export const metadata: Metadata = { title: 'Networking — Today' };
 export const dynamic = 'force-dynamic';
 
 /**
- * Today: the deterministic weekly plan — debriefs and thank-yous
- * first, then due work, chat prep, silence bumps and coverage gaps
- * weighted by the AU recruiting timeline.
+ * Renders the current networking plan for a course.
+ *
+ * @param params - Route parameters containing the course slug.
+ * @returns The networking page with the weekly plan and coverage metrics.
  */
 export default async function NetworkTodayPage({ params }: { params: Promise<{ courseSlug: string }> }) {
   const { courseSlug } = await params;

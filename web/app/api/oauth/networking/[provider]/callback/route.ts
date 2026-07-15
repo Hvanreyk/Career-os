@@ -9,6 +9,13 @@ import {
   recordNetworkingEvent,
 } from '@/lib/networking/server';
 
+/**
+ * Creates a redirect response to the networking connections page.
+ *
+ * @param request - The incoming request used to determine the redirect origin
+ * @param status - The connection status to include in the redirect URL
+ * @returns A redirect response with the OAuth state cookie deleted
+ */
 function connectionsRedirect(request: NextRequest, status: 'connected' | 'error'): NextResponse {
   const url = new URL(`/resources/${NETWORKING_RESOURCE_SLUG}/network/connections`, request.nextUrl.origin);
   url.searchParams.set('status', status);

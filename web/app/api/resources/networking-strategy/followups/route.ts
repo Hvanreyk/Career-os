@@ -8,9 +8,9 @@ import {
 } from '@/lib/networking/server';
 
 /**
- * Schedules the contact's next action. Each contact has at most one
- * active follow-up: scheduling while one exists reschedules it
- * (updated_at keeps the audit trail).
+ * Schedules a contact follow-up or reschedules the contact's active follow-up.
+ *
+ * @returns A JSON response containing the follow-up ID, or an error response if the request is invalid, the contact is unavailable, or persistence fails.
  */
 export async function POST(request: Request) {
   const result = await getNetworkingApiContext();

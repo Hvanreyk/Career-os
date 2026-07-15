@@ -16,8 +16,9 @@ import {
 const IdSchema = z.uuid();
 
 /**
- * Runs deterministic preflight then AI review on a saved draft, and
- * atomically records the review bound to the exact reviewed content.
+ * Reviews a saved networking message draft after preflight checks and records the review against the exact content reviewed.
+ *
+ * @returns A JSON response containing the review, preflight results, review ID, and remaining AI quota, or an error response.
  */
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const result = await getNetworkingApiContext('message-review');

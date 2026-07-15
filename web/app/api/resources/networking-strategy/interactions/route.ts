@@ -9,8 +9,10 @@ import {
 } from '@/lib/networking/server';
 
 /**
- * Logs a manual interaction. Logging may advance the contact's stage
- * (never regress it) via the engine's stage rules.
+ * Logs a manual networking interaction and advances the contact's stage according to the applicable rules.
+ *
+ * @param request - The request containing the interaction details.
+ * @returns A response containing the logged interaction ID and resulting contact stage.
  */
 export async function POST(request: Request) {
   const result = await getNetworkingApiContext();

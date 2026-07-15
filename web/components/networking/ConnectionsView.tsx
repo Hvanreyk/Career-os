@@ -28,16 +28,23 @@ interface Props {
 }
 
 /**
- * Provider connection management. Absent credentials render an honest
- * "not configured yet" state rather than a dead link — direct sending
- * ships behind flags once OAuth verification clears (see
- * PHASE_2_PLAN.md). Manual send/log always works regardless.
+ * Displays connection status and controls for the supported networking providers.
+ *
+ * @param connections - The current provider connection records.
+ * @param enabledProviders - Providers available for connection in the current deployment.
+ * @param status - Overall connection result to display.
+ * @returns The rendered provider connection management interface.
  */
 export function ConnectionsView({ connections, enabledProviders, status }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState<NetworkingProvider | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Disconnects the selected networking provider after user confirmation.
+   *
+   * @param provider - The networking provider to disconnect
+   */
   async function disconnect(provider: NetworkingProvider) {
     if (!window.confirm(`Disconnect ${PROVIDER_LABEL[provider]}? Sent mail and existing calendar events are not affected.`)) return;
     setBusy(provider);

@@ -82,7 +82,13 @@ export interface PlanInputs {
   coverage: CoverageSummary;
 }
 
-/** Maps raw workspace rows into the pure engine's input shapes. */
+/**
+ * Maps workspace data into planning and coverage engine inputs.
+ *
+ * @param data - Workspace rows used to derive contact activity, follow-up status, chat preparation, and target links
+ * @param nowIso - ISO timestamp used to compute coverage
+ * @returns Planning contacts, follow-ups, coffee chats, and computed coverage data
+ */
 export function buildPlanInputs(data: NetworkingWorkspaceData, nowIso: string): PlanInputs {
   const contactName = new Map(data.contacts.map((c) => [c.id, c.full_name]));
   const lastOutbound = new Map<string, string>();

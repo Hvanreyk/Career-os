@@ -86,7 +86,12 @@ const ACTION_RANK: Record<PlanActionType, number> = {
 
 const DAY_MS = 86_400_000;
 
-/** YYYY-MM-DD for an instant in Australia/Sydney (recruiting runs on AEST). */
+/**
+ * Formats an instant as a calendar date in the Australia/Sydney time zone.
+ *
+ * @param iso - An ISO timestamp
+ * @returns The date in `YYYY-MM-DD` format
+ */
 export function sydneyDate(iso: string): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Australia/Sydney',
@@ -96,10 +101,23 @@ export function sydneyDate(iso: string): string {
   }).format(new Date(iso));
 }
 
+/**
+ * Extracts the month from an ISO timestamp in Australia/Sydney time.
+ *
+ * @param iso - The ISO timestamp to convert
+ * @returns The month number from 1 through 12
+ */
 function sydneyMonth(iso: string): number {
   return Number(sydneyDate(iso).slice(5, 7));
 }
 
+/**
+ * Computes the whole-day difference between two timestamps.
+ *
+ * @param nowIso - The reference timestamp in ISO format
+ * @param iso - The timestamp to compare with the reference
+ * @returns The elapsed whole days from `iso` to `nowIso`
+ */
 function daysSince(nowIso: string, iso: string): number {
   return Math.floor((new Date(nowIso).getTime() - new Date(iso).getTime()) / DAY_MS);
 }
@@ -109,6 +127,12 @@ const MONTHS = [
   'july', 'august', 'september', 'october', 'november', 'december',
 ];
 
+/**
+ * Finds month names contained in a string.
+ *
+ * @param text - The text to search
+ * @returns The matching month numbers from 1 through 12
+ */
 function monthIndexes(text: string): number[] {
   const lower = text.toLowerCase();
   return MONTHS.flatMap((name, i) => (lower.includes(name) ? [i + 1] : []));
@@ -138,9 +162,10 @@ export function cycleWindowState(cycle: RecruitingCycle, nowIso: string): CycleW
 }
 
 /**
- * Builds the Today view: a ranked, explainable action queue plus
- * timeline notices and a weekly outreach target that coaches quality
- * (3–8 new messages a week) over volume.
+ * Builds a prioritized weekly outreach plan from contacts, follow-ups, chats, coverage gaps, and recruiting cycles.
+ *
+ * @param input - Workspace data and the timestamp used to determine due actions and timeline states
+ * @returns A plan containing prioritized actions, the recommended action, activity counts, outreach target, and timeline notices
  */
 export function buildWeeklyPlan(input: {
   nowIso: string;
@@ -317,6 +342,12 @@ export function buildWeeklyPlan(input: {
   };
 }
 
+/**
+ * Provides the action description associated with a follow-up kind.
+ *
+ * @param kind - The type of follow-up action
+ * @returns A description of the action to complete
+ */
 function followUpDetail(kind: FollowUpKind): string {
   switch (kind) {
     case 'send_outreach': return 'Send the first message you planned for this contact.';
@@ -329,6 +360,13 @@ function followUpDetail(kind: FollowUpKind): string {
   }
 }
 
+/**
+ * Limits selected action types to their configured maximum counts.
+ *
+ * @param actions - Actions to filter while preserving their encounter order
+ * @param caps - Maximum number of actions to retain for each selected action type
+ * @returns The filtered actions
+ */
 function capPerType(actions: PlanAction[], caps: Partial<Record<PlanActionType, number>>): PlanAction[] {
   const seen: Partial<Record<PlanActionType, number>> = {};
   return actions.filter((action) => {

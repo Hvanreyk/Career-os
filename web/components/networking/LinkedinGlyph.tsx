@@ -1,6 +1,8 @@
 /**
- * Inline LinkedIn glyph. lucide-react dropped brand icons, so this
- * mirrors the same path used in components/layout/Footer.tsx.
+ * Renders an inline LinkedIn icon.
+ *
+ * @param className - Optional CSS classes applied to the icon.
+ * @returns An accessible, decorative LinkedIn SVG element.
  */
 export function LinkedinGlyph({ className = 'w-4 h-4' }: { className?: string }) {
   return (

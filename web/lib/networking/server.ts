@@ -26,11 +26,10 @@ export type NetworkingContextResult =
   | { context?: never; response: NextResponse };
 
 /**
- * Authenticates the requester and verifies access to the published
- * Networking Strategy workspace.
+ * Authenticates the requester and verifies access to the published Networking Strategy workspace.
  *
- * @param capability - The catalog capability the handler exercises
- * @returns An authenticated context, or an HTTP error response
+ * @param capability - The catalog capability required by the handler
+ * @returns An authenticated networking context on success, or an HTTP error response otherwise
  */
 export async function getNetworkingApiContext(
   capability: ResourceCapability = 'contacts',
@@ -55,8 +54,10 @@ export async function getNetworkingApiContext(
 }
 
 /**
- * Records a text-free networking product event. Properties must never
- * contain names, firms, message content, or provider identifiers.
+ * Records a networking product event without storing message content or personal identifiers.
+ *
+ * @param properties - Additional event properties containing only text-free values.
+ * @returns Completes after attempting to record the event; insert failures are logged.
  */
 export async function recordNetworkingEvent(
   context: NetworkingApiContext,
@@ -79,9 +80,9 @@ export function getNetworkingAiDailyLimit(): number {
 }
 
 /**
- * Content hash binding reviews/sends to the exact message text. Must
- * match save_networking_message_review in migration 0010:
- * sha256(coalesce(subject,'') || '\n' || body).
+ * Computes a SHA-256 hash for the exact message subject and body.
+ *
+ * @returns The SHA-256 digest as a hexadecimal string.
  */
 export function hashMessageContent(subject: string, body: string): string {
   return createHash('sha256').update(`${subject}\n${body}`).digest('hex');
@@ -123,10 +124,9 @@ export async function advanceContactStage(
 }
 
 /**
- * Fires networking_activation_completed once the compound activation
- * (contact + logged outreach + scheduled follow-up) first holds.
- * Cheap existence checks; the event row itself is deduplicated by
- * checking for a prior activation event.
+ * Records the networking activation event once the user has a contact, outbound outreach, and a scheduled follow-up.
+ *
+ * The event is recorded only once.
  */
 export async function maybeRecordActivation(context: NetworkingApiContext): Promise<void> {
   const service = context.service;

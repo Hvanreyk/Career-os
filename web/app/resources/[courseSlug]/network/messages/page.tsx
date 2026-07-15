@@ -7,8 +7,10 @@ export const metadata: Metadata = { title: 'Networking — Message Lab' };
 export const dynamic = 'force-dynamic';
 
 /**
- * Message Lab: draft, AI-draft, deterministic preflight, AI review,
- * revise, and send (manual mailto/copy or log-as-sent).
+ * Renders the Message Lab with networking contacts and messages loaded from the database.
+ *
+ * @param searchParams - Optional query parameters used to select the initial contact, channel, and message.
+ * @returns The Message Lab view initialized with the loaded networking data.
  */
 export default async function NetworkMessagesPage({
   params,

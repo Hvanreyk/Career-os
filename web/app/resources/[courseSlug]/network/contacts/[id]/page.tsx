@@ -24,8 +24,10 @@ interface InteractionRow {
 }
 
 /**
- * Contact detail: identity, stage, relationship timeline, next action,
- * coffee chats with prep/debrief, and warm introductions.
+ * Displays a networking contact's details and related activity.
+ *
+ * @param params - Route parameters containing the course slug and contact ID.
+ * @returns The contact detail page.
  */
 export default async function NetworkContactDetailPage({
   params,

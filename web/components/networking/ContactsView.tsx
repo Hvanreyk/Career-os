@@ -68,8 +68,14 @@ interface Props {
 }
 
 /**
- * Contact directory with search, filters, quick add, CSV import
- * preview/commit, and private export.
+ * Displays a searchable, filterable contact directory with contact creation, CSV import, and export controls.
+ *
+ * @param base - URL prefix used for contact and target-map links
+ * @param contacts - Contacts displayed in the directory
+ * @param followUps - Follow-up records associated with contacts
+ * @param interactions - Interaction records used to display last-touch dates
+ * @param targets - Bank targets available for filtering and contact association
+ * @param links - Contact-to-target associations
  */
 export function ContactsView({ base, contacts, followUps, interactions, targets, links }: Props) {
   const router = useRouter();
@@ -124,6 +130,11 @@ export function ContactsView({ base, contacts, followUps, interactions, targets,
     });
   }, [contacts, search, stageFilter, targetFilter, targetsByContact]);
 
+  /**
+   * Creates a contact from the form data and refreshes the contact list.
+   *
+   * @param event - The form submission event
+   */
   async function createContact(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
@@ -156,6 +167,9 @@ export function ContactsView({ base, contacts, followUps, interactions, targets,
     }
   }
 
+  /**
+   * Commits the CSV import and refreshes the contacts data.
+   */
   async function commitImport() {
     setBusy(true);
     setError(null);
@@ -172,6 +186,11 @@ export function ContactsView({ base, contacts, followUps, interactions, targets,
     }
   }
 
+  /**
+   * Toggles a bank target in the contact form selection.
+   *
+   * @param id - The bank target identifier to add or remove
+   */
   function toggleTarget(id: string) {
     setForm((prev) => ({
       ...prev,

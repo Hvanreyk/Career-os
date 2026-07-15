@@ -6,7 +6,10 @@ export const metadata: Metadata = { title: 'Networking — Contacts' };
 export const dynamic = 'force-dynamic';
 
 /**
- * Contact directory: search, filters, quick add, CSV import/export.
+ * Renders the contacts directory for a course.
+ *
+ * @param params - Route parameters containing the course slug.
+ * @returns The contacts directory populated with workspace networking data.
  */
 export default async function NetworkContactsPage({ params }: { params: Promise<{ courseSlug: string }> }) {
   const { courseSlug } = await params;

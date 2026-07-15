@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import { getNetworkingApiContext } from '@/lib/networking/server';
 
 /**
- * Private data export: every networking record the student owns, as
- * JSON. Connection token material is never included.
+ * Exports the authenticated user's networking records as a JSON attachment.
+ *
+ * @returns The networking data export response.
  */
 export async function GET() {
   const result = await getNetworkingApiContext();

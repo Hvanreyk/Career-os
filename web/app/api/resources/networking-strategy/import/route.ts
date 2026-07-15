@@ -6,8 +6,12 @@ import { getNetworkingApiContext } from '@/lib/networking/server';
 const BodySchema = z.object({ csv: z.string().min(1).max(2_000_000) });
 
 /**
- * Previews a CSV import: header mapping, row validation, duplicate
- * classification. Nothing is written — the student commits explicitly.
+ * Generates a non-persistent preview of a networking CSV import.
+ *
+ * The preview includes header mapping, row validation, and duplicate classification.
+ * Invalid input produces a 400 response; parsing failures produce a 422 response.
+ *
+ * @returns An HTTP response containing the import preview or an error message.
  */
 export async function POST(request: Request) {
   const result = await getNetworkingApiContext();

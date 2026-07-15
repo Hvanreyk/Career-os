@@ -9,10 +9,10 @@ export const metadata: Metadata = { title: 'Networking — Target map' };
 export const dynamic = 'force-dynamic';
 
 /**
- * Target map: per-firm relationship coverage against a goal of two
- * junior + one senior contact, plus aggregate alumni intelligence
- * from the professionals database (aggregates only — individual rows
- * never leave the server; see lib/networking/alumni.ts).
+ * Renders the networking target map for a course.
+ *
+ * @param params - Route parameters containing the course identifier.
+ * @returns The target map page with relationship coverage and available alumni intelligence.
  */
 export default async function NetworkTargetMapPage({ params }: { params: Promise<{ courseSlug: string }> }) {
   const { courseSlug } = await params;

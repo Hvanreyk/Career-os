@@ -9,9 +9,9 @@ import {
 const BodySchema = z.object({ csv: z.string().min(1).max(2_000_000) });
 
 /**
- * Commits a CSV import. The server re-runs the same preview pipeline
- * against current data, so a stale browser preview can never insert
- * rows that have since become duplicates or invalid.
+ * Commits valid CSV networking contacts for the authenticated user.
+ *
+ * @returns A response containing import, duplicate, and row error counts, or an error response when validation, parsing, or insertion fails.
  */
 export async function POST(request: Request) {
   const result = await getNetworkingApiContext();

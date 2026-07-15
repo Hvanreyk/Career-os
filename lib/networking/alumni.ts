@@ -38,6 +38,11 @@ export interface AlumniIntel {
   topAlumniFirms: string[];
 }
 
+/**
+ * Normalizes a university name for consistent comparison.
+ *
+ * @returns The trimmed, lowercase university name with a leading `the` removed and repeated whitespace collapsed.
+ */
 function normalizeUniversity(value: string): string {
   return value
     .trim()
@@ -47,11 +52,11 @@ function normalizeUniversity(value: string): string {
 }
 
 /**
- * Aggregates the professionals dataset around the student's university.
+ * Computes aggregate firm-level alumni intelligence for a student’s university.
  *
- * @param rows - Professional rows (service-role query, minimal columns)
- * @param studentUniversity - The student's university as they entered it
- * @returns Firm-level aggregates sorted by alumni count, then total size
+ * @param rows - Professional records to aggregate
+ * @param studentUniversity - University name used to identify alumni
+ * @returns Aggregated firms meeting the minimum size threshold, sorted by alumni count, total professionals, and firm name, along with university match counts and top alumni firms
  */
 export function computeAlumniIntel(
   rows: AlumniProfessionalRow[],

@@ -7,7 +7,10 @@ import {
 } from '@/lib/networking/server';
 
 /**
- * Creates a networking contact, optionally linked to bank targets.
+ * Creates a networking contact for the authenticated user and optionally links it to bank targets and an event.
+ *
+ * @param request - The request containing the contact details.
+ * @returns A response containing the created contact ID, or an error response if validation or creation fails.
  */
 export async function POST(request: Request) {
   const result = await getNetworkingApiContext();
