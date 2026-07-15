@@ -27,7 +27,7 @@ export default async function NetworkConnectionsPage({
   params: Promise<{ courseSlug: string }>;
   searchParams: Promise<{ status?: string }>;
 }) {
-  const { courseSlug } = await params;
+  await params;
   const { status } = await searchParams;
   const supabase = await createClient();
   const { data } = await supabase
@@ -37,7 +37,6 @@ export default async function NetworkConnectionsPage({
 
   return (
     <ConnectionsView
-      base={`/resources/${courseSlug}/network`}
       connections={(data ?? []) as ConnectionRow[]}
       enabledProviders={enabledProviders()}
       status={status ?? null}

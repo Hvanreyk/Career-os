@@ -22,7 +22,6 @@ interface ConnectionRow {
 }
 
 interface Props {
-  base: string;
   connections: ConnectionRow[];
   enabledProviders: NetworkingProvider[];
   status: string | null;
@@ -34,7 +33,7 @@ interface Props {
  * ships behind flags once OAuth verification clears (see
  * PHASE_2_PLAN.md). Manual send/log always works regardless.
  */
-export function ConnectionsView({ base, connections, enabledProviders, status }: Props) {
+export function ConnectionsView({ connections, enabledProviders, status }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState<NetworkingProvider | null>(null);
   const [error, setError] = useState<string | null>(null);

@@ -17,7 +17,7 @@ export default async function NetworkMessagesPage({
   params: Promise<{ courseSlug: string }>;
   searchParams: Promise<{ contact?: string; channel?: string; message?: string }>;
 }) {
-  const { courseSlug } = await params;
+  await params;
   const query = await searchParams;
   const supabase = await createClient();
 
@@ -31,7 +31,6 @@ export default async function NetworkMessagesPage({
 
   return (
     <MessageLabView
-      base={`/resources/${courseSlug}/network`}
       contacts={(contactsResult.data ?? []) as Pick<NetworkingContactRow, 'id' | 'full_name' | 'firm' | 'role_title' | 'seniority' | 'city' | 'email' | 'email_normalized' | 'linkedin_url' | 'linkedin_normalized' | 'stage' | 'is_alum' | 'do_not_contact'>[]}
       messages={(messagesResult.data ?? []) as NetworkingMessageRow[]}
       initialContactId={query.contact ?? null}

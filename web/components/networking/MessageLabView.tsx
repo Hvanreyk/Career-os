@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type {
   MessageChannel,
@@ -42,7 +42,6 @@ const PURPOSES: { value: MessagePurpose; label: string; channel: MessageChannel 
 ];
 
 interface Props {
-  base: string;
   contacts: ContactLite[];
   messages: NetworkingMessageRow[];
   initialContactId: string | null;
@@ -55,7 +54,7 @@ interface Props {
  * truthful facts), run deterministic preflight, get a qualitative AI
  * review with faithful rewrites, then send manually or log it sent.
  */
-export function MessageLabView({ base, contacts, messages, initialContactId, initialChannel, initialMessageId }: Props) {
+export function MessageLabView({ contacts, messages, initialContactId, initialChannel, initialMessageId }: Props) {
   const router = useRouter();
   const initialMessage = initialMessageId ? messages.find((m) => m.id === initialMessageId) ?? null : null;
 
@@ -82,12 +81,18 @@ export function MessageLabView({ base, contacts, messages, initialContactId, ini
   const facts = useMemo(() => factsText.split('\n').map((f) => f.trim()).filter(Boolean).slice(0, 8), [factsText]);
   const availablePurposes = PURPOSES.filter((p) => p.channel === 'both' || p.channel === channel);
 
-  useEffect(() => {
-    if (!availablePurposes.some((p) => p.value === purpose)) {
-      setPurpose(availablePurposes[0]?.value ?? 'custom');
+  function purposesForChannel(nextChannel: MessageChannel) {
+    return PURPOSES.filter((p) => p.channel === 'both' || p.channel === nextChannel);
+  }
+
+  function changeChannel(nextChannel: MessageChannel) {
+    setChannel(nextChannel);
+    if (!purposesForChannel(nextChannel).some((p) => p.value === purpose)) {
+      setPurpose(purposesForChannel(nextChannel)[0]?.value ?? 'custom');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [channel]);
+    setMessageId(null);
+    resetOutputs();
+  }
 
   function resetOutputs() {
     setReview(null);
@@ -231,7 +236,7 @@ export function MessageLabView({ base, contacts, messages, initialContactId, ini
             </select>
             <select
               value={channel}
-              onChange={(e) => { setChannel(e.target.value as MessageChannel); setMessageId(null); resetOutputs(); }}
+              onChange={(e) => changeChannel(e.target.value as MessageChannel)}
               className={SELECT}
               aria-label="Channel"
               disabled={state === 'sent'}
