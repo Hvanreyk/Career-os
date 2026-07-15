@@ -4,111 +4,40 @@ import { createClient as createServerClient, createServiceClient } from '@/lib/s
 // Scoring engine — shared workspace package (lib/ → @trajectoryos/core).
 // The LLM step runs separately in POST /api/reports/[id]/process.
 import { score } from '@trajectoryos/core/scoring';
-import type { StudentProfile, Professional } from '@trajectoryos/core/scoring/types';
+import type { StudentProfile } from '@trajectoryos/core/scoring/types';
+import {
+  deriveAutoSignals,
+  deriveRelevance,
+  deriveRoleFunction,
+} from '@trajectoryos/core/career-compass/taxonomy';
 import type { OnboardData } from '@/lib/onboard/types';
 import { OnboardDataSchema } from '@/lib/onboard/schema';
 import { getTier, normalizeUniversityName } from '@/lib/onboard/universities';
+import { loadProfessionalSources, ProfessionalSourceError } from '@/lib/professionals/source';
+import {
+  summarizeProfessionalParity,
+  summarizeScoringParity,
+} from '@/lib/professionals/parity';
 
 // ─── Derivation helpers ───────────────────────────────────────
 
-function deriveRoleFunction(industry: string): string {
-  const map: Record<string, string> = {
-    ib: 'ib_coverage',
-    global_markets: 'sales_trading',
-    capital_markets: 'sales_trading',
-    equity_research: 'equity_research',
-    big4_advisory: 'transaction_services',
-    big4_business_advisory: 'advisory',
-    big4_audit: 'audit',
-    private_equity: 'pe_investment',
-    investment_management_equities: 'asset_management',
-    investment_management_credit: 'asset_management',
-    investment_management_real_estate: 'asset_management',
-    consulting: 'consulting',
-    law: 'law',
-    corporate: 'corp_finance',
-    corporate_development: 'corp_finance',
-    operations: 'other',
-    government: 'other',
-    non_profit: 'other',
-    other: 'other',
-  };
-  return map[industry] ?? 'other';
-}
-
-const IM_INDUSTRIES = [
-  'investment_management_equities',
-  'investment_management_credit',
-  'investment_management_real_estate',
-];
-
-function deriveRelevance(firmTier: string, industry: string): number {
-  if (firmTier === 'bb' && (industry === 'ib' || industry === 'equity_research')) return 5;
-  if ((firmTier === 'elite_boutique' || firmTier === 'mid_market') && (industry === 'ib' || industry === 'equity_research')) return 5;
-  if (firmTier === 'boutique' && (industry === 'ib' || industry === 'equity_research')) return 4;
-
-  if (industry === 'global_markets' || industry === 'capital_markets') {
-    if (['bb', 'elite_boutique', 'mid_market'].includes(firmTier)) return 5;
-    if (firmTier === 'boutique' || firmTier === 'aus_big4_bank') return 4;
-    return 3;
-  }
-
-  if (industry === 'private_equity') {
-    if (firmTier === 'mega_fund' || firmTier === 'large_cap') return 5;
-    return 4;
-  }
-
-  if (IM_INDUSTRIES.includes(industry)) {
-    if (firmTier === 'global_manager' || firmTier === 'hedge_fund') return 4;
-    return 3;
-  }
-
-  if (industry === 'consulting') {
-    if (firmTier === 'mbb') return 5;
-    if (firmTier === 'tier2_consulting') return 4;
-    return 3;
-  }
-
-  if (['big4_advisory', 'big4_business_advisory', 'big4_audit'].includes(industry)) {
-    if (firmTier === 'big4') return 3;
-    if (firmTier === 'mid_tier') return 2;
-  }
-
-  if (industry === 'law') {
-    if (firmTier === 'top_tier_law') return 3;
-    if (firmTier === 'mid_tier_law') return 2;
-    if (firmTier === 'boutique_law') return 2;
-  }
-
-  if (industry === 'operations' || industry === 'corporate_development') {
-    if (['asx50', 'asx100'].includes(firmTier)) return 3;
-    if (['asx200', 'large_private'].includes(firmTier)) return 2;
-  }
-
-  return 2;
-}
-
-function buildStudentProfile(form: OnboardData, userId: string, email: string): StudentProfile {
+export function buildStudentProfile(form: OnboardData, userId: string, email: string): StudentProfile {
   const universityName = normalizeUniversityName(form.university);
   const universityTier = getTier(universityName) as StudentProfile['university_tier'];
 
-  // Auto-derive signals from WAM and co-op
-  const autoSignals: string[] = [...form.signals];
-  if (form.wam_band === 'hd') autoSignals.push('wam_hd');
-  else if (form.wam_band === 'd') autoSignals.push('wam_distinction');
-  if (form.is_co_op) autoSignals.push('co_op_program');
-  if (form.atar_band === '99_plus') autoSignals.push('atar_99_plus');
-
-  // Auto-derive signals from experiences
-  for (const exp of form.experiences) {
-    if (exp.industry === 'private_equity') autoSignals.push('has_pe_internship');
-    if (exp.industry === 'big4_audit') autoSignals.push('has_big4_audit');
-    if (exp.industry === 'big4_advisory' || exp.industry === 'big4_business_advisory') autoSignals.push('has_big4_advisory');
-    if (exp.industry === 'consulting') autoSignals.push('has_consulting_experience');
-    if (exp.how_obtained === 'society_referral') autoSignals.push('fin_society_committee');
-  }
-
-  const uniqueSignals = [...new Set(autoSignals)] as StudentProfile['signals'];
+  const autoSignals = deriveAutoSignals({
+    wamBand: form.wam_band,
+    isCoOp: form.is_co_op,
+    atarBand: form.atar_band,
+    experiences: form.experiences.map((experience) => ({
+      industry: experience.industry,
+      howObtained: experience.how_obtained,
+    })),
+  });
+  const uniqueSignals: StudentProfile['signals'] = [...new Set([
+    ...form.signals,
+    ...autoSignals,
+  ])];
   const hasHonoursSignal = uniqueSignals.includes('honours');
 
   // Expected graduation year: current year of study + remaining years
@@ -130,15 +59,15 @@ function buildStudentProfile(form: OnboardData, userId: string, email: string): 
   const expectedGradYear = currentCalendarYear + Math.max(degreeLength - form.current_year, 1);
 
   const experiences: StudentProfile['experiences'] = form.experiences.map((exp) => ({
-    type: exp.type as StudentProfile['experiences'][number]['type'],
+    type: exp.type,
     firm: exp.firm,
-    firm_tier: exp.firm_tier as StudentProfile['experiences'][number]['firm_tier'],
-    industry: exp.industry as StudentProfile['experiences'][number]['industry'],
-    role_function: deriveRoleFunction(exp.industry) as StudentProfile['experiences'][number]['role_function'],
+    firm_tier: exp.firm_tier,
+    industry: exp.industry,
+    role_function: deriveRoleFunction(exp.industry),
     role_relevance: deriveRelevance(exp.firm_tier, exp.industry),
     year: exp.year,
     duration_months: exp.duration_months,
-    how_obtained: exp.how_obtained as StudentProfile['experiences'][number]['how_obtained'],
+    how_obtained: exp.how_obtained,
     converted_to_ft: exp.converted_to_ft,
   }));
 
@@ -148,21 +77,21 @@ function buildStudentProfile(form: OnboardData, userId: string, email: string): 
     university: universityName,
     university_tier: universityTier,
     degree: form.degree,
-    degree_type: form.degree_type as StudentProfile['degree_type'],
+    degree_type: form.degree_type,
     majors: form.majors,
     current_year: form.current_year,
     expected_graduation_year: expectedGradYear,
-    wam_band: form.wam_band as StudentProfile['wam_band'],
-    has_honours: hasHonoursSignal || form.degree_type === 'honours',
+    wam_band: form.wam_band,
+    has_honours: hasHonoursSignal,
     has_masters_or_second_degree: ['masters', 'mba', 'double_degree'].includes(form.degree_type),
     high_school: null,
-    high_school_type: form.high_school_type as StudentProfile['high_school_type'],
-    atar_band: form.atar_band as StudentProfile['atar_band'],
+    high_school_type: form.high_school_type,
+    atar_band: form.atar_band,
     experiences,
     signals: uniqueSignals,
     target_role: 'ib_analyst',
-    target_firm_tier: form.target_firm_tier as StudentProfile['target_firm_tier'],
-    target_geography: form.target_geography as StudentProfile['target_geography'],
+    target_firm_tier: form.target_firm_tier,
+    target_geography: form.target_geography,
     is_lateral_candidate: form.is_lateral_candidate,
     current_external_role: form.current_external_role || undefined,
   };
@@ -183,82 +112,6 @@ function stableStringify(value: unknown): string {
     return `{${entries.join(',')}}`;
   }
   return JSON.stringify(value) ?? 'null';
-}
-
-// ─── Professional row mapping ─────────────────────────────────
-
-// Map a flat DB row (expN_* columns) into the engine's Professional shape.
-// Returns null for rows missing the essential fields scoring relies on, so the
-// caller can skip them rather than feeding garbage into the engine.
-function mapProfessionalRow(row: Record<string, unknown>): Professional | null {
-  try {
-    const id = row['id'];
-    const current_firm_tier = row['current_firm_tier'];
-    const university_tier = row['university_tier'];
-    if (!id || !current_firm_tier || !university_tier) return null;
-
-    const experiences = [];
-    for (const i of [1, 2, 3, 4, 5]) {
-      const type = row[`exp${i}_type`];
-      if (!type) continue;
-      experiences.push({
-        type,
-        firm: row[`exp${i}_firm`],
-        firm_tier: row[`exp${i}_firm_tier`],
-        industry: row[`exp${i}_industry`],
-        role_function: row[`exp${i}_role_function`],
-        role_relevance: row[`exp${i}_role_relevance`],
-        year: row[`exp${i}_year`],
-        duration_months: row[`exp${i}_duration_months`],
-        how_obtained: row[`exp${i}_how_obtained`],
-        converted_to_ft: row[`exp${i}_converted_to_ft`] === 'TRUE'
-          ? true
-          : row[`exp${i}_converted_to_ft`] === 'FALSE'
-          ? false
-          : 'NA',
-      });
-    }
-
-    const signals: string[] = (() => {
-      const raw = row['signals'];
-      if (!raw) return [];
-      if (Array.isArray(raw)) return raw;
-      if (typeof raw === 'string') {
-        try { return JSON.parse(raw); } catch { return []; }
-      }
-      return [];
-    })();
-
-    return {
-      id: row['id'],
-      full_name_internal: row['full_name_internal'],
-      current_role: row['current_role'],
-      current_firm: row['current_firm'],
-      current_firm_tier: row['current_firm_tier'],
-      current_geography: row['current_geography'],
-      current_role_start_year: row['current_role_start_year'],
-      years_to_current_role: row['years_to_current_role'],
-      university: row['university'],
-      university_tier: row['university_tier'],
-      degree: row['degree'],
-      degree_type: row['degree_type'],
-      majors: row['majors'],
-      wam_band: row['wam_band'],
-      graduation_year: row['graduation_year'],
-      has_honours: row['has_honours'],
-      has_masters_or_second_degree: row['has_masters_or_second_degree'],
-      high_school: row['high_school'],
-      high_school_type: row['high_school_type'],
-      atar_band: row['atar_band'],
-      experiences,
-      signals,
-      path_summary: row['path_summary'],
-      data_source: row['data_source'],
-      data_confidence: row['data_confidence'],
-    } as Professional;
-  } catch {
-    return null;
-  }
 }
 
 // ─── Route handler ────────────────────────────────────────────
@@ -328,38 +181,39 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4. Fetch professionals from Supabase
-    const { data: profRows, error: profError } = await serviceClient
-      .from('professionals')
-      .select('*');
-
-    if (profError || !profRows) {
-      console.error('Failed to fetch professionals:', profError);
+    // 4. Load the selected professional source. Normalized mode fails closed
+    // on any rejected row; shadow mode returns the legacy result while
+    // comparing both sources without logging professional identifiers.
+    let loadedProfessionals;
+    try {
+      loadedProfessionals = await loadProfessionalSources(serviceClient);
+    } catch (error) {
+      const reason = error instanceof ProfessionalSourceError ? error.reason : 'query_failed';
+      console.error('generate-report: professional source unavailable', { reason });
       return NextResponse.json({ error: 'Failed to load professional database' }, { status: 500 });
     }
 
-    // Convert flat DB rows → Professional objects (collapse exp slots).
-    // Defensive: a single malformed row is skipped, not allowed to crash the
-    // whole request. We surface a warning if a meaningful fraction drop out.
-    const professionals: Professional[] = [];
-    let skipped = 0;
-    for (const row of profRows as Record<string, unknown>[]) {
-      const mapped = mapProfessionalRow(row);
-      if (mapped) professionals.push(mapped);
-      else skipped++;
-    }
-    if (skipped > 0) {
-      console.warn(`generate-report: skipped ${skipped}/${profRows.length} malformed professional rows`);
-    }
-    if (professionals.length === 0) {
-      return NextResponse.json(
-        { error: 'Professional database is empty or unreadable' },
-        { status: 500 },
-      );
-    }
+    // 5. Run scoring engine (fast, in-memory — safe to do inline).
+    const scoringNow = new Date();
+    const scoringOutput = score(profile, loadedProfessionals.professionals, { now: scoringNow });
 
-    // 5. Run scoring engine (fast, in-memory — safe to do inline)
-    const scoringOutput = score(profile, professionals, { now: new Date() });
+    if (loadedProfessionals.mode === 'shadow') {
+      if (loadedProfessionals.shadowProfessionals) {
+        const normalizedOutput = score(profile, loadedProfessionals.shadowProfessionals, { now: scoringNow });
+        console.info('professional-source-parity', {
+          ...summarizeProfessionalParity(
+            loadedProfessionals.professionals,
+            loadedProfessionals.shadowProfessionals,
+          ),
+          scoring: summarizeScoringParity(scoringOutput, normalizedOutput),
+        });
+      } else {
+        console.warn('professional-source-parity', {
+          exact: false,
+          normalized_source_error: loadedProfessionals.shadowError ?? 'query_failed',
+        });
+      }
+    }
 
     // 6. Persist the profile — one row per user. Updating (rather than
     //    inserting a new row each run) keeps the user's profile stable;

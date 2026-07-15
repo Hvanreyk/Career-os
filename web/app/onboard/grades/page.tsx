@@ -4,36 +4,12 @@ import { useRouter } from 'next/navigation';
 import { StepShell } from '@/components/onboard/StepShell';
 import { ChoiceButton } from '@/components/onboard/ChoiceButton';
 import { useOnboard } from '@/lib/onboard/context';
-import type { WamBand, HighSchoolType, AtarBand } from '@/lib/onboard/types';
-
-const WAMS: { value: WamBand; label: string; description: string }[] = [
-  { value: 'hd', label: 'High Distinction', description: '85 and above' },
-  { value: 'd', label: 'Distinction', description: '75 – 84' },
-  { value: 'c', label: 'Credit', description: '65 – 74' },
-  { value: 'p', label: 'Pass', description: '50 – 64' },
-  { value: 'unknown', label: 'Prefer not to say', description: '' },
-];
-
-const HIGH_SCHOOLS: { value: HighSchoolType; label: string }[] = [
-  { value: 'gps', label: 'GPS (Greater Public Schools)' },
-  { value: 'cas', label: 'CAS (Combined Associated Schools)' },
-  { value: 'aps', label: 'APS (Associated Public Schools)' },
-  { value: 'selective', label: 'Selective Government School' },
-  { value: 'public_comprehensive', label: 'Public Comprehensive' },
-  { value: 'catholic', label: 'Catholic School' },
-  { value: 'independent_other', label: 'Other Independent' },
-  { value: 'unknown', label: 'Prefer not to say / Skip' },
-];
-
-const ATARS: { value: AtarBand; label: string }[] = [
-  { value: '99_plus', label: '99+' },
-  { value: '98_99', label: '98 – 99' },
-  { value: '95_98', label: '95 – 98' },
-  { value: '90_95', label: '90 – 95' },
-  { value: '85_90', label: '85 – 90' },
-  { value: 'below_85', label: 'Below 85' },
-  { value: 'unknown', label: 'Skip / Not applicable' },
-];
+import type { HighSchoolType } from '@/lib/onboard/types';
+import {
+  ATAR_OPTIONS as ATARS,
+  HIGH_SCHOOL_TYPE_OPTIONS as HIGH_SCHOOLS,
+  WAM_OPTIONS as WAMS,
+} from '@trajectoryos/core/career-compass/taxonomy';
 
 export default function GradesPage() {
   const { data, update } = useOnboard();

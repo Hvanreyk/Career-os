@@ -5,37 +5,10 @@ import { useRouter } from 'next/navigation';
 import { StepShell } from '@/components/onboard/StepShell';
 import { useOnboard } from '@/lib/onboard/context';
 import { searchUniversities, normalizeUniversityName } from '@/lib/onboard/universities';
-import type { DegreeType } from '@/lib/onboard/types';
 import { X } from 'lucide-react';
+import { DEGREE_TYPE_OPTIONS as DEGREE_TYPES } from '@trajectoryos/core/career-compass/taxonomy';
 
 const YEARS = [1, 2, 3, 4, 5, 6];
-const DEGREE_TYPES: { value: DegreeType; label: string; example: string }[] = [
-  {
-    value: 'bachelor',
-    label: 'Bachelor',
-    example: 'A single undergraduate degree, e.g. a Bachelor of Commerce.',
-  },
-  {
-    value: 'double_degree',
-    label: 'Double Degree',
-    example: 'An undergraduate bachelor\'s degree followed by a Master\'s or a clinical Doctorate — e.g. a Bachelor of Commerce/Laws, or Medicine (MD) and Dentistry pathways.',
-  },
-  {
-    value: 'combined_degree',
-    label: 'Combined Degree',
-    example: 'Two bachelor\'s degrees studied together at the same time, e.g. a Bachelor of Commerce and Bachelor of Science, or a Bachelor of Commerce and Bachelor of Advanced Studies (very common combination).',
-  },
-  {
-    value: 'masters',
-    label: 'Masters',
-    example: 'A postgraduate degree, e.g. a Master of Finance.',
-  },
-  {
-    value: 'mba',
-    label: 'MBA',
-    example: 'A Master of Business Administration, typically after work experience.',
-  },
-];
 
 export default function UniversityPage() {
   const { data, update } = useOnboard();
