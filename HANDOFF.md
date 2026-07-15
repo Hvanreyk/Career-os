@@ -124,8 +124,11 @@ Phase 0 is complete when:
 1. **Phase 0 — shell and hardening**
 2. **Resume & Cover Letter** — lessons, deterministic QC, bullet workshop;
    defer the full document editor and PDF export.
-3. **Networking Strategy** — contact CRM, interactions, follow-up queue and
-   message review. Networking moves earlier because its value compounds.
+3. **Networking Strategy** — see `PHASE_2_PLAN.md` for the full plan: contact
+   CRM, a deterministic coverage/timeline intelligence layer, coffee-chat
+   prep/debrief, warm introductions, an AI Message Lab (draft + review), and
+   a flag-gated Gmail/Outlook provider scaffold. Networking moves earlier
+   because its value compounds.
 4. **Interview Preparation** — verified questions, static drills and story
    bank; add LLM grading only after expert-labelled evaluation.
 5. **Deal Breakdown Templates** — one sourced M&A template before expanding

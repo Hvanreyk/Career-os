@@ -1,0 +1,26 @@
+status: draft
+questions:
+  - slug: q1
+    prompt: What makes personalisation credible to the reader?
+    options:
+      - { id: a, text: Long, detailed research shown in the message }
+      - { id: b, text: One or two specific, verifiable facts about a genuine connection }
+      - { id: c, text: Flattering language about their career }
+    correct: b
+    explanation: A short, specific and true detail proves real research far better than length or flattery.
+  - slug: q2
+    prompt: If you are not sure whether a claim about a shared connection is true, what should you do?
+    options:
+      - { id: a, text: Include it anyway — it probably will not be checked }
+      - { id: b, text: Leave it out }
+      - { id: c, text: Phrase it vaguely so it cannot be disproven }
+    correct: b
+    explanation: Never include a claim you could not comfortably restate to the person's face. When in doubt, leave it out.
+  - slug: q3
+    prompt: How does the Message Lab's AI use the facts you supply?
+    options:
+      - { id: a, text: It expands on them with plausible additional detail }
+      - { id: b, text: It uses only the facts you explicitly provide and invents nothing further }
+      - { id: c, text: It searches the internet for more information about the contact }
+    correct: b
+    explanation: The AI is constrained to student-supplied facts only — this is a hard rule, not a preference.

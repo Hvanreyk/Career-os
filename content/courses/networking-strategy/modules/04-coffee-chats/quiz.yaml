@@ -1,0 +1,34 @@
+status: draft
+questions:
+  - slug: q1
+    prompt: Why should your questions differ between an analyst and an MD?
+    options:
+      - { id: a, text: They should not — the same questions work at every level }
+      - { id: b, text: Each level has different, genuinely useful things to share; asking the wrong level wastes the conversation }
+      - { id: c, text: MDs prefer harder questions to test you }
+    correct: b
+    explanation: Recent recruiting experience is most useful from juniors; career judgement and team dynamics are most useful from seniors.
+  - slug: q2
+    prompt: Roughly what balance of listening to talking should a good coffee chat have?
+    options:
+      - { id: a, text: 50/50 }
+      - { id: b, text: Mostly you talking about your own background }
+      - { id: c, text: Roughly 70/30 in their favour }
+    correct: c
+    explanation: The conversation is primarily an opportunity to learn from them, not to present yourself at length.
+  - slug: q3
+    prompt: What should a good close to the conversation include?
+    options:
+      - { id: a, text: A vague "I'll keep in touch" }
+      - { id: b, text: A specific, small commitment you will actually follow through on }
+      - { id: c, text: A direct request for a referral }
+    correct: b
+    explanation: Specific commitments ("I'll send an update by Friday") are more memorable and professional than vague sign-offs.
+  - slug: q4
+    prompt: Why record a debrief immediately after the conversation?
+    options:
+      - { id: a, text: It is required by the workspace }
+      - { id: b, text: Details, offered referrals, and names mentioned fade quickly from memory }
+      - { id: c, text: It is not necessary if the chat went well }
+    correct: b
+    explanation: Names and details dropped mid-conversation are easy to lose — capturing them immediately turns them into your next contacts.

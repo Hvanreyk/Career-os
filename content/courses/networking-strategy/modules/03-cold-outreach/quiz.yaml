@@ -1,0 +1,34 @@
+status: draft
+questions:
+  - slug: q1
+    prompt: What is a well-formed ask in a cold email?
+    options:
+      - { id: a, text: "\"Can I pick your brain sometime?\"" }
+      - { id: b, text: "\"Would you have 15 minutes for a call in the next two weeks? Happy to work around your schedule.\"" }
+      - { id: c, text: "\"Let me know if you're ever free.\"" }
+    correct: b
+    explanation: A good ask has a bounded time commitment, a concrete window, and removes scheduling effort from the reader.
+  - slug: q2
+    prompt: Roughly how long should a cold email be?
+    options:
+      - { id: a, text: Under 150 words }
+      - { id: b, text: As long as needed to fully explain your background }
+      - { id: c, text: Exactly one sentence }
+    correct: a
+    explanation: Cold emails are read quickly, often on a phone — brevity is a structural requirement, not a stylistic preference.
+  - slug: q3
+    prompt: What is the character limit on a LinkedIn connection note, and what does that mean for your ask?
+    options:
+      - { id: a, text: 300 characters — there is no room for an ask beyond a truthful reason to connect }
+      - { id: b, text: There is no limit }
+      - { id: c, text: 1000 characters — enough room for a full ask }
+    correct: a
+    explanation: LinkedIn connection notes are capped at 300 characters; save any specific ask for after they accept.
+  - slug: q4
+    prompt: What will the Message Lab's AI review never do?
+    options:
+      - { id: a, text: Point out a vague ask }
+      - { id: b, text: Score the message or predict a reply probability }
+      - { id: c, text: Suggest a faithful rewrite }
+    correct: b
+    explanation: The review is qualitative only — no scores, no predicted outcomes, and no invented facts.

@@ -1,0 +1,34 @@
+status: draft
+questions:
+  - slug: q1
+    prompt: What is a sustainable weekly outreach target?
+    options:
+      - { id: a, text: As many messages as possible, sent in short bursts }
+      - { id: b, text: Roughly 3-8 new messages a week, kept up consistently }
+      - { id: c, text: One message per target firm, sent once }
+    correct: b
+    explanation: A modest, consistent weekly pace sustains research quality far better than occasional high-volume bursts.
+  - slug: q2
+    prompt: Why do off-cycle and boutique roles depend especially heavily on networking?
+    options:
+      - { id: a, text: They pay less, so fewer people apply }
+      - { id: b, text: They are rarely advertised through a portal and are typically filled via direct approaches }
+      - { id: c, text: They only hire final-year students }
+    correct: b
+    explanation: With no structured application portal, networking and direct outreach are often the only realistic way in.
+  - slug: q3
+    prompt: Why does the course caution against relying on exact recruiting dates?
+    options:
+      - { id: a, text: Dates are irrelevant to networking }
+      - { id: b, text: Firms change their timing every cycle, so students must verify directly with each firm }
+      - { id: c, text: Only graduate programs have deadlines }
+    correct: b
+    explanation: Recruiting windows are typical patterns, not guarantees — always confirm current dates directly with each firm.
+  - slug: q4
+    prompt: What role does a strong network play relative to your actual application?
+    options:
+      - { id: a, text: It replaces the need for a strong resume or interview preparation }
+      - { id: b, text: It informs and times your application but does not replace preparing it well }
+      - { id: c, text: It only matters after you have already secured an interview }
+    correct: b
+    explanation: Relationships provide context and occasionally a referral, but serious preparation is still required.

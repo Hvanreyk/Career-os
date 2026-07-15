@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 
 interface Props {
-  eventName: 'resource_viewed' | 'lesson_viewed' | 'resume_workshop_opened';
+  eventName: 'resource_viewed' | 'lesson_viewed' | 'resume_workshop_opened' | 'networking_workspace_opened';
   resourceSlug: string;
   properties?: Record<string, string | number | boolean | null>;
 }

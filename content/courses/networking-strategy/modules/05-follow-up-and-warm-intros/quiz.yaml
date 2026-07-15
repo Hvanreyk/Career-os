@@ -1,0 +1,34 @@
+status: draft
+questions:
+  - slug: q1
+    prompt: When should you send a thank-you after a coffee chat?
+    options:
+      - { id: a, text: Within 24 hours }
+      - { id: b, text: Within a month, whenever convenient }
+      - { id: c, text: Only if you want something else from them }
+    correct: a
+    explanation: A prompt, specific thank-you is the highest-value follow-up message and should never be skipped or delayed.
+  - slug: q2
+    prompt: If a contact has not replied to your first message after a week, what should you do?
+    options:
+      - { id: a, text: Send multiple follow-ups until they respond }
+      - { id: b, text: Send one brief, polite follow-up, then let it rest if there is still no reply }
+      - { id: c, text: Assume they are uninterested and never contact them again }
+    correct: b
+    explanation: One follow-up is normal persistence; more starts to read as pressure. Silence is common and not necessarily a rejection.
+  - slug: q3
+    prompt: What makes a warm introduction more effective than cold outreach?
+    options:
+      - { id: a, text: It skips the need for any research }
+      - { id: b, text: Trust is transferred from the connecting person rather than built from zero }
+      - { id: c, text: It guarantees a referral }
+    correct: b
+    explanation: An introduction borrows the introducer's existing trust with the target, which cold outreach has to build from scratch.
+  - slug: q4
+    prompt: What should you always include when asking someone for an introduction or referral?
+    options:
+      - { id: a, text: A deadline for their response }
+      - { id: b, text: An easy way for them to decline without discomfort }
+      - { id: c, text: A reminder of everything you have already done for them }
+    correct: b
+    explanation: Making it low-pressure to decline protects the relationship regardless of their answer.
