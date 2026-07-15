@@ -170,5 +170,35 @@ Google restricted-scope verification (long-lead, outside engineering);
 provider send/sync workers behind flags once credentials exist; privacy
 policy + deletion disclosures updated for provider data.
 
+Known hardening follow-ups (reviewed, deliberately deferred — none block
+GA since the affected paths are either pre-launch or already flag-gated
+inert):
+- `bank_targets` composite unique constraint (migration 0010) takes an
+  ACCESS EXCLUSIVE lock while building its backing index. Harmless
+  pre-launch (table has no production traffic yet); switch to
+  `CREATE UNIQUE INDEX CONCURRENTLY` + `ADD CONSTRAINT ... USING INDEX`
+  before this table sees real concurrent writes.
+- Provider webhooks (`/api/webhooks/networking/[provider]`) check bearer
+  presence / configured clientState rather than fully verifying Google's
+  OIDC signature/issuer/audience or parsing Microsoft's clientState
+  strictly. Both endpoints 404 until `NETWORKING_PROVIDERS_ENABLED` and
+  real credentials are set — this is exactly the hardening the P2.5
+  security review (see delivery roadmap) is scoped to close before either
+  flag goes on.
+- `web/lib/networking/queries.ts` (workspace loader) and a few page
+  components fall back to an empty list on a Supabase read error rather
+  than surfacing a loading-error state. This degrades to a confusing but
+  harmless empty UI, not data loss; fixing it well means deciding how
+  error states should look across the workspace, which is a small design
+  task rather than a bug fix.
+- Broader defensive Zod-validation of every internal Supabase read
+  (`queries.ts` rows, the client `networkingApi` fetch helper, page-level
+  row casts) was reviewed and intentionally not applied: those rows are
+  written by our own Zod-validated insert paths, not external input, so
+  CLAUDE.md's trust-boundary convention doesn't reach them. (The one
+  place this pattern *does* apply — `lib/networking/alumni.ts` reading
+  the externally-imported `professionals` table — already validates
+  defensively, matching the existing professional-DB convention.)
+
 Rollback: disable provider/product flags, unpublish the course. Never destroy
 user data during rollback.
