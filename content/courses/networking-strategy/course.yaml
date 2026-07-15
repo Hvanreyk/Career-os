@@ -1,0 +1,22 @@
+slug: networking-strategy
+title: Networking Strategy
+description: >-
+  How to build real relationships with investment banking professionals in
+  Australia: who to contact, how to research them honestly, what to say,
+  how to run a coffee chat, and how to follow up without becoming noise.
+  Includes a private workspace — a contact pipeline, a weekly plan driven by
+  the AU recruiting calendar, and an AI Message Lab that drafts and reviews
+  truthful outreach before you send it.
+icon: users
+tag: Networking Workspace
+region: au
+status: draft
+sort_order: 3
+last_reviewed: "2026-07-15"
+modules:
+  - 01-targets-and-purpose
+  - 02-research-and-personalisation
+  - 03-cold-outreach
+  - 04-coffee-chats
+  - 05-follow-up-and-warm-intros
+  - 06-pipeline-and-recruiting-calendar
