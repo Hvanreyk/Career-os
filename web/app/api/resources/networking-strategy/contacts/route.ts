@@ -8,6 +8,9 @@ import {
 
 /**
  * Creates a networking contact, optionally linked to bank targets.
+ * Contact creation and target linking commit atomically (see
+ * create_networking_contact_with_targets in migration 0010) so a
+ * target-link failure can never silently drop requested associations.
  */
 export async function POST(request: Request) {
   const result = await getNetworkingApiContext();
@@ -38,53 +41,32 @@ export async function POST(request: Request) {
     if (!event) return NextResponse.json({ error: 'Event not found' }, { status: 404 });
   }
 
-  const { data: contact, error } = await context.service
-    .from('networking_contacts')
-    .insert({
-      user_id: context.user.id,
-      full_name: input.full_name,
-      firm: input.firm,
-      role_title: input.role_title,
-      seniority: input.seniority,
-      city: input.city,
-      email: emailNormalized ? input.email.trim() : '',
-      email_normalized: emailNormalized,
-      linkedin_url: linkedinNormalized ?? '',
-      linkedin_normalized: linkedinNormalized,
-      source: input.source,
-      stage: input.stage,
-      priority: input.priority,
-      tags: input.tags,
-      notes: input.notes,
-      do_not_contact: input.do_not_contact,
-      is_alum: input.is_alum,
-      event_id: input.event_id,
-    })
-    .select('id')
-    .single();
-  if (error || !contact) {
+  const { data: contactId, error } = await context.service.rpc('create_networking_contact_with_targets', {
+    p_user_id: context.user.id,
+    p_full_name: input.full_name,
+    p_firm: input.firm,
+    p_role_title: input.role_title,
+    p_seniority: input.seniority,
+    p_city: input.city,
+    p_email: emailNormalized ? input.email.trim() : '',
+    p_email_normalized: emailNormalized,
+    p_linkedin_url: linkedinNormalized ?? '',
+    p_linkedin_normalized: linkedinNormalized,
+    p_source: input.source,
+    p_stage: input.stage,
+    p_priority: input.priority,
+    p_tags: input.tags,
+    p_notes: input.notes,
+    p_do_not_contact: input.do_not_contact,
+    p_is_alum: input.is_alum,
+    p_event_id: input.event_id,
+    p_bank_target_ids: input.bank_target_ids,
+  });
+  if (error || !contactId) {
     if (error?.code === '23505') {
       return NextResponse.json({ error: 'You already have a contact with this email or LinkedIn profile' }, { status: 409 });
     }
     return NextResponse.json({ error: 'Could not create the contact' }, { status: 500 });
-  }
-
-  if (input.bank_target_ids.length > 0) {
-    const { data: targets } = await context.service
-      .from('bank_targets')
-      .select('id')
-      .eq('user_id', context.user.id)
-      .in('id', input.bank_target_ids);
-    const validIds = (targets ?? []).map((t) => t.id);
-    if (validIds.length > 0) {
-      await context.service.from('networking_contact_targets').insert(
-        validIds.map((bankTargetId) => ({
-          user_id: context.user.id,
-          contact_id: contact.id,
-          bank_target_id: bankTargetId,
-        })),
-      );
-    }
   }
 
   await recordNetworkingEvent(context, 'networking_contact_created', {
@@ -93,5 +75,5 @@ export async function POST(request: Request) {
     has_email: Boolean(emailNormalized),
     has_linkedin: Boolean(linkedinNormalized),
   });
-  return NextResponse.json({ id: contact.id }, { status: 201 });
+  return NextResponse.json({ id: contactId }, { status: 201 });
 }

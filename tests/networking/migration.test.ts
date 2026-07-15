@@ -67,4 +67,42 @@ describe('networking migration', () => {
     expect(migration).toContain('networking_interactions_provider_unique');
     expect(migration).toContain('unique (provider, dedupe_key)');
   });
+
+  it('defines every atomic multi-write RPC as service-role-only', () => {
+    for (const fn of [
+      'create_networking_contact_with_targets',
+      'replace_networking_contact_targets',
+      'schedule_networking_followup',
+      'create_networking_coffee_chat',
+      'complete_networking_coffee_chat',
+      'log_networking_message_sent',
+      'delete_all_networking_data',
+    ]) {
+      expect(migration).toContain(`create or replace function ${fn}(`);
+      expect(migration).toContain(`grant execute on function ${fn}(`);
+    }
+  });
+
+  it('upserts follow-ups through the one-active partial unique index, not a read-then-write race', () => {
+    expect(migration).toContain('on conflict (contact_id) where status in (\'open\', \'snoozed\')');
+  });
+
+  it('only completes a coffee chat still in scheduled status', () => {
+    expect(migration).toContain("if v_chat_status <> 'scheduled' then");
+  });
+
+  it('claims a message before logging it sent, rejecting an already-sent message', () => {
+    expect(migration).toContain("if v_state = 'sent' or v_state = 'sending' then");
+  });
+
+  it('the stage-advance helper never regresses and revives dormant contacts', () => {
+    expect(migration).toContain('function networking_stage_advance');
+    expect(migration).toContain("when p_current = 'dormant' then p_implied");
+    expect(migration).toContain('networking_stage_rank(p_current) >= networking_stage_rank(p_implied) then p_current');
+  });
+
+  it('moves quota-usage retention out of the per-request hot path', () => {
+    expect(migration).not.toMatch(/opportunistic pruning[\s\S]{0,80}delete from networking_review_daily_usage/i);
+    expect(migration).toContain('delete from networking_review_daily_usage');
+  });
 });

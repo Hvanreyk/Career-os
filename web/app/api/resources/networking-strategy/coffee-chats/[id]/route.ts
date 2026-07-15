@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { ChatDebriefSchema, CHAT_NOTES_MAX } from '@trajectoryos/core/networking/types';
 import {
-  advanceContactStage,
   getNetworkingApiContext,
   loadOwnedContact,
   recordNetworkingEvent,
@@ -85,56 +84,26 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ ok: true });
   }
 
-  // action === 'complete'
-  if (chat.status === 'completed') {
-    return NextResponse.json({ error: 'This chat is already completed' }, { status: 409 });
-  }
+  // action === 'complete'. Status transition, interaction, stage
+  // advance and the thank-you follow-up all commit atomically (see
+  // complete_networking_coffee_chat in migration 0010) — the RPC's
+  // own row lock and status check are authoritative, not the earlier
+  // pre-fetch, so only a chat still 'scheduled' at that instant completes.
   const debrief = ChatDebriefSchema.safeParse(input.debrief ?? {});
   if (!debrief.success) return NextResponse.json({ error: 'Invalid debrief' }, { status: 400 });
 
-  const { error: completeError } = await context.service
-    .from('networking_coffee_chats')
-    .update({ status: 'completed', debrief: debrief.data })
-    .eq('id', id)
-    .eq('user_id', context.user.id);
-  if (completeError) return NextResponse.json({ error: 'Could not complete the chat' }, { status: 500 });
-
-  await context.service.from('networking_interactions').insert({
-    user_id: context.user.id,
-    contact_id: chat.contact_id,
-    type: 'coffee_chat',
-    direction: 'none',
-    occurred_at: chat.scheduled_at,
-    summary: debrief.data.learned,
-    outcome: debrief.data.outcome,
-    source: 'manual',
+  const { data: rows, error: completeError } = await context.service.rpc('complete_networking_coffee_chat', {
+    p_user_id: context.user.id,
+    p_chat_id: id,
+    p_debrief: debrief.data,
   });
-  const stage = await advanceContactStage(context, contact, 'coffee_chat', 'none');
-
-  // Queue the thank-you: the highest-value follow-up, due within 24h.
-  const dueAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-  const { data: existing } = await context.service
-    .from('networking_followups')
-    .select('id')
-    .eq('user_id', context.user.id)
-    .eq('contact_id', chat.contact_id)
-    .in('status', ['open', 'snoozed'])
-    .maybeSingle();
-  if (existing) {
-    await context.service
-      .from('networking_followups')
-      .update({ kind: 'thank_you', due_at: dueAt, reason: 'Thank-you after your coffee chat', status: 'open' })
-      .eq('id', existing.id)
-      .eq('user_id', context.user.id);
-  } else {
-    await context.service.from('networking_followups').insert({
-      user_id: context.user.id,
-      contact_id: chat.contact_id,
-      kind: 'thank_you',
-      due_at: dueAt,
-      reason: 'Thank-you after your coffee chat',
-    });
+  if (completeError) return NextResponse.json({ error: 'Could not complete the chat' }, { status: 500 });
+  const outcome = Array.isArray(rows) ? rows[0] : rows;
+  if (!outcome || !outcome.chat_found) return NextResponse.json({ error: 'Coffee chat not found' }, { status: 404 });
+  if (!outcome.was_scheduled) {
+    return NextResponse.json({ error: 'This chat is not in a completable state' }, { status: 409 });
   }
+  const stage = outcome.stage;
 
   await recordNetworkingEvent(context, 'networking_coffee_chat_completed', {
     referral_offered: debrief.data.referral_offered,

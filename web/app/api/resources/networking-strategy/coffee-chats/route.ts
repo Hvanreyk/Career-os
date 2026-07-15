@@ -9,7 +9,9 @@ import {
 
 /**
  * Schedules a coffee chat, seeds a role-calibrated prep sheet, and
- * advances the relationship stage to conversation_booked.
+ * advances the relationship stage to conversation_booked. Creation
+ * and the conditional stage advance commit atomically (see
+ * create_networking_coffee_chat in migration 0010).
  */
 export async function POST(request: Request) {
   const result = await getNetworkingApiContext();
@@ -24,34 +26,22 @@ export async function POST(request: Request) {
   const contact = await loadOwnedContact(context, input.contact_id);
   if (!contact) return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
 
-  const { data: chat, error } = await context.service
-    .from('networking_coffee_chats')
-    .insert({
-      user_id: context.user.id,
-      contact_id: input.contact_id,
-      scheduled_at: input.scheduled_at,
-      timezone: input.timezone,
-      duration_minutes: input.duration_minutes,
-      location: input.location,
-      notes: input.notes,
-      prep: buildPrepSheet(contact.seniority as ContactSeniority),
-    })
-    .select('id')
-    .single();
-  if (error || !chat) return NextResponse.json({ error: 'Could not schedule the coffee chat' }, { status: 500 });
-
-  const current = contact.stage;
-  if (current !== 'connected') {
-    await context.service
-      .from('networking_contacts')
-      .update({ stage: 'conversation_booked' })
-      .eq('id', contact.id)
-      .eq('user_id', context.user.id)
-      .in('stage', ['prospect', 'ready_to_contact', 'contacted', 'replied', 'dormant']);
-  }
+  const { data: rows, error } = await context.service.rpc('create_networking_coffee_chat', {
+    p_user_id: context.user.id,
+    p_contact_id: input.contact_id,
+    p_scheduled_at: input.scheduled_at,
+    p_timezone: input.timezone,
+    p_duration_minutes: input.duration_minutes,
+    p_location: input.location,
+    p_notes: input.notes,
+    p_prep: buildPrepSheet(contact.seniority as ContactSeniority),
+  });
+  if (error) return NextResponse.json({ error: 'Could not schedule the coffee chat' }, { status: 500 });
+  const created = Array.isArray(rows) ? rows[0] : rows;
+  if (!created) return NextResponse.json({ error: 'Could not schedule the coffee chat' }, { status: 500 });
 
   await recordNetworkingEvent(context, 'networking_coffee_chat_scheduled', {
     duration_minutes: input.duration_minutes,
   });
-  return NextResponse.json({ id: chat.id }, { status: 201 });
+  return NextResponse.json({ id: created.id }, { status: 201 });
 }

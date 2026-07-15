@@ -77,8 +77,10 @@ export async function getNetworkingOwnerContext(): Promise<NetworkingOwnerContex
 }
 
 /**
- * Records a text-free networking product event. Properties must never
- * contain names, firms, message content, or provider identifiers.
+ * Records a text-free networking product event. Properties may include
+ * enum-like values (provider, channel, purpose, stage, counts) but must
+ * never contain names, firms, addresses, message content, notes, tokens,
+ * or provider-issued identifiers (account IDs, connection IDs, message IDs).
  */
 export async function recordNetworkingEvent(
   context: NetworkingOwnerContext,
@@ -125,7 +127,11 @@ export async function loadOwnedContact(
 
 /**
  * Advances a contact's stage in response to a logged interaction,
- * using the engine's never-regress rules.
+ * using the engine's never-regress rules. Compare-and-swap: the
+ * update is scoped to the stage this call actually read, so a
+ * concurrent transition can never be silently overwritten. If the
+ * stage changed underneath this call, the row's current stage is
+ * returned as-is rather than blindly applying a now-stale `next`.
  */
 export async function advanceContactStage(
   context: NetworkingApiContext,
@@ -134,15 +140,27 @@ export async function advanceContactStage(
   direction: InteractionDirection,
 ): Promise<RelationshipStage> {
   const next = advanceStage(contact.stage, type, direction);
-  if (next !== contact.stage) {
-    const { error } = await context.service
-      .from('networking_contacts')
-      .update({ stage: next })
-      .eq('id', contact.id)
-      .eq('user_id', context.user.id);
-    if (error) throw error;
-  }
-  return next;
+  if (next === contact.stage) return next;
+
+  const { data: updated, error } = await context.service
+    .from('networking_contacts')
+    .update({ stage: next })
+    .eq('id', contact.id)
+    .eq('user_id', context.user.id)
+    .eq('stage', contact.stage)
+    .select('stage')
+    .maybeSingle();
+  if (error) throw error;
+  if (updated) return updated.stage as RelationshipStage;
+
+  const { data: current, error: refetchError } = await context.service
+    .from('networking_contacts')
+    .select('stage')
+    .eq('id', contact.id)
+    .eq('user_id', context.user.id)
+    .maybeSingle();
+  if (refetchError) throw refetchError;
+  return (current?.stage as RelationshipStage | undefined) ?? contact.stage;
 }
 
 /**

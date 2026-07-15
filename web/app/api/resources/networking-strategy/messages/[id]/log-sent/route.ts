@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { FollowUpKindSchema, type FollowUpKind } from '@trajectoryos/core/networking/types';
 import {
-  advanceContactStage,
   getNetworkingApiContext,
   loadOwnedContact,
   maybeRecordActivation,
@@ -22,9 +21,10 @@ const BodySchema = z.object({
 
 /**
  * Manual send path: the student sent the message themselves (mail
- * client or LinkedIn) and logs it. Creates the immutable sent
- * interaction, marks the message sent (channel 'manual'), advances the
- * stage, and optionally schedules the next follow-up in one step.
+ * client or LinkedIn) and logs it. Claiming the message, logging the
+ * immutable sent interaction, and advancing the stage commit
+ * atomically (see log_networking_message_sent in migration 0010), so
+ * a double-click can never produce duplicate sent interactions.
  */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const result = await getNetworkingApiContext('message-review');
@@ -43,9 +43,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .eq('user_id', context.user.id)
     .maybeSingle();
   if (!message) return NextResponse.json({ error: 'Message not found' }, { status: 404 });
-  if (message.state === 'sent') {
-    return NextResponse.json({ error: 'This message is already logged as sent' }, { status: 409 });
-  }
 
   const contact = await loadOwnedContact(context, message.contact_id);
   if (!contact) return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
@@ -54,66 +51,35 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const now = new Date().toISOString();
-  const interactionType = message.channel === 'email' ? 'email_sent' : 'linkedin_sent';
-  const { error: interactionError } = await context.service
-    .from('networking_interactions')
-    .insert({
-      user_id: context.user.id,
-      contact_id: message.contact_id,
-      type: interactionType,
-      direction: 'outbound',
-      occurred_at: now,
-      summary: `Sent ${message.purpose.replace(/_/g, ' ')} (${message.channel})`,
-      source: 'manual',
-    });
-  if (interactionError) {
-    return NextResponse.json({ error: 'Could not log the sent message' }, { status: 500 });
+  const { data: rows, error } = await context.service.rpc('log_networking_message_sent', {
+    p_user_id: context.user.id,
+    p_message_id: id,
+    p_occurred_at: now,
+  });
+  if (error) return NextResponse.json({ error: 'Could not log the sent message' }, { status: 500 });
+  const outcome = Array.isArray(rows) ? rows[0] : rows;
+  if (!outcome || !outcome.claimed) {
+    return NextResponse.json({ error: 'This message is already logged as sent' }, { status: 409 });
   }
-
-  const { error: messageError } = await context.service
-    .from('networking_messages')
-    .update({ state: 'sent', send_channel: 'manual', sent_at: now })
-    .eq('id', message.id)
-    .eq('user_id', context.user.id);
-  if (messageError) {
-    return NextResponse.json({ error: 'The interaction was logged but the draft state could not be updated' }, { status: 500 });
-  }
-
-  const stage = await advanceContactStage(context, contact, interactionType, 'outbound');
+  const stage = outcome.stage;
 
   let followUpId: string | null = null;
   const followup = parsed.data.followup;
   if (followup) {
-    const { data: existing } = await context.service
-      .from('networking_followups')
-      .select('id')
-      .eq('user_id', context.user.id)
-      .eq('contact_id', message.contact_id)
-      .in('status', ['open', 'snoozed'])
-      .maybeSingle();
-    if (existing) {
-      await context.service
-        .from('networking_followups')
-        .update({ kind: followup.kind, due_at: followup.due_at, reason: followup.reason, status: 'open' })
-        .eq('id', existing.id)
-        .eq('user_id', context.user.id);
-      followUpId = existing.id;
-    } else {
-      const { data: created } = await context.service
-        .from('networking_followups')
-        .insert({
-          user_id: context.user.id,
-          contact_id: message.contact_id,
-          kind: followup.kind,
-          due_at: followup.due_at,
-          reason: followup.reason,
-        })
-        .select('id')
-        .single();
-      followUpId = created?.id ?? null;
-    }
-    if (followUpId) {
-      await recordNetworkingEvent(context, 'networking_followup_scheduled', { kind: followup.kind, rescheduled: Boolean(existing) });
+    const { data: followUpRows, error: followUpError } = await context.service.rpc('schedule_networking_followup', {
+      p_user_id: context.user.id,
+      p_contact_id: message.contact_id,
+      p_kind: followup.kind,
+      p_due_at: followup.due_at,
+      p_reason: followup.reason,
+    });
+    const followUpOutcome = Array.isArray(followUpRows) ? followUpRows[0] : followUpRows;
+    if (!followUpError && followUpOutcome) {
+      followUpId = followUpOutcome.id;
+      await recordNetworkingEvent(context, 'networking_followup_scheduled', {
+        kind: followup.kind,
+        rescheduled: followUpOutcome.rescheduled,
+      });
     }
   }
 

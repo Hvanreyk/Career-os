@@ -585,6 +585,419 @@ grant execute on function save_networking_message_review(
   uuid, uuid, text, jsonb, text, text, integer, integer
 ) to service_role;
 
+-- ─── Stage-machine helpers ───────────────────────────────────
+-- Mirror lib/networking/stages.ts's stageRank/advanceStage exactly, so
+-- multi-step RPCs below can advance a contact's stage atomically with
+-- their other writes instead of relying on a second round-trip from
+-- the route layer.
+
+create or replace function networking_stage_rank(p_stage text)
+returns integer
+language sql
+immutable
+as $$
+  select case p_stage
+    when 'prospect' then 0
+    when 'ready_to_contact' then 1
+    when 'contacted' then 2
+    when 'replied' then 3
+    when 'conversation_booked' then 4
+    when 'connected' then 5
+    when 'dormant' then -1
+    else -1
+  end;
+$$;
+
+revoke all on function networking_stage_rank(text) from public, anon, authenticated;
+grant execute on function networking_stage_rank(text) to service_role;
+
+create or replace function networking_stage_advance(p_current text, p_implied text)
+returns text
+language sql
+immutable
+as $$
+  select case
+    when p_implied is null then p_current
+    when p_current = 'dormant' then p_implied
+    when networking_stage_rank(p_current) >= networking_stage_rank(p_implied) then p_current
+    else p_implied
+  end;
+$$;
+
+revoke all on function networking_stage_advance(text, text) from public, anon, authenticated;
+grant execute on function networking_stage_advance(text, text) to service_role;
+
+-- ─── Atomic contact + target-link creation ──────────────────
+-- Both writes commit together; an invalid target id is silently
+-- filtered (matching the existing route contract) rather than
+-- failing the whole contact creation.
+
+create or replace function create_networking_contact_with_targets(
+  p_user_id uuid,
+  p_full_name text,
+  p_firm text,
+  p_role_title text,
+  p_seniority text,
+  p_city text,
+  p_email text,
+  p_email_normalized text,
+  p_linkedin_url text,
+  p_linkedin_normalized text,
+  p_source text,
+  p_stage text,
+  p_priority integer,
+  p_tags jsonb,
+  p_notes text,
+  p_do_not_contact boolean,
+  p_is_alum boolean,
+  p_event_id uuid,
+  p_bank_target_ids uuid[]
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_contact_id uuid;
+begin
+  insert into networking_contacts (
+    user_id, full_name, firm, role_title, seniority, city, email, email_normalized,
+    linkedin_url, linkedin_normalized, source, stage, priority, tags, notes,
+    do_not_contact, is_alum, event_id
+  ) values (
+    p_user_id, p_full_name, p_firm, p_role_title, p_seniority, p_city, p_email, p_email_normalized,
+    p_linkedin_url, p_linkedin_normalized, p_source, p_stage, p_priority, p_tags, p_notes,
+    p_do_not_contact, p_is_alum, p_event_id
+  ) returning id into v_contact_id;
+
+  if p_bank_target_ids is not null and array_length(p_bank_target_ids, 1) > 0 then
+    insert into networking_contact_targets (user_id, contact_id, bank_target_id)
+    select p_user_id, v_contact_id, bt.id
+    from bank_targets bt
+    where bt.id = any(p_bank_target_ids) and bt.user_id = p_user_id;
+  end if;
+
+  return v_contact_id;
+end;
+$$;
+
+revoke all on function create_networking_contact_with_targets(
+  uuid, text, text, text, text, text, text, text, text, text, text, text,
+  integer, jsonb, text, boolean, boolean, uuid, uuid[]
+) from public, anon, authenticated;
+grant execute on function create_networking_contact_with_targets(
+  uuid, text, text, text, text, text, text, text, text, text, text, text,
+  integer, jsonb, text, boolean, boolean, uuid, uuid[]
+) to service_role;
+
+-- ─── Atomic target-link replacement ─────────────────────────
+-- A failed lookup or partial write must never leave a contact's
+-- target links deleted without their replacements committed.
+
+create or replace function replace_networking_contact_targets(
+  p_user_id uuid,
+  p_contact_id uuid,
+  p_bank_target_ids uuid[]
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from networking_contacts where id = p_contact_id and user_id = p_user_id
+  ) then
+    raise exception 'CONTACT_NOT_FOUND';
+  end if;
+
+  delete from networking_contact_targets
+  where user_id = p_user_id and contact_id = p_contact_id;
+
+  if p_bank_target_ids is not null and array_length(p_bank_target_ids, 1) > 0 then
+    insert into networking_contact_targets (user_id, contact_id, bank_target_id)
+    select p_user_id, p_contact_id, bt.id
+    from bank_targets bt
+    where bt.id = any(p_bank_target_ids) and bt.user_id = p_user_id;
+  end if;
+end;
+$$;
+
+revoke all on function replace_networking_contact_targets(uuid, uuid, uuid[]) from public, anon, authenticated;
+grant execute on function replace_networking_contact_targets(uuid, uuid, uuid[]) to service_role;
+
+-- ─── Atomic follow-up scheduling ─────────────────────────────
+-- Upserts through the networking_followups_one_active partial unique
+-- index so two concurrent "schedule a follow-up" requests can never
+-- both observe no active row and both insert.
+
+create or replace function schedule_networking_followup(
+  p_user_id uuid,
+  p_contact_id uuid,
+  p_kind text,
+  p_due_at timestamptz,
+  p_reason text
+)
+returns table (id uuid, rescheduled boolean)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_id uuid;
+  v_rescheduled boolean;
+begin
+  if not exists (
+    select 1 from networking_contacts where id = p_contact_id and user_id = p_user_id
+  ) then
+    raise exception 'CONTACT_NOT_FOUND';
+  end if;
+
+  insert into networking_followups (user_id, contact_id, kind, due_at, reason, status)
+  values (p_user_id, p_contact_id, p_kind, p_due_at, p_reason, 'open')
+  on conflict (contact_id) where status in ('open', 'snoozed')
+  do update set
+    kind = excluded.kind,
+    due_at = excluded.due_at,
+    reason = excluded.reason,
+    status = 'open',
+    updated_at = now()
+  returning networking_followups.id, (xmax <> 0) into v_id, v_rescheduled;
+
+  return query select v_id, v_rescheduled;
+end;
+$$;
+
+revoke all on function schedule_networking_followup(uuid, uuid, text, timestamptz, text) from public, anon, authenticated;
+grant execute on function schedule_networking_followup(uuid, uuid, text, timestamptz, text) to service_role;
+
+-- ─── Atomic coffee-chat creation ─────────────────────────────
+-- Locks the contact row for the duration of the call so a concurrent
+-- stage-changing write can't interleave with the conditional advance.
+
+create or replace function create_networking_coffee_chat(
+  p_user_id uuid,
+  p_contact_id uuid,
+  p_scheduled_at timestamptz,
+  p_timezone text,
+  p_duration_minutes integer,
+  p_location text,
+  p_notes text,
+  p_prep jsonb
+)
+returns table (id uuid, stage text)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_chat_id uuid;
+  v_current_stage text;
+  v_next_stage text;
+begin
+  select stage into v_current_stage
+  from networking_contacts
+  where id = p_contact_id and user_id = p_user_id
+  for update;
+
+  if not found then
+    raise exception 'CONTACT_NOT_FOUND';
+  end if;
+
+  insert into networking_coffee_chats (
+    user_id, contact_id, scheduled_at, timezone, duration_minutes, location, notes, prep
+  ) values (
+    p_user_id, p_contact_id, p_scheduled_at, p_timezone, p_duration_minutes, p_location, p_notes, p_prep
+  ) returning id into v_chat_id;
+
+  v_next_stage := v_current_stage;
+  if v_current_stage in ('prospect', 'ready_to_contact', 'contacted', 'replied', 'dormant') then
+    v_next_stage := 'conversation_booked';
+    update networking_contacts set stage = v_next_stage
+    where id = p_contact_id and user_id = p_user_id;
+  end if;
+
+  return query select v_chat_id, v_next_stage;
+end;
+$$;
+
+revoke all on function create_networking_coffee_chat(
+  uuid, uuid, timestamptz, text, integer, text, text, jsonb
+) from public, anon, authenticated;
+grant execute on function create_networking_coffee_chat(
+  uuid, uuid, timestamptz, text, integer, text, text, jsonb
+) to service_role;
+
+-- ─── Atomic coffee-chat completion ───────────────────────────
+-- Only a chat still in 'scheduled' status can complete (blocks
+-- completing a cancelled chat and blocks retrying an already-applied
+-- completion). Status transition, interaction, stage advance and the
+-- thank-you follow-up all commit together or not at all.
+
+create or replace function complete_networking_coffee_chat(
+  p_user_id uuid,
+  p_chat_id uuid,
+  p_debrief jsonb
+)
+returns table (chat_found boolean, was_scheduled boolean, stage text)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_contact_id uuid;
+  v_chat_status text;
+  v_scheduled_at timestamptz;
+  v_current_stage text;
+  v_next_stage text;
+begin
+  select contact_id, status, scheduled_at into v_contact_id, v_chat_status, v_scheduled_at
+  from networking_coffee_chats
+  where id = p_chat_id and user_id = p_user_id
+  for update;
+
+  if not found then
+    return query select false, false, null::text;
+    return;
+  end if;
+
+  if v_chat_status <> 'scheduled' then
+    return query select true, false, null::text;
+    return;
+  end if;
+
+  update networking_coffee_chats
+  set status = 'completed', debrief = p_debrief
+  where id = p_chat_id and user_id = p_user_id;
+
+  select stage into v_current_stage
+  from networking_contacts
+  where id = v_contact_id and user_id = p_user_id
+  for update;
+
+  v_next_stage := networking_stage_advance(v_current_stage, 'connected');
+  if v_next_stage <> v_current_stage then
+    update networking_contacts set stage = v_next_stage
+    where id = v_contact_id and user_id = p_user_id;
+  end if;
+
+  insert into networking_interactions (
+    user_id, contact_id, type, direction, occurred_at, summary, outcome, source
+  ) values (
+    p_user_id, v_contact_id, 'coffee_chat', 'none', v_scheduled_at,
+    coalesce(p_debrief->>'learned', ''), coalesce(p_debrief->>'outcome', ''), 'manual'
+  );
+
+  insert into networking_followups (user_id, contact_id, kind, due_at, reason, status)
+  values (p_user_id, v_contact_id, 'thank_you', now() + interval '24 hours', 'Thank-you after your coffee chat', 'open')
+  on conflict (contact_id) where status in ('open', 'snoozed')
+  do update set
+    kind = 'thank_you',
+    due_at = now() + interval '24 hours',
+    reason = 'Thank-you after your coffee chat',
+    status = 'open',
+    updated_at = now();
+
+  return query select true, true, v_next_stage;
+end;
+$$;
+
+revoke all on function complete_networking_coffee_chat(uuid, uuid, jsonb) from public, anon, authenticated;
+grant execute on function complete_networking_coffee_chat(uuid, uuid, jsonb) to service_role;
+
+-- ─── Atomic send-logging ─────────────────────────────────────
+-- Claims the message (draft/reviewed -> sent) and inserts the sent
+-- interaction and stage advance in one transaction, so two concurrent
+-- "log as sent" calls (e.g. a double-click) can never both succeed
+-- and never produce duplicate interactions.
+
+create or replace function log_networking_message_sent(
+  p_user_id uuid,
+  p_message_id uuid,
+  p_occurred_at timestamptz
+)
+returns table (claimed boolean, contact_id uuid, stage text)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_contact_id uuid;
+  v_channel text;
+  v_purpose text;
+  v_state text;
+  v_interaction_type text;
+  v_current_stage text;
+  v_next_stage text;
+begin
+  select contact_id, channel, purpose, state into v_contact_id, v_channel, v_purpose, v_state
+  from networking_messages
+  where id = p_message_id and user_id = p_user_id
+  for update;
+
+  if not found then
+    return query select false, null::uuid, null::text;
+    return;
+  end if;
+
+  if v_state = 'sent' or v_state = 'sending' then
+    return query select false, v_contact_id, null::text;
+    return;
+  end if;
+
+  update networking_messages
+  set state = 'sent', send_channel = 'manual', sent_at = p_occurred_at
+  where id = p_message_id and user_id = p_user_id;
+
+  v_interaction_type := case when v_channel = 'email' then 'email_sent' else 'linkedin_sent' end;
+
+  insert into networking_interactions (
+    user_id, contact_id, type, direction, occurred_at, summary, source
+  ) values (
+    p_user_id, v_contact_id, v_interaction_type, 'outbound', p_occurred_at,
+    'Sent ' || replace(v_purpose, '_', ' ') || ' (' || v_channel || ')', 'manual'
+  );
+
+  select stage into v_current_stage
+  from networking_contacts
+  where id = v_contact_id and user_id = p_user_id
+  for update;
+
+  v_next_stage := networking_stage_advance(v_current_stage, 'contacted');
+  if v_next_stage <> v_current_stage then
+    update networking_contacts set stage = v_next_stage
+    where id = v_contact_id and user_id = p_user_id;
+  end if;
+
+  return query select true, v_contact_id, v_next_stage;
+end;
+$$;
+
+revoke all on function log_networking_message_sent(uuid, uuid, timestamptz) from public, anon, authenticated;
+grant execute on function log_networking_message_sent(uuid, uuid, timestamptz) to service_role;
+
+-- ─── Atomic full data deletion ───────────────────────────────
+-- All owner-scoped deletions commit together; a mid-sequence failure
+-- must never leave only part of the "delete everything" request applied.
+
+create or replace function delete_all_networking_data(p_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  delete from networking_introductions where user_id = p_user_id;
+  delete from networking_contacts where user_id = p_user_id;
+  delete from networking_events where user_id = p_user_id;
+  delete from networking_connections where user_id = p_user_id;
+end;
+$$;
+
+revoke all on function delete_all_networking_data(uuid) from public, anon, authenticated;
+grant execute on function delete_all_networking_data(uuid) to service_role;
+
 -- ─── Bounded operational retention ──────────────────────────
 
 create or replace function cleanup_networking_operational_rows()

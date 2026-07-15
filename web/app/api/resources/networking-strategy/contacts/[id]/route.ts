@@ -65,26 +65,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   if (input.bank_target_ids !== undefined) {
-    const { data: targets } = await context.service
-      .from('bank_targets')
-      .select('id')
-      .eq('user_id', context.user.id)
-      .in('id', input.bank_target_ids.length > 0 ? input.bank_target_ids : ['00000000-0000-0000-0000-000000000000']);
-    const validIds = (targets ?? []).map((t) => t.id);
-    await context.service
-      .from('networking_contact_targets')
-      .delete()
-      .eq('user_id', context.user.id)
-      .eq('contact_id', id);
-    if (validIds.length > 0) {
-      await context.service.from('networking_contact_targets').insert(
-        validIds.map((bankTargetId) => ({
-          user_id: context.user.id,
-          contact_id: id,
-          bank_target_id: bankTargetId,
-        })),
-      );
-    }
+    const { error: linkError } = await context.service.rpc('replace_networking_contact_targets', {
+      p_user_id: context.user.id,
+      p_contact_id: id,
+      p_bank_target_ids: input.bank_target_ids,
+    });
+    if (linkError) return NextResponse.json({ error: 'Could not update the target links' }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });
