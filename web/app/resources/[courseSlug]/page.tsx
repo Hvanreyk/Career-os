@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { ArrowRight, BookOpen, Clock, FileText, Gauge, Landmark, Map } from 'lucide-react';
+import { ArrowRight, BookOpen, Clock, FileText, Gauge, Landmark, Mail, Map, Users } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import {
   getCourseStructure,
@@ -23,6 +23,8 @@ const ACTION_ICONS: Record<ResourceActionIcon, typeof Map> = {
   landmark: Landmark,
   map: Map,
   'file-text': FileText,
+  users: Users,
+  mail: Mail,
 };
 
 // Public overview page: anyone can see the course structure; progress,

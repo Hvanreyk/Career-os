@@ -10,12 +10,14 @@ const EVENT_NAMES = [
   'resource_viewed',
   'lesson_viewed',
   'resume_workshop_opened',
+  'networking_workspace_opened',
 ] as const;
 
 const PROPERTY_KEYS: Record<(typeof EVENT_NAMES)[number], readonly string[]> = {
   resource_viewed: [],
   lesson_viewed: ['moduleSlug', 'lessonSlug'],
   resume_workshop_opened: [],
+  networking_workspace_opened: [],
 };
 
 const BodySchema = z.object({

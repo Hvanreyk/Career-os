@@ -1,6 +1,6 @@
 import type { ResourceCapability, ResourceDefinition } from './catalog';
 
-export type ResourceActionIcon = 'landmark' | 'map' | 'file-text';
+export type ResourceActionIcon = 'landmark' | 'map' | 'file-text' | 'users' | 'mail';
 
 export interface ResourceActionDefinition {
   capability: ResourceCapability;
@@ -31,6 +31,20 @@ const ACTIONS: Partial<Record<ResourceCapability, ResourceActionDefinition>> = {
     description: 'Build your master resume and improve individual bullets with AI critique',
     path: 'workshop',
     icon: 'file-text',
+  },
+  contacts: {
+    capability: 'contacts',
+    title: 'Networking workspace',
+    description: 'Your contact pipeline, weekly plan and target-firm coverage map',
+    path: 'network',
+    icon: 'users',
+  },
+  'message-review': {
+    capability: 'message-review',
+    title: 'Message lab',
+    description: 'Draft, review and revise truthful outreach before you send it',
+    path: 'network/messages',
+    icon: 'mail',
   },
 };
 
