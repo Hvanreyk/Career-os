@@ -61,17 +61,22 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
   if (Object.keys(update).length === 0) return NextResponse.json({ ok: true });
 
-  const { error } = await context.service
+  const { data: updated, error } = await context.service
     .from('networking_messages')
     .update(update)
     .eq('id', id)
-    .eq('user_id', context.user.id);
+    .eq('user_id', context.user.id)
+    .in('state', ['draft', 'reviewed'])
+    .select('id')
+    .maybeSingle();
   if (error) return NextResponse.json({ error: 'Could not update the draft' }, { status: 500 });
+  if (!updated) return NextResponse.json({ error: 'Sent messages cannot be edited' }, { status: 422 });
   return NextResponse.json({ ok: true, reviewInvalidated: contentChanged && message.state === 'reviewed' });
 }
 
 /**
- * Deletes a draft and its review history.
+ * Deletes a draft and its review history. Sent or sending messages are
+ * immutable history and cannot be deleted.
  */
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const result = await getNetworkingApiContext('message-review');
@@ -80,11 +85,26 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   const { id } = await params;
   if (!IdSchema.safeParse(id).success) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
-  const { error } = await context.service
+  const { data: deleted, error } = await context.service
     .from('networking_messages')
     .delete()
     .eq('id', id)
-    .eq('user_id', context.user.id);
+    .eq('user_id', context.user.id)
+    .in('state', ['draft', 'reviewed'])
+    .select('id')
+    .maybeSingle();
   if (error) return NextResponse.json({ error: 'Could not delete the draft' }, { status: 500 });
+  if (!deleted) {
+    const { data: existing } = await context.service
+      .from('networking_messages')
+      .select('id')
+      .eq('id', id)
+      .eq('user_id', context.user.id)
+      .maybeSingle();
+    return NextResponse.json(
+      { error: existing ? 'Sent messages cannot be deleted' : 'Message not found' },
+      { status: existing ? 409 : 404 },
+    );
+  }
   return NextResponse.json({ ok: true });
 }

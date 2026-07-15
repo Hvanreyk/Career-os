@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { z } from 'zod';
 import { STAGE_LABELS } from '@trajectoryos/core/networking';
 import type {
   FollowUpKind,
@@ -33,6 +34,8 @@ const INPUT = 'w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/1
 const SELECT = `${INPUT} [&>option]:bg-navy-950`;
 const BUTTON = 'text-xs px-3 py-1.5 rounded-full border border-white/10 text-slate-400 hover:text-white hover:border-gold-400/40 transition-colors disabled:opacity-50';
 const PRIMARY = 'text-sm px-4 py-2 rounded-full bg-gold-400/15 text-gold-400 border border-gold-400/40 hover:bg-gold-400/25 transition-colors disabled:opacity-50 inline-flex items-center gap-2';
+
+const CompleteChatResponseSchema = z.object({ namesDropped: z.array(z.string()).default([]) });
 
 const INTERACTION_TYPES: { value: InteractionType; label: string; direction: 'outbound' | 'inbound' | 'none' }[] = [
   { value: 'email_sent', label: 'Email sent', direction: 'outbound' },
@@ -122,8 +125,10 @@ export function ContactDetail(props: Props) {
 
   async function deleteContact() {
     if (!window.confirm(`Delete ${contact.full_name} and their entire timeline? This cannot be undone.`)) return;
-    await run(async () => { await networkingApi(`/contacts/${contact.id}`, 'DELETE'); });
-    router.push(`${base}/contacts`);
+    await run(async () => {
+      await networkingApi(`/contacts/${contact.id}`, 'DELETE');
+      router.push(`${base}/contacts`);
+    });
   }
 
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Australia/Sydney';
@@ -425,7 +430,7 @@ export function ContactDetail(props: Props) {
                         event.preventDefault();
                         void run(async () => {
                           const names = debrief.names.split(',').map((n) => n.trim()).filter(Boolean);
-                          const result = await networkingApi<{ namesDropped: string[] }>(`/coffee-chats/${chat.id}`, 'PATCH', {
+                          const raw = await networkingApi<unknown>(`/coffee-chats/${chat.id}`, 'PATCH', {
                             action: 'complete',
                             debrief: {
                               learned: debrief.learned,
@@ -435,7 +440,8 @@ export function ContactDetail(props: Props) {
                               outcome: debrief.outcome,
                             },
                           });
-                          setDroppedNames(result.namesDropped ?? []);
+                          const result = CompleteChatResponseSchema.parse(raw);
+                          setDroppedNames(result.namesDropped);
                           setDebriefFor(null);
                         });
                       }}

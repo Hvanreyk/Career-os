@@ -38,9 +38,9 @@ export function normalizeLinkedinUrl(raw: string): string | null {
   value = value.replace(/^https?:\/\//i, '');
   value = value.replace(/^([a-z]{2,3}\.)?(www\.)?linkedin\.com\//i, '');
   value = value.replace(/^\/+/, '');
-  const match = value.match(/^in\/([A-Za-z0-9\-_%.]+)/);
+  const match = value.match(/^in\/([A-Za-z0-9._%-]+)\/?(?:[?#].*)?$/);
   if (!match || !match[1]) return null;
-  const slug = match[1].replace(/\/+$/, '').toLowerCase();
+  const slug = match[1].toLowerCase();
   if (!slug || slug.length > 120) return null;
   return `https://www.linkedin.com/in/${slug}`;
 }

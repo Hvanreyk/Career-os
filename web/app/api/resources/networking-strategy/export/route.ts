@@ -24,6 +24,11 @@ export async function GET() {
     service.from('networking_message_reviews').select('id, message_id, input_hash, review, model, prompt_version, created_at').eq('user_id', userId).order('created_at'),
   ]);
 
+  const results = [contacts, targets, interactions, followups, chats, intros, events, messages, reviews];
+  if (results.some((result) => result.error)) {
+    return NextResponse.json({ error: 'Could not build the export; try again' }, { status: 500 });
+  }
+
   const body = JSON.stringify({
     exported_at: new Date().toISOString(),
     contacts: contacts.data ?? [],

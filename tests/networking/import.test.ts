@@ -16,6 +16,10 @@ describe('parseCsv', () => {
     const rows = Array.from({ length: 502 }, (_, i) => `Person ${i}`).join('\n');
     expect(() => parseCsv(`name\n${rows}`)).toThrow(/limited to 500 rows/);
   });
+
+  it('throws on an unterminated quoted field', () => {
+    expect(() => parseCsv('name,notes\nJane,"unfinished')).toThrow(/unterminated quoted field/);
+  });
 });
 
 describe('buildImportPreview', () => {
@@ -49,6 +53,26 @@ describe('buildImportPreview', () => {
       'name,firm,email',
       'Jane Doe,Macquarie,jane@example.com',
       'Jane Doe,Macquarie,jane@example.com',
+    ].join('\n');
+    const preview = buildImportPreview(csv, []);
+    expect(preview.candidates).toHaveLength(1);
+  });
+
+  it('collapses in-file rows sharing only a LinkedIn URL', () => {
+    const csv = [
+      'name,firm,email,linkedin',
+      'Jane Doe,Macquarie,jane@example.com,linkedin.com/in/jane-doe',
+      'Jane D,UBS,jane.other@example.com,linkedin.com/in/jane-doe',
+    ].join('\n');
+    const preview = buildImportPreview(csv, []);
+    expect(preview.candidates).toHaveLength(1);
+  });
+
+  it('collapses in-file rows sharing only a normalized name+firm', () => {
+    const csv = [
+      'name,firm,email',
+      'Jane Doe,Macquarie,jane@example.com',
+      'Jane Doe,Macquarie,jane.alt@example.com',
     ].join('\n');
     const preview = buildImportPreview(csv, []);
     expect(preview.candidates).toHaveLength(1);

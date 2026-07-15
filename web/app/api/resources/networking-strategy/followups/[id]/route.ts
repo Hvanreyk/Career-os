@@ -24,12 +24,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
   const input = parsed.data;
 
-  const { data: followUp } = await context.service
+  const { data: followUp, error: lookupError } = await context.service
     .from('networking_followups')
     .select('id, status, kind')
     .eq('id', id)
     .eq('user_id', context.user.id)
     .maybeSingle();
+  if (lookupError) return NextResponse.json({ error: 'Could not look up the follow-up' }, { status: 500 });
   if (!followUp) return NextResponse.json({ error: 'Follow-up not found' }, { status: 404 });
 
   const update: Record<string, unknown> = {};
@@ -51,7 +52,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     .eq('user_id', context.user.id);
   if (error) return NextResponse.json({ error: 'Could not update the follow-up' }, { status: 500 });
 
-  if (input.status === 'completed') {
+  if (input.status === 'completed' && followUp.status !== 'completed') {
     await recordNetworkingEvent(context, 'networking_followup_completed', { kind: followUp.kind });
   }
   return NextResponse.json({ ok: true });

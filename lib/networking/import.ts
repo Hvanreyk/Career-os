@@ -53,6 +53,7 @@ export function parseCsv(text: string): CsvParseResult {
       field += char;
     }
   }
+  if (inQuotes) throw new Error('The file has an unterminated quoted field');
   if (field !== '' || row.length > 0) pushRow();
 
   const nonEmpty = rows.filter((r) => r.some((cell) => cell.trim() !== ''));
@@ -191,7 +192,9 @@ export function buildImportPreview(
   const candidates: ImportCandidate[] = [];
   const errors: ImportRowError[] = [];
   const duplicates: ImportDuplicate[] = [];
-  const seenInFile = new Set<string>();
+  const seenEmails = new Set<string>();
+  const seenLinkedin = new Set<string>();
+  const seenNameFirm = new Set<string>();
 
   rows.forEach((cells, index) => {
     const rowNumber = index + 2; // 1-based, after the header row
@@ -221,13 +224,18 @@ export function buildImportPreview(
       .filter(Boolean)
       .slice(0, 10);
 
-    const fileKey = emailNormalized ?? linkedinNormalized ?? nameFirmKey(value.full_name, value.firm);
-    if (seenInFile.has(fileKey)) return;
-    seenInFile.add(fileKey);
+    const nameFirm = nameFirmKey(value.full_name, value.firm);
+    const seenBefore = (emailNormalized && seenEmails.has(emailNormalized))
+      || (linkedinNormalized && seenLinkedin.has(linkedinNormalized))
+      || seenNameFirm.has(nameFirm);
+    if (seenBefore) return;
+    if (emailNormalized) seenEmails.add(emailNormalized);
+    if (linkedinNormalized) seenLinkedin.add(linkedinNormalized);
+    seenNameFirm.add(nameFirm);
 
     const emailMatch = emailNormalized ? byEmail.get(emailNormalized) : undefined;
     const linkedinMatch = linkedinNormalized ? byLinkedin.get(linkedinNormalized) : undefined;
-    const nameFirmMatch = byNameFirm.get(nameFirmKey(value.full_name, value.firm));
+    const nameFirmMatch = byNameFirm.get(nameFirm);
     const existingContactId = emailMatch ?? linkedinMatch ?? nameFirmMatch;
     if (existingContactId) {
       duplicates.push({

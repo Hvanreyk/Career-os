@@ -3,7 +3,7 @@ import { ProviderSchema } from '@trajectoryos/core/networking/types';
 import { decryptToken, TokenCryptoError } from '@/lib/networking/crypto';
 import { getProviderConfig, revokeToken } from '@/lib/networking/providers';
 import {
-  getNetworkingApiContext,
+  getNetworkingOwnerContext,
   recordNetworkingEvent,
 } from '@/lib/networking/server';
 
@@ -13,7 +13,7 @@ import {
  * and existing calendar events are never recalled.
  */
 export async function DELETE(_request: Request, { params }: { params: Promise<{ provider: string }> }) {
-  const result = await getNetworkingApiContext();
+  const result = await getNetworkingOwnerContext();
   if (result.response) return result.response;
   const { context } = result;
 

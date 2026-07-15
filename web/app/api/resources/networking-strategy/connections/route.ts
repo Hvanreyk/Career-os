@@ -11,11 +11,12 @@ export async function GET() {
   if (result.response) return result.response;
   const { context } = result;
 
-  const { data } = await context.service
+  const { data, error } = await context.service
     .from('networking_connections')
     .select('id, provider, account_email, scopes, health, last_synced_at, created_at')
     .eq('user_id', context.user.id)
     .order('created_at');
+  if (error) return NextResponse.json({ error: 'Could not load connections' }, { status: 500 });
 
   return NextResponse.json({
     connections: data ?? [],

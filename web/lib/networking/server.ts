@@ -15,14 +15,21 @@ export const NETWORKING_RESOURCE_SLUG = 'networking-strategy';
 
 type ServiceClient = ReturnType<typeof createServiceClient>;
 
-export interface NetworkingApiContext {
+export interface NetworkingOwnerContext {
   user: User;
   service: ServiceClient;
+}
+
+export interface NetworkingApiContext extends NetworkingOwnerContext {
   course: { id: string; slug: string };
 }
 
 export type NetworkingContextResult =
   | { context: NetworkingApiContext; response?: never }
+  | { context?: never; response: NextResponse };
+
+export type NetworkingOwnerContextResult =
+  | { context: NetworkingOwnerContext; response?: never }
   | { context?: never; response: NextResponse };
 
 /**
@@ -55,11 +62,26 @@ export async function getNetworkingApiContext(
 }
 
 /**
+ * Authenticates the requester only — no capability or publish-state
+ * check. Destructive privacy controls (delete all data, disconnect a
+ * provider) must stay reachable even if the resource is later
+ * unpublished or withdrawn, so a user can still remove retained data
+ * and credentials.
+ */
+export async function getNetworkingOwnerContext(): Promise<NetworkingOwnerContextResult> {
+  const user = await getRequestUser();
+  if (!user) {
+    return { response: NextResponse.json({ error: 'Unauthorised' }, { status: 401 }) };
+  }
+  return { context: { user, service: createServiceClient() } };
+}
+
+/**
  * Records a text-free networking product event. Properties must never
  * contain names, firms, message content, or provider identifiers.
  */
 export async function recordNetworkingEvent(
-  context: NetworkingApiContext,
+  context: NetworkingOwnerContext,
   eventName: string,
   properties: Record<string, string | number | boolean | null> = {},
 ): Promise<void> {
@@ -113,11 +135,12 @@ export async function advanceContactStage(
 ): Promise<RelationshipStage> {
   const next = advanceStage(contact.stage, type, direction);
   if (next !== contact.stage) {
-    await context.service
+    const { error } = await context.service
       .from('networking_contacts')
       .update({ stage: next })
       .eq('id', contact.id)
       .eq('user_id', context.user.id);
+    if (error) throw error;
   }
   return next;
 }

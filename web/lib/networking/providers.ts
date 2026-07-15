@@ -10,7 +10,34 @@
 // nothing in the UI dead-ends when a provider is not configured.
 // ============================================================
 
+import { z } from 'zod';
 import type { NetworkingProvider } from '@trajectoryos/core/networking/types';
+
+const FETCH_TIMEOUT_MS = 10_000;
+
+/** fetch() with a bounded timeout; aborts surface as a network TypeError. */
+async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+const TokenExchangeResponseSchema = z.object({
+  access_token: z.string().min(1),
+  refresh_token: z.string().min(1).optional(),
+  scope: z.string().optional(),
+  id_token: z.string().optional(),
+});
+
+const AccountEmailResponseSchema = z.object({
+  email: z.string().optional(),
+  mail: z.string().optional(),
+  userPrincipalName: z.string().optional(),
+});
 
 export interface ProviderConfig {
   clientId: string;
@@ -148,21 +175,22 @@ export async function exchangeCode(
     code,
     code_verifier: codeVerifier,
   });
-  const response = await fetch(config.tokenUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body,
-  });
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(config.tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    });
+  } catch (cause) {
+    throw new ProviderError('Token exchange request timed out or failed to connect', cause);
+  }
   if (!response.ok) {
     throw new ProviderError(`Token exchange failed (${response.status})`);
   }
-  const json = (await response.json()) as {
-    access_token?: string;
-    refresh_token?: string;
-    scope?: string;
-    id_token?: string;
-  };
-  if (!json.access_token) throw new ProviderError('Token exchange returned no access token');
+  const parsed = TokenExchangeResponseSchema.safeParse(await response.json().catch(() => null));
+  if (!parsed.success) throw new ProviderError('Token exchange returned an unexpected response shape');
+  const json = parsed.data;
 
   let accountEmail = '';
   if (json.id_token) {
@@ -198,10 +226,16 @@ async function fetchAccountEmail(provider: NetworkingProvider, accessToken: stri
   const url = provider === 'google'
     ? 'https://openidconnect.googleapis.com/v1/userinfo'
     : 'https://graph.microsoft.com/v1.0/me';
-  const response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  } catch {
+    return '';
+  }
   if (!response.ok) return '';
-  const json = (await response.json()) as { email?: string; mail?: string; userPrincipalName?: string };
-  return json.email ?? json.mail ?? json.userPrincipalName ?? '';
+  const parsed = AccountEmailResponseSchema.safeParse(await response.json().catch(() => null));
+  if (!parsed.success) return '';
+  return parsed.data.email ?? parsed.data.mail ?? parsed.data.userPrincipalName ?? '';
 }
 
 /**
@@ -215,7 +249,7 @@ export async function revokeToken(
   refreshToken: string,
 ): Promise<void> {
   if (provider !== 'google' || !config.revokeUrl) return;
-  await fetch(config.revokeUrl, {
+  await fetchWithTimeout(config.revokeUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ token: refreshToken }),

@@ -136,6 +136,9 @@ export function MessageLabView({ contacts, messages, initialContactId, initialCh
     setError(null);
     try {
       const id = await ensureMessage();
+      await networkingApi(`/messages/${id}`, 'PATCH', {
+        subject, body, context: { personal_facts: facts, ask, prior_interaction: priorInteraction },
+      });
       const result = await networkingApi<{ draft: { subject: string; body: string; notes_for_student: string }; remaining: number; resetsAt: string }>(
         `/messages/${id}/draft`, 'POST',
       );
@@ -246,7 +249,7 @@ export function MessageLabView({ contacts, messages, initialContactId, initialCh
             </select>
             <select
               value={purpose}
-              onChange={(e) => { setPurpose(e.target.value as MessagePurpose); resetOutputs(); }}
+              onChange={(e) => { setPurpose(e.target.value as MessagePurpose); setMessageId(null); resetOutputs(); }}
               className={SELECT}
               aria-label="Purpose"
               disabled={state === 'sent'}

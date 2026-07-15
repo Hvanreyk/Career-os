@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import {
-  getNetworkingApiContext,
+  getNetworkingOwnerContext,
   recordNetworkingEvent,
 } from '@/lib/networking/server';
 
@@ -12,7 +12,7 @@ import {
  * recalled — that is disclosed in the UI before confirmation.
  */
 export async function DELETE() {
-  const result = await getNetworkingApiContext();
+  const result = await getNetworkingOwnerContext();
   if (result.response) return result.response;
   const { context } = result;
   const userId = context.user.id;

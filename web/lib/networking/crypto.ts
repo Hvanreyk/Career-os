@@ -23,7 +23,7 @@ export class TokenCryptoError extends Error {
 }
 
 function keyForVersion(version: number): Buffer {
-  const current = Number(process.env.NETWORKING_TOKEN_KEY_VERSION ?? '1');
+  const current = currentKeyVersion();
   const raw = version === current
     ? process.env.NETWORKING_TOKEN_KEY
     : process.env[`NETWORKING_TOKEN_KEY_V${version}`] ?? (version === 1 ? process.env.NETWORKING_TOKEN_KEY : undefined);
@@ -33,10 +33,17 @@ function keyForVersion(version: number): Buffer {
   return key;
 }
 
-/** Current key version for new ciphertexts. */
+/**
+ * Current key version for new ciphertexts. Fails closed: an invalid
+ * NETWORKING_TOKEN_KEY_VERSION must never silently select version 1
+ * and bypass an intended key rotation.
+ */
 export function currentKeyVersion(): number {
   const value = Number(process.env.NETWORKING_TOKEN_KEY_VERSION ?? '1');
-  return Number.isInteger(value) && value >= 1 ? value : 1;
+  if (!Number.isInteger(value) || value < 1) {
+    throw new TokenCryptoError('NETWORKING_TOKEN_KEY_VERSION must be a positive integer');
+  }
+  return value;
 }
 
 export interface TokenAad {

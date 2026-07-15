@@ -49,6 +49,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const contact = await loadOwnedContact(context, message.contact_id);
   if (!contact) return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
+  if (contact.do_not_contact) {
+    return NextResponse.json({ error: 'This contact is marked do-not-contact' }, { status: 422 });
+  }
 
   const now = new Date().toISOString();
   const interactionType = message.channel === 'email' ? 'email_sent' : 'linkedin_sent';

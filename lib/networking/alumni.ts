@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 // ============================================================
 // Aggregate alumni intelligence from the professionals database.
 //
@@ -12,13 +14,21 @@
 /** Minimum professionals at a firm before it appears in aggregates. */
 export const MIN_FIRM_TOTAL = 2;
 
-export interface AlumniProfessionalRow {
-  current_firm: string;
-  current_firm_tier: string;
-  current_role: string;
-  current_geography: string;
-  university: string;
-}
+/**
+ * Matches the exact five-column subset the target-map query selects
+ * from `professionals` — not the full ProfessionalRowSchema (lib/scoring/types.ts),
+ * which requires ~80 columns this aggregate view never fetches. Malformed
+ * rows are skipped defensively, matching the professionals-DB convention
+ * used elsewhere in the engine.
+ */
+export const AlumniProfessionalRowSchema = z.object({
+  current_firm: z.string(),
+  current_firm_tier: z.string(),
+  current_role: z.string(),
+  current_geography: z.string(),
+  university: z.string(),
+});
+export type AlumniProfessionalRow = z.infer<typeof AlumniProfessionalRowSchema>;
 
 export interface FirmAlumniAggregate {
   firm: string;
@@ -48,20 +58,27 @@ function normalizeUniversity(value: string): string {
 
 /**
  * Aggregates the professionals dataset around the student's university.
+ * Rows that fail validation are skipped defensively rather than
+ * aborting the whole aggregate (see AlumniProfessionalRowSchema).
  *
  * @param rows - Professional rows (service-role query, minimal columns)
  * @param studentUniversity - The student's university as they entered it
  * @returns Firm-level aggregates sorted by alumni count, then total size
  */
 export function computeAlumniIntel(
-  rows: AlumniProfessionalRow[],
+  rows: unknown[],
   studentUniversity: string,
 ): AlumniIntel {
+  const validRows = rows.flatMap((row) => {
+    const parsed = AlumniProfessionalRowSchema.safeParse(row);
+    return parsed.success ? [parsed.data] : [];
+  });
+
   const target = normalizeUniversity(studentUniversity);
   const byFirm = new Map<string, FirmAlumniAggregate & { geographies: Map<string, number> }>();
   let universityMatchCount = 0;
 
-  for (const row of rows) {
+  for (const row of validRows) {
     const firm = row.current_firm.trim();
     if (!firm) continue;
     const isAlum = target !== '' && normalizeUniversity(row.university) === target;
@@ -102,7 +119,7 @@ export function computeAlumniIntel(
   return {
     studentUniversity,
     universityMatchCount,
-    totalProfessionals: rows.length,
+    totalProfessionals: validRows.length,
     firms,
     topAlumniFirms: firms.filter((f) => f.alumniCount > 0).slice(0, 5).map((f) => f.firm),
   };

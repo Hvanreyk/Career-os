@@ -36,11 +36,14 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
 
   const { data: contact } = await context.service
     .from('networking_contacts')
-    .select('id, full_name, firm, role_title, seniority, city, stage, is_alum, email_normalized')
+    .select('id, full_name, firm, role_title, seniority, city, stage, is_alum, email_normalized, do_not_contact')
     .eq('id', message.contact_id)
     .eq('user_id', context.user.id)
     .maybeSingle();
   if (!contact) return NextResponse.json({ error: 'Contact not found' }, { status: 404 });
+  if (contact.do_not_contact) {
+    return NextResponse.json({ error: 'This contact is marked do-not-contact' }, { status: 422 });
+  }
 
   const messageContext = MessageContextSchema.safeParse(message.context);
   const ctx = messageContext.success

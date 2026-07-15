@@ -28,17 +28,23 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (input.notes !== undefined) update.notes = input.notes;
   if (Object.keys(update).length === 0) return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
 
-  const { data: updated, error } = await context.service
+  const { data: existing, error: lookupError } = await context.service
+    .from('networking_introductions')
+    .select('status')
+    .eq('id', id)
+    .eq('user_id', context.user.id)
+    .maybeSingle();
+  if (lookupError) return NextResponse.json({ error: 'Could not look up the introduction' }, { status: 500 });
+  if (!existing) return NextResponse.json({ error: 'Introduction not found' }, { status: 404 });
+
+  const { error } = await context.service
     .from('networking_introductions')
     .update(update)
     .eq('id', id)
-    .eq('user_id', context.user.id)
-    .select('id')
-    .maybeSingle();
+    .eq('user_id', context.user.id);
   if (error) return NextResponse.json({ error: 'Could not update the introduction' }, { status: 500 });
-  if (!updated) return NextResponse.json({ error: 'Introduction not found' }, { status: 404 });
 
-  if (input.status === 'made') {
+  if (input.status === 'made' && existing.status !== 'made') {
     await recordNetworkingEvent(context, 'networking_introduction_recorded', { status: 'made' });
   }
   return NextResponse.json({ ok: true });

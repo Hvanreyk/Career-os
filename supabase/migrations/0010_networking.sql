@@ -482,9 +482,10 @@ begin
     raise exception 'Invalid networking quota limit';
   end if;
 
-  -- Opportunistic pruning of expired, text-free counters (see 0008).
-  delete from networking_review_daily_usage
-  where usage_date < v_day - 31;
+  -- Expired-row pruning lives in cleanup_networking_operational_rows(),
+  -- not here: this table's primary key leads with user_id, so a
+  -- usage_date-only delete can't use it and would scan every user's
+  -- rows on every single draft/review request.
 
   insert into networking_review_daily_usage (user_id, usage_date, count)
   values (p_user_id, v_day, 1)
@@ -596,6 +597,8 @@ begin
   delete from networking_webhook_receipts where received_at < now() - interval '7 days';
   delete from networking_sync_jobs
   where status in ('completed', 'failed') and updated_at < now() - interval '30 days';
+  delete from networking_review_daily_usage
+  where usage_date < (timezone('Australia/Sydney', now())::date - 31);
 end;
 $$;
 
