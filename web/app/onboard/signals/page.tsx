@@ -3,72 +3,14 @@
 import { useRouter } from 'next/navigation';
 import { StepShell } from '@/components/onboard/StepShell';
 import { useOnboard } from '@/lib/onboard/context';
-
-const SIGNAL_GROUPS = [
-  {
-    label: 'Academic achievements',
-    options: [
-      { value: 'honours', label: 'Honours' },
-      { value: 'deans_list', label: "Dean's List" },
-      { value: 'first_in_class', label: 'First in class / subject' },
-      { value: 'subject_top_10_finance', label: 'Top 10 in Finance subject' },
-      { value: 'faculty_prize', label: 'Faculty prize' },
-      { value: 'university_medal', label: 'University medal' },
-      { value: 'school_dux', label: 'School Dux' },
-    ],
-  },
-  {
-    label: 'Finance & investment societies',
-    options: [
-      { value: 'investment_society_member', label: 'Investment society — member' },
-      { value: 'investment_society_committee', label: 'Investment society — committee' },
-      { value: 'investment_society_president', label: 'Investment society — president' },
-      { value: 'fin_society_committee', label: 'Finance society — committee' },
-      { value: 'consulting_society_committee', label: 'Consulting society — committee' },
-    ],
-  },
-  {
-    label: 'Competitions',
-    options: [
-      { value: 'case_comp_winner', label: 'Case comp — winner' },
-      { value: 'case_comp_finalist', label: 'Case comp — finalist' },
-      { value: 'stock_pitch_winner', label: 'Stock pitch competition — winner' },
-      { value: 'hackathon_winner', label: 'Hackathon — winner' },
-    ],
-  },
-  {
-    label: 'Certifications & courses',
-    options: [
-      { value: 'cfa_l1', label: 'CFA Level 1 (passed)' },
-      { value: 'cfa_l2', label: 'CFA Level 2 (passed)' },
-      { value: 'cfa_l3', label: 'CFA Level 3 (passed)' },
-      { value: 'modelling_course', label: 'Financial modelling course (BIWS, REFM, etc.)' },
-      { value: 'virtual_experience', label: 'Virtual experience program' },
-    ],
-  },
-  {
-    label: 'Programs & scholarships',
-    options: [
-      { value: 'scholarship', label: 'Academic scholarship' },
-      { value: 'women_in_banking_scholarship', label: 'Women in Banking scholarship' },
-      { value: 'exchange_program', label: 'Exchange / study abroad program' },
-    ],
-  },
-  {
-    label: 'Other',
-    options: [
-      { value: 'sports_rep', label: 'Sports representative (state / national)' },
-      { value: 'school_leadership', label: 'School leadership (captain, prefect)' },
-      { value: 'industry_award', label: 'Industry award' },
-    ],
-  },
-];
+import { SIGNAL_GROUPS } from '@trajectoryos/core/career-compass/taxonomy';
+import type { SignalTag } from '@/lib/onboard/types';
 
 export default function SignalsPage() {
   const { data, update } = useOnboard();
   const router = useRouter();
 
-  const toggle = (value: string) => {
+  const toggle = (value: SignalTag) => {
     const has = data.signals.includes(value);
     update({ signals: has ? data.signals.filter((s) => s !== value) : [...data.signals, value] });
   };

@@ -39,4 +39,13 @@ describe('computeFields — Y2 UNSW Co-op HD JPM student', () => {
     expect(c.months_until_penultimate_recruiting).toBeGreaterThanOrEqual(13);
     expect(c.months_until_penultimate_recruiting).toBeLessThanOrEqual(15);
   });
+
+  it('preserves the approved Release A unknown-as-zero duration behaviour', () => {
+    const experience = {
+      ...Y2_UNSW_COOP_HD_JPM.experiences[0]!,
+      duration_months: null,
+    };
+    const computed = computeFields({ experiences: [experience], signals: [] });
+    expect(computed.total_experience_months).toBe(0);
+  });
 });

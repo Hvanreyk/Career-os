@@ -6,114 +6,17 @@ import { StepShell } from '@/components/onboard/StepShell';
 import { useOnboard } from '@/lib/onboard/context';
 import type { ExperienceEntry, ExpType, FirmTier, Industry, HowObtained } from '@/lib/onboard/types';
 import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
-
-const EXP_TYPES: { value: ExpType; label: string }[] = [
-  { value: 'summer_internship', label: 'Summer Internship' },
-  { value: 'winter_internship', label: 'Winter Internship' },
-  { value: 'penultimate_internship', label: 'Penultimate Year Internship' },
-  { value: 'vacationer', label: 'Vacationer' },
-  { value: 'cadetship', label: 'Cadetship' },
-  { value: 'part_time', label: 'Part-time Role' },
-  { value: 'full_time', label: 'Full-time Role' },
-  { value: 'grad_program', label: 'Graduate Program' },
-];
-
-// Area = industry. Picked first; it determines which firm-level options
-// make sense (e.g. IB shows BB/EB/MM/Boutique, Consulting shows MBB/Tier 2/
-// Big 4/Boutique). Keeps 'capital_markets' out of the picker (superseded by
-// 'global_markets') and 'operations' out of the picker (removed as a
-// selectable Area) but both values stay valid in the schema for old data.
-const AREAS: { value: Industry; label: string }[] = [
-  { value: 'ib', label: 'Investment Banking' },
-  { value: 'global_markets', label: 'Global Markets (Sales & Trading)' },
-  { value: 'equity_research', label: 'Equity Research' },
-  { value: 'private_equity', label: 'Private Equity' },
-  { value: 'investment_management_equities', label: 'Investment Management — Equities' },
-  { value: 'investment_management_credit', label: 'Investment Management — Credit' },
-  { value: 'investment_management_real_estate', label: 'Investment Management — Real Estate' },
-  { value: 'consulting', label: 'Consulting' },
-  { value: 'big4_audit', label: 'Accounting — Audit' },
-  { value: 'big4_advisory', label: 'Accounting — M&A' },
-  { value: 'big4_business_advisory', label: 'Accounting — Business Advisory' },
-  { value: 'corporate_development', label: 'Corporate Development' },
-  { value: 'law', label: 'Law' },
-  { value: 'government', label: 'Government' },
-  { value: 'other', label: 'Other' },
-];
-
-const FIRM_TIER_LABELS: Record<FirmTier, string> = {
-  bb: 'Bulge Bracket (BB)',
-  elite_boutique: 'Elite Boutique',
-  mid_market: 'Mid-Market',
-  boutique: 'Boutique',
-  aus_big4_bank: 'Big 4 Australian Bank (CBA/NAB/Westpac/ANZ)',
-  mega_fund: 'Mega-Fund',
-  large_cap: 'Large-Cap',
-  global_manager: 'Global Asset Manager',
-  hedge_fund: 'Hedge Fund',
-  mbb: 'MBB',
-  tier2_consulting: 'Tier 2',
-  big4: 'Big 4',
-  mid_tier: 'Mid-Tier',
-  private_equity: 'Private Equity',
-  top_tier_law: 'Big 6',
-  mid_tier_law: 'Mid-Tier',
-  boutique_law: 'Boutique',
-  asx50: 'ASX50',
-  asx100: 'ASX100',
-  asx200: 'ASX200',
-  large_private: 'Large Private',
-  medium_private: 'Medium Private',
-  small_private: 'Small Private',
-  corporate: 'Corporate / Other',
-  startup: 'Startup',
-  local_government: 'Local Government',
-  state_government: 'State Government',
-  federal_government: 'Federal Government',
-  government: 'Government',
-  non_profit: 'Non-Profit',
-  other: 'Other',
-};
-
-// Which firm-level options are offered for each area, in display order.
-// The first entry is used as the default when an area is selected.
-// 'operations' has no entry in AREAS (removed as a selectable Area) but
-// still needs a mapping here to satisfy Record<Industry, ...> for old data.
-const AREA_FIRM_TIERS: Record<Industry, FirmTier[]> = {
-  ib: ['bb', 'elite_boutique', 'mid_market', 'boutique'],
-  global_markets: ['bb', 'elite_boutique', 'mid_market', 'boutique', 'aus_big4_bank'],
-  capital_markets: ['bb', 'elite_boutique', 'mid_market', 'boutique', 'aus_big4_bank'],
-  equity_research: ['bb', 'elite_boutique', 'mid_market', 'boutique'],
-  private_equity: ['mega_fund', 'large_cap', 'mid_market', 'boutique'],
-  investment_management_equities: ['global_manager', 'hedge_fund', 'boutique'],
-  investment_management_credit: ['global_manager', 'hedge_fund', 'boutique'],
-  investment_management_real_estate: ['global_manager', 'hedge_fund', 'boutique'],
-  consulting: ['mbb', 'tier2_consulting', 'big4', 'boutique'],
-  big4_audit: ['big4', 'mid_tier', 'boutique'],
-  big4_advisory: ['big4', 'mid_tier', 'boutique'],
-  big4_business_advisory: ['big4', 'mid_tier', 'boutique'],
-  operations: ['asx50', 'asx100', 'asx200', 'large_private', 'medium_private', 'small_private'],
-  corporate_development: ['asx50', 'asx100', 'asx200', 'large_private', 'medium_private', 'small_private'],
-  corporate: ['corporate'],
-  law: ['top_tier_law', 'mid_tier_law', 'boutique_law', 'other'],
-  government: ['federal_government', 'state_government', 'local_government'],
-  non_profit: ['non_profit'],
-  other: ['other'],
-};
+import {
+  ACQUISITION_METHOD_OPTIONS as HOW_OBTAINED,
+  AREA_FIRM_TIERS,
+  EXPERIENCE_TYPE_OPTIONS as EXP_TYPES,
+  FIRM_TIER_LABELS,
+  INDUSTRY_OPTIONS as AREAS,
+} from '@trajectoryos/core/career-compass/taxonomy';
 
 function firmTiersForArea(area: Industry): { value: FirmTier; label: string }[] {
   return AREA_FIRM_TIERS[area].map((value) => ({ value, label: FIRM_TIER_LABELS[value] }));
 }
-
-const HOW_OBTAINED: { value: HowObtained; label: string }[] = [
-  { value: 'online_application', label: 'Online application' },
-  { value: 'cold_email', label: 'Cold email / networking' },
-  { value: 'ocr', label: 'Campus recruitment (OCR)' },
-  { value: 'society_referral', label: 'Finance society referral' },
-  { value: 'internal_referral', label: 'Internal / personal referral' },
-  { value: 'co_op_program', label: 'Co-op program placement' },
-  { value: 'unknown', label: 'Other / not sure' },
-];
 
 const DURATIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 24, 36];
 
@@ -140,7 +43,7 @@ function ExperienceCard({
   onDelete: () => void;
 }) {
   const [open, setOpen] = useState(true);
-  const isInternship = ['summer_internship', 'winter_internship', 'penultimate_internship', 'internship', 'vacationer'].includes(exp.type);
+  const isInternship = ['summer_internship', 'winter_internship', 'penultimate_internship', 'vacationer'].includes(exp.type);
   const currentYear = new Date().getFullYear();
 
   return (
@@ -180,7 +83,11 @@ function ExperienceCard({
               <label className="text-xs text-slate-500 uppercase tracking-wider block mb-1.5">Type</label>
               <select
                 value={exp.type}
-                onChange={(e) => onUpdate({ ...exp, type: e.target.value as ExpType, converted_to_ft: ['full_time', 'grad_program'].includes(e.target.value) ? 'NA' : exp.converted_to_ft })}
+                onChange={(e) => {
+                  const type = e.target.value as ExpType;
+                  const internship = ['summer_internship', 'winter_internship', 'penultimate_internship', 'vacationer'].includes(type);
+                  onUpdate({ ...exp, type, converted_to_ft: internship ? exp.converted_to_ft : 'NA' });
+                }}
                 className="w-full bg-navy-800/60 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-gold-400/40"
               >
                 {EXP_TYPES.map((t) => <option key={t.value} value={t.value} className="bg-navy-900">{t.label}</option>)}

@@ -1,44 +1,30 @@
-// Form-layer types — slightly simpler than the engine's StudentProfile.
-// Derivation (university_tier, role_relevance, signals from WAM, etc.)
-// happens in /api/generate-report before the profile is passed to score().
+import type {
+  AtarBand,
+  SelectableAcquisitionMethod,
+  SelectableDegreeType,
+  SelectableExperienceType,
+  SelectableFirmTier,
+  SelectableHighSchoolType,
+  SelectableIndustry,
+  SelectableSignalTag,
+  TargetFirmTier,
+  TargetGeography,
+  WamBand as CareerCompassWamBand,
+} from '@trajectoryos/core/career-compass/taxonomy';
 
-export type TargetTier = 'bb' | 'elite_boutique' | 'mid_market' | 'boutique' | 'any';
-export type TargetGeo = 'sydney' | 'melbourne' | 'perth' | 'adelaide' | 'brisbane';
-export type DegreeType = 'bachelor' | 'double_degree' | 'combined_degree' | 'honours' | 'masters' | 'mba' | 'phd';
-export type WamBand = 'hd' | 'd' | 'c' | 'p' | 'unknown';
-export type HighSchoolType =
-  | 'gps' | 'cas' | 'aps' | 'selective'
-  | 'public_comprehensive' | 'catholic' | 'independent_other' | 'unknown';
-export type AtarBand = '99_plus' | '98_99' | '95_98' | '90_95' | '85_90' | 'below_85' | 'unknown';
-export type ExpType =
-  | 'summer_internship' | 'winter_internship' | 'penultimate_internship'
-  | 'internship' | 'vacationer' | 'cadetship'
-  | 'part_time' | 'full_time' | 'casual' | 'grad_program';
-export type FirmTier =
-  | 'bb' | 'elite_boutique' | 'mid_market' | 'boutique'
-  | 'aus_big4_bank'
-  | 'mega_fund' | 'large_cap'
-  | 'global_manager' | 'hedge_fund'
-  | 'mbb' | 'tier2_consulting'
-  | 'big4' | 'mid_tier'
-  | 'private_equity' | 'top_tier_law' | 'mid_tier_law' | 'boutique_law'
-  | 'asx50' | 'asx100' | 'asx200' | 'large_private' | 'medium_private' | 'small_private'
-  | 'corporate' | 'startup'
-  | 'local_government' | 'state_government' | 'federal_government'
-  | 'government' | 'non_profit' | 'other';
-export type Industry =
-  | 'ib' | 'global_markets' | 'capital_markets' | 'equity_research'
-  | 'private_equity'
-  | 'investment_management_equities' | 'investment_management_credit'
-  | 'investment_management_real_estate'
-  | 'consulting' | 'big4_advisory' | 'big4_business_advisory' | 'big4_audit'
-  | 'operations' | 'corporate_development'
-  | 'corporate'
-  | 'law' | 'government' | 'non_profit' | 'other';
-export type HowObtained =
-  | 'online_application' | 'cold_email' | 'society_referral'
-  | 'ocr' | 'internal_referral' | 'networking_event' | 'alumni_network'
-  | 'co_op_program' | 'scholarship' | 'conversion' | 'unknown';
+// Form-layer aliases. The Career Compass taxonomy module is the only source of
+// identifier truth; this file contains only the shape of the persisted form.
+export type TargetTier = TargetFirmTier;
+export type TargetGeo = TargetGeography;
+export type DegreeType = SelectableDegreeType;
+export type WamBand = CareerCompassWamBand;
+export type HighSchoolType = SelectableHighSchoolType;
+export type ExpType = SelectableExperienceType;
+export type FirmTier = SelectableFirmTier;
+export type Industry = SelectableIndustry;
+export type HowObtained = SelectableAcquisitionMethod;
+export type SignalTag = SelectableSignalTag;
+export type { AtarBand };
 
 export interface ExperienceEntry {
   type: ExpType;
@@ -74,8 +60,8 @@ export interface OnboardData {
   is_lateral_candidate: boolean;
   current_external_role: string;
 
-  // Step 5 — Signals (subset — rest auto-derived)
-  signals: string[];
+  // Step 5 — only user-selectable tags; server-derived tags are added later.
+  signals: SignalTag[];
 }
 
 export const EMPTY_ONBOARD: OnboardData = {

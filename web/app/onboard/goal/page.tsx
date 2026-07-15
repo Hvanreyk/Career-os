@@ -4,23 +4,10 @@ import { useRouter } from 'next/navigation';
 import { StepShell } from '@/components/onboard/StepShell';
 import { ChoiceButton } from '@/components/onboard/ChoiceButton';
 import { useOnboard } from '@/lib/onboard/context';
-import type { TargetTier, TargetGeo } from '@/lib/onboard/types';
-
-const TIERS: { value: TargetTier; label: string; description: string }[] = [
-  { value: 'bb', label: 'Bulge Bracket (BB)', description: 'Goldman, JPM, Morgan Stanley, Citi, UBS, Deutsche, Barrenjoey' },
-  { value: 'elite_boutique', label: 'Elite Boutique', description: 'Lazard, Jefferies, Moelis, Jarden, Rothschild' },
-  { value: 'mid_market', label: 'Mid-Market', description: 'Local and independent mid-market advisory firms' },
-  { value: 'boutique', label: 'Boutique', description: 'Smaller advisory and specialist firms' },
-  { value: 'any', label: 'Any Level', description: "I'm open — match me to all options" },
-];
-
-const GEOS: { value: TargetGeo; label: string }[] = [
-  { value: 'sydney', label: 'Sydney' },
-  { value: 'melbourne', label: 'Melbourne' },
-  { value: 'perth', label: 'Perth' },
-  { value: 'adelaide', label: 'Adelaide' },
-  { value: 'brisbane', label: 'Brisbane' },
-];
+import {
+  TARGET_GEOGRAPHY_OPTIONS as GEOS,
+  TARGET_TIER_OPTIONS as TIERS,
+} from '@trajectoryos/core/career-compass/taxonomy';
 
 export default function GoalPage() {
   const { data, update } = useOnboard();

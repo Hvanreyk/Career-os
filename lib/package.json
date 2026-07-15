@@ -5,7 +5,9 @@
   "description": "Shared scoring engine + LLM report layer for TrajectoryOS. Consumed by web/ as a workspace package and by root scripts/tests via relative imports.",
   "type": "module",
   "exports": {
+    "./career-compass/taxonomy": "./career-compass/taxonomy.ts",
     "./scoring": "./scoring/index.ts",
+    "./scoring/professional-adapter": "./scoring/professional-adapter.ts",
     "./scoring/types": "./scoring/types.ts",
     "./llm": "./llm/index.ts",
     "./llm/types": "./llm/types.ts",

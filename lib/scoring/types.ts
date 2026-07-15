@@ -1,7 +1,24 @@
 import { z } from 'zod';
+import {
+  AtarBandSchema,
+  CareerCompassSignalTagSchema,
+  DegreeTypeSchema,
+  ProfessionalAcquisitionMethodSchema,
+  ProfessionalCompatibilitySignalTagSchema,
+  ProfessionalExperienceTypeSchema,
+  ProfessionalFirmTierSchema,
+  ProfessionalHighSchoolTypeSchema,
+  ProfessionalIndustrySchema,
+  RoleFunctionSchema,
+  TargetFirmTierSchema,
+  TargetGeographySchema,
+  WamBandSchema,
+} from '../career-compass/taxonomy';
 
 // ============================================================
-// Enums (locked — match Database_v7_clean.xlsx reference sheet)
+// Scoring compatibility enums. Overlapping Career Compass identifiers come
+// from the shared onboarding taxonomy; database-only values remain explicit
+// compatibility inputs until their versioned semantic migration is approved.
 // ============================================================
 
 export const CurrentRole = z.enum(['ib_analyst', 'ib_associate', 'ib_vp']);
@@ -27,30 +44,19 @@ export const UniversityTier = z.enum([
 ]);
 export type UniversityTier = z.infer<typeof UniversityTier>;
 
-export const DegreeType = z.enum([
-  'bachelor', 'honours', 'masters', 'mba', 'double_degree', 'combined_degree', 'phd',
-]);
+export const DegreeType = DegreeTypeSchema;
 export type DegreeType = z.infer<typeof DegreeType>;
 
-export const WamBand = z.enum(['hd', 'd', 'c', 'p', 'unknown']);
+export const WamBand = WamBandSchema;
 export type WamBand = z.infer<typeof WamBand>;
 
-export const HighSchoolType = z.enum([
-  'gps', 'cas', 'aps', 'selective', 'public_comprehensive',
-  'catholic', 'independent_other', 'international', 'unknown',
-]);
+export const HighSchoolType = ProfessionalHighSchoolTypeSchema;
 export type HighSchoolType = z.infer<typeof HighSchoolType>;
 
-export const AtarBand = z.enum([
-  '99_plus', '98_99', '95_98', '90_95', '85_90', 'below_85', 'unknown',
-]);
+export const AtarBand = AtarBandSchema;
 export type AtarBand = z.infer<typeof AtarBand>;
 
-export const ExpType = z.enum([
-  'summer_internship', 'winter_internship', 'penultimate_internship',
-  'internship', 'vacationer', 'cadetship',
-  'part_time', 'full_time', 'casual', 'grad_program',
-]);
+export const ExpType = ProfessionalExperienceTypeSchema;
 export type ExpType = z.infer<typeof ExpType>;
 
 // 'elite_boutique_and_mm' is retained for backward compatibility with
@@ -65,20 +71,7 @@ export type ExpType = z.infer<typeof ExpType>;
 // rankings don't share the same scale.
 // 'asx50'..'small_private' are the firm-level options for the Operations
 // and Corporate Development onboarding areas.
-export const ExpFirmTier = z.enum([
-  'bb', 'elite_boutique', 'mid_market', 'elite_boutique_and_mm', 'boutique',
-  'aus_big4_bank',
-  'mega_fund', 'large_cap',
-  'global_manager', 'hedge_fund',
-  'mbb', 'tier2_consulting',
-  'big4', 'mid_tier',
-  'private_equity', 'top_tier_law', 'mid_tier_law', 'boutique_law',
-  'asx50', 'asx100', 'asx200', 'large_private', 'medium_private', 'small_private',
-  'corporate', 'startup',
-  'local_government', 'state_government', 'federal_government',
-  'government', 'non_profit',
-  'other', 'unknown',
-]);
+export const ExpFirmTier = ProfessionalFirmTierSchema;
 export type ExpFirmTier = z.infer<typeof ExpFirmTier>;
 
 // 'capital_markets' is retained for backward compatibility with existing
@@ -92,32 +85,13 @@ export type ExpFirmTier = z.infer<typeof ExpFirmTier>;
 // 'big4_advisory' now represents the M&A/transaction-services split of Big 4
 // advisory work; 'big4_business_advisory' is the newer, non-deal-facing
 // split. Both feed the same 'has_big4_advisory_experience' signal.
-export const ExpIndustry = z.enum([
-  'ib', 'global_markets', 'capital_markets', 'equity_research',
-  'private_equity',
-  'investment_management_equities', 'investment_management_credit',
-  'investment_management_real_estate',
-  'consulting', 'big4_advisory', 'big4_business_advisory', 'big4_audit',
-  'operations', 'corporate_development',
-  'corporate', 'law',
-  'government', 'non_profit', 'other',
-]);
+export const ExpIndustry = ProfessionalIndustrySchema;
 export type ExpIndustry = z.infer<typeof ExpIndustry>;
 
-export const ExpRoleFunction = z.enum([
-  'ib_coverage', 'ib_product', 'equity_research', 'transaction_services', 'advisory',
-  'audit', 'corp_finance', 'sales_trading', 'pe_investment',
-  'asset_management', 'law', 'consulting', 'other',
-]);
+export const ExpRoleFunction = RoleFunctionSchema;
 export type ExpRoleFunction = z.infer<typeof ExpRoleFunction>;
 
-export const ExpHowObtained = z.enum([
-  'cold_email', 'society_referral', 'ocr', 'online_application',
-  'internal_referral', 'networking_event', 'alumni_network',
-  'family_connection', 'recruiter', 'co_op_program', 'scholarship',
-  'graduate_program', 'conversion', 'return_offer', 'lateral',
-  'promotion', 'unknown', 'NA',
-]);
+export const ExpHowObtained = ProfessionalAcquisitionMethodSchema;
 export type ExpHowObtained = z.infer<typeof ExpHowObtained>;
 
 // Tristate boolean — internships convert/not, FT roles are 'NA'
@@ -132,33 +106,7 @@ export type DataSource = z.infer<typeof DataSource>;
 export const DataConfidence = z.enum(['high', 'medium', 'low']);
 export type DataConfidence = z.infer<typeof DataConfidence>;
 
-export const SignalTag = z.enum([
-  // Academic
-  'wam_hd', 'wam_distinction', 'wam_top_10',
-  'subject_top_10_finance', 'subject_top_10_law',
-  'first_in_class', 'deans_list', 'university_medal', 'faculty_prize',
-  'honours', 'honours_first_class',
-  // ATAR / school
-  'atar_99_plus', 'school_dux', 'hsc_distinguished_achiever', 'selective_school',
-  // Society / leadership
-  'fin_society_committee',
-  'investment_society_member', 'investment_society_committee', 'investment_society_president',
-  'consulting_society_committee', 'consulting_society_member',
-  'society_committee', 'school_leadership',
-  // Competitions
-  'case_comp_winner', 'case_comp_finalist', 'stock_pitch_winner', 'hackathon_winner',
-  // Certifications
-  'cfa_l1', 'cfa_l2', 'cfa_l3', 'chartered_accountant', 'modelling_course', 'virtual_experience',
-  // Programs
-  'co_op_program', 'scholarship', 'women_in_banking_scholarship', 'exchange_program',
-  // Awards
-  'industry_award',
-  // Experience flags
-  'has_pe_internship', 'has_law_clerkship',
-  'has_big4_audit', 'has_big4_advisory', 'has_consulting_experience',
-  // Sport
-  'sports_rep', 'sports_volunteer',
-]);
+export const SignalTag = ProfessionalCompatibilitySignalTagSchema;
 export type SignalTag = z.infer<typeof SignalTag>;
 
 // ============================================================
@@ -170,7 +118,7 @@ export type SignalTag = z.infer<typeof SignalTag>;
 // reusable ExpSlotSchema and compose it. A row may have any number
 // of slots filled (1-5); unfilled slots are entirely null.
 
-const ExpSlotSchema = z.object({
+export const ExperienceSchema = z.object({
   type: ExpType,
   firm: z.string().min(1),
   firm_tier: ExpFirmTier,
@@ -182,7 +130,7 @@ const ExpSlotSchema = z.object({
   how_obtained: ExpHowObtained,
   converted_to_ft: ConvertedToFt,
 });
-export type ExpSlot = z.infer<typeof ExpSlotSchema>;
+export type ExpSlot = z.infer<typeof ExperienceSchema>;
 
 // All-null slot — for unused exp4/exp5. Either every field is null or none.
 const ExpSlotEmpty = z.object({
@@ -206,7 +154,7 @@ export const ExpSlotOrEmpty = z.unknown().transform((value, ctx) => {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'expected object' });
     return z.NEVER;
   }
-  const target = v.type === null ? ExpSlotEmpty : ExpSlotSchema;
+  const target = v.type === null ? ExpSlotEmpty : ExperienceSchema;
   const result = target.safeParse(v);
   if (!result.success) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -390,10 +338,10 @@ export const UNI_TIER_RANKS: Record<UniversityTier, number> = {
 };
 
 // ----- Student profile (intake schema) -----
-export const TargetFirmTier = z.enum(['bb', 'elite_boutique', 'mid_market', 'boutique', 'any']);
+export const TargetFirmTier = TargetFirmTierSchema;
 export type TargetFirmTier = z.infer<typeof TargetFirmTier>;
 
-export const TargetGeography = z.enum(['sydney', 'melbourne', 'perth', 'adelaide', 'brisbane']);
+export const TargetGeography = TargetGeographySchema;
 export type TargetGeography = z.infer<typeof TargetGeography>;
 
 // Geographies with real professional data. Perth/Adelaide/Brisbane targets
@@ -428,8 +376,8 @@ export const StudentProfileSchema = z.object({
   atar_band: AtarBand,
 
   // Experiences + signals
-  experiences: z.array(ExpSlotSchema),
-  signals: z.array(SignalTag),
+  experiences: z.array(ExperienceSchema),
+  signals: z.array(CareerCompassSignalTagSchema),
 
   // Targeting
   target_role: z.literal('ib_analyst'),
@@ -445,35 +393,36 @@ export type StudentProfile = z.infer<typeof StudentProfileSchema>;
 // ----- Professional (canonical engine shape — experiences as array) -----
 //
 // The DB stores experiences in 5 inlined slots; the engine wants them
-// as a single array. `toCanonicalProfessional` collapses the slots.
+// as a single array. `toCanonicalProfessional` collapses the slots. Private
+// identity is deliberately excluded because scoring never consumes it.
 
-export interface Professional {
-  id: string;
-  full_name_internal: string;
-  current_role: CurrentRole;
-  current_firm: string;
-  current_firm_tier: CurrentFirmTier;
-  current_geography: Geography;
-  current_role_start_year: number;
-  years_to_current_role: number;
-  university: string;
-  university_tier: UniversityTier;
-  degree: string;
-  degree_type: DegreeType;
-  majors: string | null;
-  wam_band: WamBand;
-  graduation_year: number | null;
-  has_honours: boolean;
-  has_masters_or_second_degree: boolean;
-  high_school: string | null;
-  high_school_type: HighSchoolType;
-  atar_band: AtarBand;
-  experiences: Experience[];
-  signals: SignalTag[];
-  path_summary: string | null;
-  data_source: DataSource;
-  data_confidence: DataConfidence;
-}
+export const ProfessionalSchema = z.object({
+  id: z.string().regex(/^P\d{3,}$/, 'id must be P followed by digits'),
+  current_role: CurrentRole,
+  current_firm: z.string().min(1),
+  current_firm_tier: CurrentFirmTier,
+  current_geography: Geography,
+  current_role_start_year: z.number().int().min(1990).max(2100),
+  years_to_current_role: z.number().int().nonnegative(),
+  university: z.string().min(1),
+  university_tier: UniversityTier,
+  degree: z.string().min(1),
+  degree_type: DegreeType,
+  majors: z.string().nullable(),
+  wam_band: WamBand,
+  graduation_year: z.number().int().min(1990).max(2100).nullable(),
+  has_honours: z.boolean(),
+  has_masters_or_second_degree: z.boolean(),
+  high_school: z.string().nullable(),
+  high_school_type: HighSchoolType,
+  atar_band: AtarBand,
+  experiences: z.array(ExperienceSchema),
+  signals: z.array(SignalTag),
+  path_summary: z.string().nullable(),
+  data_source: DataSource,
+  data_confidence: DataConfidence,
+});
+export type Professional = z.infer<typeof ProfessionalSchema>;
 
 export function toCanonicalProfessional(row: ProfessionalRow): Professional {
   const slots = [row.exp1, row.exp2, row.exp3, row.exp4, row.exp5];
@@ -486,7 +435,6 @@ export function toCanonicalProfessional(row: ProfessionalRow): Professional {
   }
   return {
     id: row.id,
-    full_name_internal: row.full_name_internal,
     current_role: row.current_role,
     current_firm: row.current_firm,
     current_firm_tier: row.current_firm_tier,
