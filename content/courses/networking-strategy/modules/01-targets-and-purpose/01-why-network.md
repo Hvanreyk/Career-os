@@ -3,7 +3,7 @@ slug: why-network
 title: Why Networking Is Core to IB Recruiting
 est_minutes: 9
 region: au
-status: draft
+status: published
 last_reviewed: "2026-07-15"
 sources:
   - label: Australian Government — How to network and find opportunities

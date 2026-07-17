@@ -1,10 +1,10 @@
-status: draft
+status: published
 questions:
   - slug: q1
     prompt: What makes personalisation credible to the reader?
     options:
-      - { id: a, text: Long, detailed research shown in the message }
-      - { id: b, text: One or two specific, verifiable facts about a genuine connection }
+      - { id: a, text: "Long, detailed research shown in the message" }
+      - { id: b, text: "One or two specific, verifiable facts about a genuine connection" }
       - { id: c, text: Flattering language about their career }
     correct: b
     explanation: A short, specific and true detail proves real research far better than length or flattery.

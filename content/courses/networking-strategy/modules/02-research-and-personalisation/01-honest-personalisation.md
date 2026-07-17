@@ -3,7 +3,7 @@ slug: honest-personalisation
 title: Finding Truthful Common Ground
 est_minutes: 8
 region: au
-status: draft
+status: published
 last_reviewed: "2026-07-15"
 ---
 

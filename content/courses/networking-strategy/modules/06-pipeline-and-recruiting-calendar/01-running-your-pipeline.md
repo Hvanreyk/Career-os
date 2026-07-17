@@ -3,7 +3,7 @@ slug: running-your-pipeline
 title: A Sustainable Weekly Cadence
 est_minutes: 10
 region: au
-status: draft
+status: published
 last_reviewed: "2026-07-15"
 sources:
   - label: Australian Government — Build your network
