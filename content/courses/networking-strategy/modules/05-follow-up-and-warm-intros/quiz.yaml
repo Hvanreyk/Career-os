@@ -4,7 +4,7 @@ questions:
     prompt: When should you send a thank-you after a coffee chat?
     options:
       - { id: a, text: Within 24 hours }
-      - { id: b, text: Within a month, whenever convenient }
+      - { id: b, text: "Within a month, whenever convenient" }
       - { id: c, text: Only if you want something else from them }
     correct: a
     explanation: A prompt, specific thank-you is the highest-value follow-up message and should never be skipped or delayed.
@@ -12,7 +12,7 @@ questions:
     prompt: If a contact has not replied to your first message after a week, what should you do?
     options:
       - { id: a, text: Send multiple follow-ups until they respond }
-      - { id: b, text: Send one brief, polite follow-up, then let it rest if there is still no reply }
+      - { id: b, text: "Send one brief, polite follow-up, then let it rest if there is still no reply" }
       - { id: c, text: Assume they are uninterested and never contact them again }
     correct: b
     explanation: One follow-up is normal persistence; more starts to read as pressure. Silence is common and not necessarily a rejection.

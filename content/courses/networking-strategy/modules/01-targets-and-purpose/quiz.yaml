@@ -4,7 +4,7 @@ questions:
     prompt: What is the most accurate description of networking in IB recruiting?
     options:
       - { id: a, text: Asking senior bankers to get you an interview }
-      - { id: b, text: Building genuine relationships that may, over time, lead to advice or a referral }
+      - { id: b, text: "Building genuine relationships that may, over time, lead to advice or a referral" }
       - { id: c, text: Messaging as many people as possible at target firms }
     correct: b
     explanation: Networking is relationship-building first; referrals are an earned, later-stage outcome — not the opening ask.
@@ -12,7 +12,7 @@ questions:
     prompt: What coverage should you aim for at a serious target firm?
     options:
       - { id: a, text: One senior contact only }
-      - { id: b, text: As many contacts as possible, regardless of seniority }
+      - { id: b, text: "As many contacts as possible, regardless of seniority" }
       - { id: c, text: Roughly 2-3 junior contacts and at least one VP+ contact }
     correct: c
     explanation: Juniors are more likely to reply and remember recruiting clearly; seniors carry more influence once a relationship is established.
@@ -27,8 +27,8 @@ questions:
   - slug: q4
     prompt: When is it appropriate to ask a new contact for a referral?
     options:
-      - { id: a, text: In your first message, so you do not waste their time }
+      - { id: a, text: "In your first message, so you do not waste their time" }
       - { id: b, text: Only once a real relationship exists and they choose to offer it }
-      - { id: c, text: Whenever you need one, regardless of relationship stage }
+      - { id: c, text: "Whenever you need one, regardless of relationship stage" }
     correct: b
     explanation: A referral is something a relationship earns over time — it is not a reasonable opening request.
