@@ -3,7 +3,7 @@ slug: writing-the-first-message
 title: Writing a Cold Message That Gets Read
 est_minutes: 11
 region: au
-status: draft
+status: published
 last_reviewed: "2026-07-15"
 ---
 

@@ -3,7 +3,7 @@ slug: follow-up-and-referrals
 title: Following Up Without Becoming Noise
 est_minutes: 10
 region: au
-status: draft
+status: published
 last_reviewed: "2026-07-15"
 ---
 

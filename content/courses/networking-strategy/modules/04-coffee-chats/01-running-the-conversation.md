@@ -3,7 +3,7 @@ slug: running-the-conversation
 title: Preparing For and Running a Coffee Chat
 est_minutes: 10
 region: au
-status: draft
+status: published
 last_reviewed: "2026-07-15"
 ---
 
