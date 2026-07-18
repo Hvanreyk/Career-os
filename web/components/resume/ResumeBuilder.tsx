@@ -33,6 +33,15 @@ export interface WorkspaceRows {
 }
 
 /**
+ * The next sort_order for a new sibling. Uses max(sibling)+1 rather than
+ * sibling count, so a gap left by a prior deletion (e.g. [0, 2]) never
+ * produces a duplicate position.
+ */
+function nextSortOrder(siblings: { sort_order: number }[]): number {
+  return siblings.length === 0 ? 0 : Math.max(...siblings.map((row) => row.sort_order)) + 1;
+}
+
+/**
  * The resume builder workspace: contact header, structured sections /
  * entries / bullets editing, and the per-bullet AI critique panel.
  */
@@ -49,8 +58,18 @@ export function ResumeBuilder({ initialData }: Props) {
   const [newHeading, setNewHeading] = useState('Experience');
   const [newKind, setNewKind] = useState<ResumeSectionKind>('experience');
   const [dialog, setDialog] = useState<'import' | 'autocreate' | 'improve' | 'tailor' | null>(null);
+  const [critiqueDirty, setCritiqueDirty] = useState(false);
 
   const selected = bullets.find((bullet) => bullet.id === selectedId) ?? null;
+
+  /** Switches the selected bullet, confirming first if the critique panel has unsaved edits. */
+  function selectBullet(bullet: ResumeBulletRow) {
+    if (critiqueDirty && bullet.id !== selectedId) {
+      if (!window.confirm('You have unsaved changes to the current bullet. Discard them and switch?')) return;
+    }
+    setCritiqueDirty(false);
+    setSelectedId(bullet.id);
+  }
 
   useEffect(() => {
     void api<{ remaining: number }>('/critique', 'GET')
@@ -105,7 +124,7 @@ export function ResumeBuilder({ initialData }: Props) {
     setBusy('section'); setError(null);
     try {
       const result = await api<{ section: ResumeSectionRow }>('/sections', 'POST', {
-        resumeId: resume.id, kind: newKind, heading: newHeading, sortOrder: sections.length,
+        resumeId: resume.id, kind: newKind, heading: newHeading, sortOrder: nextSortOrder(sections),
       });
       setSections((rows) => [...rows, result.section]); setNewHeading('');
     } catch (value) { fail(value); } finally { setBusy(null); }
@@ -142,15 +161,16 @@ export function ResumeBuilder({ initialData }: Props) {
     ]);
   }
 
-  async function addEntry(sectionId: string, org: string) {
+  async function addEntry(sectionId: string, org: string): Promise<boolean> {
     setBusy('entry'); setError(null);
     try {
-      const count = entries.filter((entry) => entry.section_id === sectionId).length;
+      const siblings = entries.filter((entry) => entry.section_id === sectionId);
       const result = await api<{ entry: ResumeEntryRow }>('/entries', 'POST', {
-        sectionId, org, sortOrder: count,
+        sectionId, org, sortOrder: nextSortOrder(siblings),
       });
       setEntries((rows) => [...rows, result.entry]);
-    } catch (value) { fail(value); } finally { setBusy(null); }
+      return true;
+    } catch (value) { fail(value); return false; } finally { setBusy(null); }
   }
 
   async function updateEntry(id: string, patch: { org?: string; roleTitle?: string | null; location?: string | null; dateRange?: string | null; sortOrder?: number }) {
@@ -182,18 +202,19 @@ export function ResumeBuilder({ initialData }: Props) {
     ]);
   }
 
-  async function addBullet(sectionId: string, entryId: string | null, text: string) {
+  async function addBullet(sectionId: string, entryId: string | null, text: string): Promise<boolean> {
     setBusy('bullet'); setError(null);
     try {
-      const count = bullets.filter((bullet) =>
+      const siblings = bullets.filter((bullet) =>
         entryId ? bullet.entry_id === entryId : bullet.section_id === sectionId && bullet.entry_id === null,
-      ).length;
+      );
       const result = await api<{ bullet: ResumeBulletRow }>('/bullets', 'POST', {
-        sectionId, entryId, text, status: 'draft', sortOrder: count,
+        sectionId, entryId, text, status: 'draft', sortOrder: nextSortOrder(siblings),
       });
       setBullets((rows) => [...rows, result.bullet]);
-      setSelectedId(result.bullet.id);
-    } catch (value) { fail(value); } finally { setBusy(null); }
+      selectBullet(result.bullet);
+      return true;
+    } catch (value) { fail(value); return false; } finally { setBusy(null); }
   }
 
   async function moveBullet(bullet: ResumeBulletRow, siblings: ResumeBulletRow[], delta: number) {
@@ -280,7 +301,7 @@ export function ResumeBuilder({ initialData }: Props) {
       {dialog === 'improve' && <ImproveDialog onClose={() => setDialog(null)} onApplied={setWorkspace} />}
       {dialog === 'tailor' && <TailorDialog onClose={() => setDialog(null)} onApplied={setWorkspace} />}
 
-      <ContactHeader resume={resume} busy={busy === 'contact'} onSave={(patch) => void saveContact(patch)} />
+      <ContactHeader key={resume.updated_at} resume={resume} busy={busy === 'contact'} onSave={(patch) => void saveContact(patch)} />
 
       <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] gap-6 items-start">
         <div className="space-y-4">
@@ -303,12 +324,12 @@ export function ResumeBuilder({ initialData }: Props) {
             onUpdateSection={(id, patch) => void updateSection(id, patch)}
             onDeleteSection={(id) => void deleteSection(id)}
             onMoveSection={(section, delta) => void moveSection(section, delta)}
-            onAddEntry={(sectionId, org) => void addEntry(sectionId, org)}
+            onAddEntry={(sectionId, org) => addEntry(sectionId, org)}
             onUpdateEntry={(id, patch) => void updateEntry(id, patch)}
             onDeleteEntry={(id) => void deleteEntry(id)}
             onMoveEntry={(entry, siblings, delta) => void moveEntry(entry, siblings, delta)}
-            onAddBullet={(sectionId, entryId, text) => void addBullet(sectionId, entryId, text)}
-            onSelectBullet={(bullet) => setSelectedId(bullet.id)}
+            onAddBullet={(sectionId, entryId, text) => addBullet(sectionId, entryId, text)}
+            onSelectBullet={selectBullet}
             onMoveBullet={(bullet, siblings, delta) => void moveBullet(bullet, siblings, delta)}
           />
         </div>
@@ -324,6 +345,7 @@ export function ResumeBuilder({ initialData }: Props) {
               revisions={revisions.filter((revision) => revision.bullet_id === selected.id)}
               remaining={remaining}
               onRemainingChange={setRemaining}
+              onDirtyChange={setCritiqueDirty}
               onBulletChanged={(bullet) => setBullets((rows) => rows.map((row) => row.id === bullet.id ? bullet : row))}
               onRevisionSaved={(revision, bulletText) => {
                 setBullets((rows) => rows.map((row) => row.id === revision.bullet_id ? { ...row, text: bulletText } : row));

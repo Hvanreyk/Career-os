@@ -29,11 +29,11 @@ interface Props {
   onUpdateSection: (id: string, patch: { heading?: string; kind?: ResumeSectionKind; sortOrder?: number }) => void;
   onDeleteSection: (id: string) => void;
   onMoveSection: (section: ResumeSectionRow, delta: number) => void;
-  onAddEntry: (sectionId: string, org: string) => void;
+  onAddEntry: (sectionId: string, org: string) => Promise<boolean>;
   onUpdateEntry: (id: string, patch: { org?: string; roleTitle?: string | null; location?: string | null; dateRange?: string | null; sortOrder?: number }) => void;
   onDeleteEntry: (id: string) => void;
   onMoveEntry: (entry: ResumeEntryRow, siblings: ResumeEntryRow[], delta: number) => void;
-  onAddBullet: (sectionId: string, entryId: string | null, text: string) => void;
+  onAddBullet: (sectionId: string, entryId: string | null, text: string) => Promise<boolean>;
   onSelectBullet: (bullet: ResumeBulletRow) => void;
   onMoveBullet: (bullet: ResumeBulletRow, siblings: ResumeBulletRow[], delta: number) => void;
 }
@@ -116,7 +116,12 @@ export function SectionList({
               <button
                 onClick={() => {
                   const org = newEntryOrg[section.id]?.trim();
-                  if (org) { onAddEntry(section.id, org); setNewEntryOrg((values) => ({ ...values, [section.id]: '' })); }
+                  if (!org) return;
+                  void (async () => {
+                    if (await onAddEntry(section.id, org)) {
+                      setNewEntryOrg((values) => ({ ...values, [section.id]: '' }));
+                    }
+                  })();
                 }}
                 disabled={!newEntryOrg[section.id]?.trim() || busy}
                 aria-label={`Add entry to ${section.heading}`}
@@ -149,7 +154,12 @@ export function SectionList({
                   <button
                     onClick={() => {
                       const text = newLooseBullet[section.id]?.trim();
-                      if (text) { onAddBullet(section.id, null, text); setNewLooseBullet((values) => ({ ...values, [section.id]: '' })); }
+                      if (!text) return;
+                      void (async () => {
+                        if (await onAddBullet(section.id, null, text)) {
+                          setNewLooseBullet((values) => ({ ...values, [section.id]: '' }));
+                        }
+                      })();
                     }}
                     disabled={!newLooseBullet[section.id]?.trim() || busy}
                     aria-label={`Add bullet to ${section.heading}`}

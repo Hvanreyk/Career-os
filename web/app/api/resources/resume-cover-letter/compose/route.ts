@@ -8,17 +8,32 @@ import { StudentProfileSchema, type StudentProfile } from '@trajectoryos/core/sc
 import { getResumeApiContext, recordResumeEvent, type ResumeApiContext } from '@/lib/resume/server';
 import { createResumeAiJob } from '@/lib/resume/jobs';
 
-async function loadStudentProfile(context: ResumeApiContext): Promise<StudentProfile | null> {
-  const { data } = await context.service
+interface ProfileLookup {
+  profile: StudentProfile | null;
+  // True only for a query/infrastructure failure — distinct from "the user
+  // simply hasn't completed onboarding yet", which must not surface as a 500.
+  failed: boolean;
+}
+
+async function loadStudentProfile(context: ResumeApiContext): Promise<ProfileLookup> {
+  const { data, error } = await context.service
     .from('student_profiles')
     .select('profile')
     .eq('user_id', context.user.id)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (!data?.profile) return null;
+  if (error) {
+    console.error('resume compose: student_profiles lookup failed:', error.message);
+    return { profile: null, failed: true };
+  }
+  if (!data?.profile) return { profile: null, failed: false };
   const parsed = StudentProfileSchema.safeParse(data.profile);
-  return parsed.success ? parsed.data : null;
+  if (!parsed.success) {
+    console.error('resume compose: stored student profile failed schema validation:', parsed.error.message);
+    return { profile: null, failed: false };
+  }
+  return { profile: parsed.data, failed: false };
 }
 
 /**
@@ -31,7 +46,8 @@ export async function GET() {
   const result = await getResumeApiContext();
   if (result.response) return result.response;
   const { context } = result;
-  const profile = await loadStudentProfile(context);
+  const { profile, failed } = await loadStudentProfile(context);
+  if (failed) return NextResponse.json({ error: 'Could not load your profile' }, { status: 500 });
   if (!profile) {
     return NextResponse.json({
       available: false,
@@ -60,7 +76,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid additional details' }, { status: 400 });
   }
 
-  const profile = await loadStudentProfile(context);
+  const { profile, failed } = await loadStudentProfile(context);
+  if (failed) return NextResponse.json({ error: 'Could not load your profile' }, { status: 500 });
   if (!profile) {
     return NextResponse.json({
       error: 'Complete onboarding first — auto-create builds from your Career Compass profile',

@@ -62,7 +62,17 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ status: current.status }, { status: 202 });
   }
 
-  const claimed = job as { id: string; kind: ResumeAiJobKind; input: Record<string, unknown> };
+  const claimed = job as {
+    id: string;
+    kind: ResumeAiJobKind;
+    input: Record<string, unknown>;
+    processing_started_at: string;
+  };
+  // Gate the final write on this exact lease (status AND the claimed
+  // timestamp), not just status='processing'. If the lease expired mid-call
+  // and a second worker reclaimed the job, its processing_started_at will
+  // differ, so this stale worker's update matches zero rows instead of
+  // clobbering the newer attempt.
   try {
     const outcome = await runGenerator(claimed.kind, claimed.input);
     const { error: updateError } = await context.service.from('resume_ai_jobs')
@@ -76,7 +86,8 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       })
       .eq('id', id)
       .eq('user_id', context.user.id)
-      .eq('status', 'processing');
+      .eq('status', 'processing')
+      .eq('processing_started_at', claimed.processing_started_at);
     if (updateError) {
       console.error('Failed to save completed resume AI job:', updateError);
       return NextResponse.json({ error: 'Failed to save AI result' }, { status: 500 });
@@ -92,7 +103,8 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       .update({ status: 'error', error_message: message })
       .eq('id', id)
       .eq('user_id', context.user.id)
-      .eq('status', 'processing');
+      .eq('status', 'processing')
+      .eq('processing_started_at', claimed.processing_started_at);
     await context.service.rpc('release_resume_ai_quota', {
       p_user_id: context.user.id, p_kind: claimed.kind,
     });

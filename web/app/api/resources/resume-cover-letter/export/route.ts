@@ -3,12 +3,13 @@ import { z } from 'zod';
 import { applyChanges } from '@trajectoryos/core/resume/apply';
 import { toResumeDocument } from '@trajectoryos/core/resume/assemble';
 import {
+  hasResumeContent,
   ResumeChangeListSchema,
   ResumeDocumentSchema,
 } from '@trajectoryos/core/resume/document';
 import { getResumeApiContext, recordResumeEvent } from '@/lib/resume/server';
 import { loadResumeWorkspace } from '@/lib/resume/workspace';
-import { buildExportFilename } from '@/lib/resume/export/template';
+import { buildContentDispositionFilename, buildExportFilename } from '@/lib/resume/export/template';
 
 const QuerySchema = z.object({
   format: z.enum(['pdf', 'docx']),
@@ -62,7 +63,7 @@ export async function GET(request: Request) {
     }
   }
 
-  if (document.sections.length === 0) {
+  if (!hasResumeContent(document)) {
     return NextResponse.json({ error: 'Add some resume content before exporting' }, { status: 422 });
   }
 
@@ -88,10 +89,11 @@ export async function GET(request: Request) {
     format: parsed.data.format,
     from_job: Boolean(parsed.data.jobId),
   });
+  const { ascii, encoded } = buildContentDispositionFilename(filename, parsed.data.format);
   return new NextResponse(new Uint8Array(body), {
     headers: {
       'Content-Type': contentType,
-      'Content-Disposition': `attachment; filename="${filename}.${parsed.data.format}"`,
+      'Content-Disposition': `attachment; filename="${ascii}"; filename*=UTF-8''${encoded}`,
       'Cache-Control': 'no-store',
     },
   });

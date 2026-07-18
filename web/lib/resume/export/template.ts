@@ -63,3 +63,34 @@ export function buildExportFilename(document: ResumeDocument): string {
     .trim();
   return name ? `${name} Resume` : 'Resume';
 }
+
+export interface ContentDispositionFilename {
+  /** Quoted `filename` fallback — stripped to the Latin-1/ASCII byte range Content-Disposition requires. */
+  ascii: string;
+  /** Percent-encoded `filename*` value (RFC 5987) preserving the original Unicode name. */
+  encoded: string;
+}
+
+// Combining diacritical marks (U+0300–U+036F) that NFKD normalization
+// splits accented letters into, e.g. "é" -> "e" + U+0301.
+const COMBINING_DIACRITICS = new RegExp('[\\u0300-\\u036f]', 'g');
+
+/**
+ * Builds header-safe filename values for a Content-Disposition response.
+ * A display name containing non-ASCII characters (e.g. an accented name)
+ * cannot go directly into a header value, so this emits an ASCII fallback
+ * alongside the RFC 5987 `filename*` form browsers prefer when present.
+ */
+export function buildContentDispositionFilename(name: string, extension: string): ContentDispositionFilename {
+  const full = `${name}.${extension}`;
+  const ascii = full
+    .normalize('NFKD')
+    .replace(COMBINING_DIACRITICS, '')
+    .replace(/[^\x20-\x7E]/g, '')
+    .replace(/["\\]/g, '')
+    .trim();
+  return {
+    ascii: ascii || `Resume.${extension}`,
+    encoded: encodeURIComponent(full),
+  };
+}

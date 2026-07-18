@@ -8,6 +8,7 @@ import {
   type ResumeImproveOutput,
 } from '../resume/document';
 import { serializeResumeForPrompt } from '../resume/serialize';
+import { neutralizeTagSequences } from './prompt-safety';
 
 const MODEL = process.env.OPENAI_CRITIQUE_MODEL ?? 'gpt-5.6';
 const MAX_RETRIES = 2;
@@ -71,7 +72,7 @@ export function buildResumeImproveSystemPrompt(): string {
 export function buildResumeImproveUserMessage(document: ResumeDocument): string {
   return [
     '<resume_snapshot>',
-    serializeResumeForPrompt(document),
+    neutralizeTagSequences(serializeResumeForPrompt(document)),
     '</resume_snapshot>',
   ].join('\n');
 }

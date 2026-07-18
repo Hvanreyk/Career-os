@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ResumeAiJobRow } from '@trajectoryos/core/resume/document';
 import { api } from './api';
 
@@ -27,6 +27,10 @@ export function useResumeAiJob() {
   const [state, setState] = useState<ResumeAiJobState>(IDLE);
   const activeRun = useRef(0);
 
+  // Stop polling/processing once the owning component unmounts (e.g. the
+  // dialog is closed), even if reset() was never explicitly called.
+  useEffect(() => () => { activeRun.current += 1; }, []);
+
   const reset = useCallback(() => {
     activeRun.current += 1;
     setState(IDLE);
@@ -48,12 +52,20 @@ export function useResumeAiJob() {
       const deadline = Date.now() + POLL_TIMEOUT_MS;
       for (;;) {
         if (activeRun.current !== runId) return;
-        const { job } = await api<{ job: ResumeAiJobRow }>(`/ai-jobs/${jobId}`, 'GET');
-        if (job.status === 'completed') {
+        // A transient network/server error while polling doesn't abandon an
+        // otherwise still-running job — keep retrying until the deadline.
+        let job: ResumeAiJobRow | null = null;
+        try {
+          ({ job } = await api<{ job: ResumeAiJobRow }>(`/ai-jobs/${jobId}`, 'GET'));
+        } catch {
+          job = null;
+        }
+        if (activeRun.current !== runId) return;
+        if (job?.status === 'completed') {
           setState({ phase: 'completed', jobId, output: job.output, error: null });
           return;
         }
-        if (job.status === 'error') {
+        if (job?.status === 'error') {
           setState({ phase: 'error', jobId, output: null, error: job.error_message ?? 'AI generation failed' });
           return;
         }

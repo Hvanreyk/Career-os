@@ -32,7 +32,7 @@ export function TailorDialog({ onClose, onApplied }: Props) {
   const [jobDescription, setJobDescription] = useState('');
   const [applying, setApplying] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
-  const { state, run } = useResumeAiJob();
+  const { state, run, reset } = useResumeAiJob();
 
   const tailored = state.phase === 'completed'
     ? TailorOutputSchema.safeParse(state.output)
@@ -78,6 +78,14 @@ export function TailorDialog({ onClose, onApplied }: Props) {
             onApply={(accepted) => void apply(accepted)}
             onCancel={onClose}
           />
+        </div>
+      ) : state.phase === 'completed' ? (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-red-400/20 bg-red-400/10 p-4 text-red-300 text-sm flex gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+            The AI returned a tailoring result we couldn&apos;t validate. Nothing was applied — you can try again.
+          </div>
+          <button onClick={() => reset()} className="px-4 py-2 rounded-lg border border-white/10 text-slate-300 text-sm">Try again</button>
         </div>
       ) : (
         <div className="space-y-4">

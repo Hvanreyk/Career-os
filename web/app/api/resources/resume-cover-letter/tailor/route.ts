@@ -5,6 +5,7 @@ import {
   RESUME_TAILOR_GENERATION_VERSION,
 } from '@trajectoryos/core/llm/resume-tailor';
 import { toResumeDocument } from '@trajectoryos/core/resume/assemble';
+import { hasResumeContent } from '@trajectoryos/core/resume/document';
 import { getResumeApiContext, recordResumeEvent } from '@/lib/resume/server';
 import { createResumeAiJob } from '@/lib/resume/jobs';
 import { loadResumeWorkspace } from '@/lib/resume/workspace';
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
   const document = toResumeDocument(
     workspace.resume, workspace.sections, workspace.entries, workspace.bullets,
   );
-  if (document.sections.length === 0) {
+  if (!hasResumeContent(document)) {
     return NextResponse.json({ error: 'Add some resume content before tailoring' }, { status: 422 });
   }
 

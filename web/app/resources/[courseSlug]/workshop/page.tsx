@@ -38,13 +38,15 @@ export default async function ResumeWorkshopPage({ params }: { params: Promise<{
     sections = (sectionRows ?? []) as ResumeWorkspaceData['sections'];
     const sectionIds = sections.map((section) => section.id);
     if (sectionIds.length > 0) {
-      const { data: entryRows } = await supabase.from('resume_entries')
+      const { data: entryRows, error: entriesError } = await supabase.from('resume_entries')
         .select('id, section_id, org, role_title, location, date_range, sort_order, created_at, updated_at')
         .in('section_id', sectionIds).order('sort_order');
+      if (entriesError) throw new Error(`Could not load resume entries: ${entriesError.message}`);
       entries = (entryRows ?? []) as ResumeWorkspaceData['entries'];
-      const { data: bulletRows } = await supabase.from('resume_bullets')
+      const { data: bulletRows, error: bulletsError } = await supabase.from('resume_bullets')
         .select('id, section_id, entry_id, text, status, sort_order, created_at, updated_at')
         .in('section_id', sectionIds).order('sort_order');
+      if (bulletsError) throw new Error(`Could not load resume bullets: ${bulletsError.message}`);
       bullets = (bulletRows ?? []) as ResumeWorkspaceData['bullets'];
       const bulletIds = bullets.map((bullet) => bullet.id);
       if (bulletIds.length > 0) {

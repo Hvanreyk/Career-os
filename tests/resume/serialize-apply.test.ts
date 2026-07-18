@@ -24,16 +24,32 @@ describe('serializeResumeForPrompt', () => {
 });
 
 describe('applyChanges', () => {
-  const change = (target: ResumeChange['target'], proposed: string): ResumeChange => ({
-    target, proposed, original: 'x', rationale: 'test',
+  const change = (target: ResumeChange['target'], original: string, proposed: string): ResumeChange => ({
+    target, proposed, original, rationale: 'test',
   });
 
   it('applies entry bullets, loose bullets, headings and entry fields by index', () => {
     const result = applyChanges(sampleDocument, [
-      change({ section_index: 1, entry_index: 0, bullet_index: 0, field: 'bullet' }, 'Built a three-statement model for an ASX-200 target [add metric if truthful]'),
-      change({ section_index: 2, entry_index: null, bullet_index: 1, field: 'bullet' }, 'Interests: AFL, chess'),
-      change({ section_index: 2, entry_index: null, bullet_index: null, field: 'heading' }, 'Skills, Certifications & Interests'),
-      change({ section_index: 1, entry_index: 0, bullet_index: null, field: 'role_title' }, 'Investment Banking Summer Analyst'),
+      change(
+        { section_index: 1, entry_index: 0, bullet_index: 0, field: 'bullet' },
+        'Built a three-statement model',
+        'Built a three-statement model for an ASX-200 target [add metric if truthful]',
+      ),
+      change(
+        { section_index: 2, entry_index: null, bullet_index: 1, field: 'bullet' },
+        'AFL, chess',
+        'Interests: AFL, chess',
+      ),
+      change(
+        { section_index: 2, entry_index: null, bullet_index: null, field: 'heading' },
+        'Skills & Interests',
+        'Skills, Certifications & Interests',
+      ),
+      change(
+        { section_index: 1, entry_index: 0, bullet_index: null, field: 'role_title' },
+        'Summer Analyst',
+        'Investment Banking Summer Analyst',
+      ),
     ]);
     expect(result.skipped).toHaveLength(0);
     expect(result.document.sections[1]!.entries[0]!.bullets[0]).toContain('[add metric if truthful]');
@@ -45,21 +61,38 @@ describe('applyChanges', () => {
   it('does not mutate the input document', () => {
     const before = JSON.stringify(sampleDocument);
     applyChanges(sampleDocument, [
-      change({ section_index: 0, entry_index: 0, bullet_index: 0, field: 'bullet' }, 'changed'),
+      change(
+        { section_index: 0, entry_index: 0, bullet_index: 0, field: 'bullet' },
+        'Distinction average',
+        'changed',
+      ),
     ]);
     expect(JSON.stringify(sampleDocument)).toBe(before);
   });
 
   it('skips targets that no longer resolve instead of corrupting the document', () => {
     const result = applyChanges(sampleDocument, [
-      change({ section_index: 9, entry_index: 0, bullet_index: 0, field: 'bullet' }, 'nope'),
-      change({ section_index: 1, entry_index: 5, bullet_index: 0, field: 'bullet' }, 'nope'),
-      change({ section_index: 1, entry_index: 0, bullet_index: 9, field: 'bullet' }, 'nope'),
-      change({ section_index: 1, entry_index: null, bullet_index: null, field: 'org' }, 'nope'),
-      change({ section_index: 1, entry_index: 0, bullet_index: null, field: 'bullet' }, 'nope'),
+      change({ section_index: 9, entry_index: 0, bullet_index: 0, field: 'bullet' }, 'x', 'nope'),
+      change({ section_index: 1, entry_index: 5, bullet_index: 0, field: 'bullet' }, 'x', 'nope'),
+      change({ section_index: 1, entry_index: 0, bullet_index: 9, field: 'bullet' }, 'x', 'nope'),
+      change({ section_index: 1, entry_index: null, bullet_index: null, field: 'org' }, 'x', 'nope'),
+      change({ section_index: 1, entry_index: 0, bullet_index: null, field: 'bullet' }, 'x', 'nope'),
     ]);
     expect(result.applied).toHaveLength(0);
     expect(result.skipped).toHaveLength(5);
     expect(JSON.stringify(result.document)).toBe(JSON.stringify(sampleDocument));
+  });
+
+  it('skips a change whose original text no longer matches the current document (stale proposal)', () => {
+    const result = applyChanges(sampleDocument, [
+      change(
+        { section_index: 1, entry_index: 0, bullet_index: 0, field: 'bullet' },
+        'This is not what the bullet currently says',
+        'Overwritten text',
+      ),
+    ]);
+    expect(result.applied).toHaveLength(0);
+    expect(result.skipped).toHaveLength(1);
+    expect(result.document.sections[1]!.entries[0]!.bullets[0]).toBe('Built a three-statement model');
   });
 });

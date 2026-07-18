@@ -41,12 +41,19 @@ export async function createResumeAiJob(
   context: ResumeApiContext,
   options: CreateJobOptions,
 ): Promise<{ jobId: string; reused: boolean; response?: never } | { response: NextResponse; jobId?: never; reused?: never }> {
-  const inputHash = hashResumeAiInput(stableStringify(options.input));
+  // generationVersion is folded into the hash (and stored alongside it in
+  // the DB unique index) so a prompt/model upgrade never reuses a job
+  // completed under an older generator version.
+  const inputHash = hashResumeAiInput(stableStringify({
+    generationVersion: options.generationVersion,
+    input: options.input,
+  }));
 
   const findExisting = () => context.service.from('resume_ai_jobs')
     .select('id, status')
     .eq('user_id', context.user.id)
     .eq('kind', options.kind)
+    .eq('generation_version', options.generationVersion)
     .eq('input_hash', inputHash)
     .in('status', ['pending', 'processing', 'completed'])
     .maybeSingle();
@@ -85,11 +92,14 @@ export async function createResumeAiJob(
 
   if (error?.code === '23505') {
     // Lost a creation race — reuse the winner and hand back the claim.
+    // Quota is released exactly once here regardless of the outcome below,
+    // since the raced insert never consumed a generation.
     await context.service.rpc('release_resume_ai_quota', {
       p_user_id: context.user.id, p_kind: options.kind,
     });
     const { data: raced } = await findExisting();
     if (raced) return { jobId: raced.id, reused: true };
+    return { response: NextResponse.json({ error: 'Could not create AI job' }, { status: 500 }) };
   }
   if (error || !job) {
     await context.service.rpc('release_resume_ai_quota', {

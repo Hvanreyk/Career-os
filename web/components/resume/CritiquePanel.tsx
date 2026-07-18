@@ -23,6 +23,8 @@ interface Props {
   onBulletChanged: (bullet: ResumeBulletRow) => void;
   onRevisionSaved: (revision: ResumeBulletRevisionRow, bulletText: string) => void;
   onDeleteBullet: (id: string) => void;
+  /** Reports whether this panel has unsaved edits, so the parent can guard switching bullets. */
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 /**
@@ -32,7 +34,7 @@ interface Props {
  */
 export function CritiquePanel({
   bullet, revisions, remaining, onRemainingChange,
-  onBulletChanged, onRevisionSaved, onDeleteBullet,
+  onBulletChanged, onRevisionSaved, onDeleteBullet, onDirtyChange,
 }: Props) {
   const [baseText, setBaseText] = useState(bullet.text);
   const [revisedText, setRevisedText] = useState(bullet.text);
@@ -49,16 +51,22 @@ export function CritiquePanel({
     setNotice(null);
   }, [bullet.id, bullet.text]);
 
+  const baseDirty = baseText.trim() !== bullet.text.trim();
   const dirtyRevision = Boolean(critique && revisedText.trim() !== bullet.text.trim());
+  const dirty = baseDirty || dirtyRevision;
+
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
 
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
-      if (!dirtyRevision) return;
+      if (!dirty) return;
       event.preventDefault();
     };
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
-  }, [dirtyRevision]);
+  }, [dirty]);
 
   function fail(value: unknown) {
     setError(value instanceof Error ? value.message : 'Something went wrong');

@@ -13,6 +13,7 @@
     "./llm/types": "./llm/types.ts",
     "./llm/roadmap": "./llm/roadmap.ts",
     "./llm/critique": "./llm/critique.ts",
+    "./llm/prompt-safety": "./llm/prompt-safety.ts",
     "./llm/resume-extract": "./llm/resume-extract.ts",
     "./llm/resume-compose": "./llm/resume-compose.ts",
     "./llm/resume-improve": "./llm/resume-improve.ts",

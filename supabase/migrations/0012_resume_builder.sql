@@ -118,8 +118,10 @@ create table resume_ai_jobs (
   created_at            timestamptz not null default now(),
   updated_at            timestamptz not null default now(),
   unique (id, user_id),
+  -- user_id is NOT NULL, so only resume_id may be nulled when the resume
+  -- is deleted (PostgreSQL 15+ column-specific ON DELETE SET NULL).
   foreign key (resume_id, user_id)
-    references resumes(id, user_id) on delete set null,
+    references resumes(id, user_id) on delete set null (resume_id),
   check (jsonb_typeof(input) = 'object'),
   check (octet_length(input::text) <= 150000),
   check (output is null or (jsonb_typeof(output) = 'object' and octet_length(output::text) <= 250000)),
@@ -128,8 +130,10 @@ create table resume_ai_jobs (
 );
 
 -- Identical live requests reuse the same job (mirrors course_roadmaps).
+-- generation_version is part of the key so a prompt/model upgrade can never
+-- reuse a completed job generated under an older version.
 create unique index resume_ai_jobs_active_uidx
-  on resume_ai_jobs (user_id, kind, input_hash)
+  on resume_ai_jobs (user_id, kind, generation_version, input_hash)
   where status in ('pending', 'processing', 'completed');
 
 create index resume_ai_jobs_user_idx
@@ -174,7 +178,7 @@ begin
     and (
       status in ('pending', 'error')
       or (status = 'processing'
-          and processing_started_at < now() - interval '2 minutes')
+          and processing_started_at < now() - interval '5 minutes')
     )
   returning *;
 end;

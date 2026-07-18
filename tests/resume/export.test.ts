@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { renderResumeDocx } from '../../web/lib/resume/export/docx.js';
 import { renderResumePdf } from '../../web/lib/resume/export/pdf.js';
-import { buildExportFilename, buildExportModel } from '../../web/lib/resume/export/template.js';
+import {
+  buildContentDispositionFilename,
+  buildExportFilename,
+  buildExportModel,
+} from '../../web/lib/resume/export/template.js';
 import { sampleDocument } from './fixtures.js';
 
 describe('resume export', () => {
@@ -27,6 +31,21 @@ describe('resume export', () => {
       ...sampleDocument,
       contact: { ...sampleDocument.contact, full_name: null },
     })).toBe('Resume');
+  });
+
+  it('builds an ASCII-safe Content-Disposition filename with an RFC 5987 fallback', () => {
+    const plain = buildContentDispositionFilename('Alex Nguyen Resume', 'pdf');
+    expect(plain.ascii).toBe('Alex Nguyen Resume.pdf');
+    expect(plain.encoded).toBe(encodeURIComponent('Alex Nguyen Resume.pdf'));
+
+    const accented = buildContentDispositionFilename('José Núñez Resume', 'docx');
+    expect(accented.ascii).toBe('Jose Nunez Resume.docx');
+    expect(/^[\x20-\x7E]*$/.test(accented.ascii)).toBe(true);
+    expect(accented.encoded).toBe(encodeURIComponent('José Núñez Resume.docx'));
+
+    const nonLatin = buildContentDispositionFilename('田中 Resume', 'pdf');
+    expect(/^[\x20-\x7E]*$/.test(nonLatin.ascii)).toBe(true);
+    expect(nonLatin.ascii.length).toBeGreaterThan(0);
   });
 
   it('renders a real PDF', async () => {

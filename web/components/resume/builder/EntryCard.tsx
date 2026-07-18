@@ -15,7 +15,7 @@ interface Props {
   onUpdate: (patch: { org?: string; roleTitle?: string | null; location?: string | null; dateRange?: string | null }) => void;
   onDelete: () => void;
   onMove: (delta: number) => void;
-  onAddBullet: (text: string) => void;
+  onAddBullet: (text: string) => Promise<boolean>;
   onSelectBullet: (bullet: ResumeBulletRow) => void;
   onMoveBullet: (bullet: ResumeBulletRow, delta: number) => void;
 }
@@ -90,7 +90,13 @@ export function EntryCard({
           className="flex-1 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm resize-none"
         />
         <button
-          onClick={() => { if (newBullet.trim()) { onAddBullet(newBullet.trim()); setNewBullet(''); } }}
+          onClick={() => {
+            const text = newBullet.trim();
+            if (!text) return;
+            void (async () => {
+              if (await onAddBullet(text)) setNewBullet('');
+            })();
+          }}
           disabled={!newBullet.trim() || busy}
           aria-label={`Add bullet to ${entry.org}`}
           className="px-3 rounded-lg border border-gold-400/30 text-gold-300"

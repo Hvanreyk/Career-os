@@ -9,6 +9,7 @@ import {
   type AdditionalDetails,
   type ResumeDocument,
 } from '../resume/document';
+import { neutralizeTagSequences } from './prompt-safety';
 
 const MODEL = process.env.OPENAI_CRITIQUE_MODEL ?? 'gpt-5.6';
 const MAX_RETRIES = 2;
@@ -147,11 +148,11 @@ export function buildResumeComposeSystemPrompt(): string {
 export function buildResumeComposeUserMessage(input: ResumeComposeInput): string {
   return [
     '<student_profile>',
-    JSON.stringify(input.profile, null, 2),
+    neutralizeTagSequences(JSON.stringify(input.profile, null, 2)),
     '</student_profile>',
     '',
     '<additional_details>',
-    JSON.stringify(input.details, null, 2),
+    neutralizeTagSequences(JSON.stringify(input.details, null, 2)),
     '</additional_details>',
   ].join('\n');
 }

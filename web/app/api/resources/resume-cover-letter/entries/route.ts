@@ -24,8 +24,9 @@ export async function POST(request: Request) {
   const parsed = BodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'Invalid entry' }, { status: 400 });
   const { context } = result;
-  const { data: section } = await context.service.from('resume_sections').select('id, kind')
+  const { data: section, error: sectionError } = await context.service.from('resume_sections').select('id, kind')
     .eq('id', parsed.data.sectionId).eq('user_id', context.user.id).maybeSingle();
+  if (sectionError) return NextResponse.json({ error: 'Could not load section' }, { status: 500 });
   if (!section) return NextResponse.json({ error: 'Section not found' }, { status: 404 });
   const { data, error } = await context.service.from('resume_entries').insert({
     section_id: section.id,

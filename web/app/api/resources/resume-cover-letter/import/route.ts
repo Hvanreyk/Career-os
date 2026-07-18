@@ -11,7 +11,9 @@ import {
 } from '@/lib/resume/extract';
 
 const TextBodySchema = z.object({
-  text: z.string().trim().min(RESUME_EXTRACT_MIN_CHARS, 'Paste at least a few paragraphs of resume text').max(RESUME_EXTRACT_TEXT_LIMIT * 2),
+  text: z.string().trim()
+    .min(RESUME_EXTRACT_MIN_CHARS, 'Paste at least a few paragraphs of resume text')
+    .max(RESUME_EXTRACT_TEXT_LIMIT, `That's too long to import in one go — keep it under ${RESUME_EXTRACT_TEXT_LIMIT.toLocaleString()} characters`),
 });
 
 /**
@@ -49,10 +51,17 @@ export async function POST(request: Request) {
       }
       throw error;
     }
+    if (text.length > RESUME_EXTRACT_TEXT_LIMIT) {
+      return NextResponse.json({
+        error: `That resume is too long to import in one go (over ${RESUME_EXTRACT_TEXT_LIMIT.toLocaleString()} characters of text) — try the paste tab with a trimmed-down version instead`,
+      }, { status: 422 });
+    }
   } else {
     const parsed = TextBodySchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Paste at least a few paragraphs of resume text' }, { status: 400 });
+      return NextResponse.json({
+        error: parsed.error.issues[0]?.message ?? 'Paste at least a few paragraphs of resume text',
+      }, { status: 400 });
     }
     text = parsed.data.text;
   }
@@ -62,7 +71,7 @@ export async function POST(request: Request) {
 
   const created = await createResumeAiJob(context, {
     kind: 'import',
-    input: { text: text.slice(0, RESUME_EXTRACT_TEXT_LIMIT) },
+    input: { text },
     generationVersion: RESUME_EXTRACT_GENERATION_VERSION,
     resumeId: resume?.id ?? null,
   });

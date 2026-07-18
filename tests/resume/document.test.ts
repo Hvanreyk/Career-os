@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   AdditionalDetailsSchema,
+  hasResumeContent,
+  JdMatchSchema,
   ResumeDocumentSchema,
 } from '../../lib/resume/document.js';
 import { sampleDocument } from './fixtures.js';
@@ -49,6 +51,53 @@ describe('ResumeDocumentSchema', () => {
       ...sampleDocument,
       sections: [{ ...section, entries: [{ ...section.entries[0]!, bullets: ['y'.repeat(1001)] }] }],
     }).success).toBe(false);
+  });
+});
+
+describe('hasResumeContent', () => {
+  it('is true for a document with entries or loose bullets', () => {
+    expect(hasResumeContent(sampleDocument)).toBe(true);
+  });
+
+  it('is false for a document with only empty, titled sections', () => {
+    expect(hasResumeContent({
+      contact: sampleDocument.contact,
+      sections: [{ kind: 'experience', heading: 'Experience', entries: [], loose_bullets: [] }],
+    })).toBe(false);
+  });
+
+  it('is false for no sections at all', () => {
+    expect(hasResumeContent({ ...sampleDocument, sections: [] })).toBe(false);
+  });
+});
+
+describe('JdMatchSchema', () => {
+  const base = { requirement_id: 'R1', note: 'n' };
+
+  it('requires at least one evidence ref for direct and stretch matches', () => {
+    expect(JdMatchSchema.safeParse({ ...base, match: 'direct', evidence_refs: [] }).success).toBe(false);
+    expect(JdMatchSchema.safeParse({ ...base, match: 'stretch', evidence_refs: [] }).success).toBe(false);
+  });
+
+  it('accepts a direct match with evidence', () => {
+    const parsed = JdMatchSchema.safeParse({
+      ...base,
+      match: 'direct',
+      evidence_refs: [{ section_index: 0, entry_index: 0, bullet_index: 0, field: 'bullet' }],
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it('rejects a gap match that cites evidence', () => {
+    expect(JdMatchSchema.safeParse({
+      ...base,
+      match: 'gap',
+      evidence_refs: [{ section_index: 0, entry_index: 0, bullet_index: 0, field: 'bullet' }],
+    }).success).toBe(false);
+  });
+
+  it('accepts a gap match with no evidence', () => {
+    expect(JdMatchSchema.safeParse({ ...base, match: 'gap', evidence_refs: [] }).success).toBe(true);
   });
 });
 

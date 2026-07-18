@@ -46,6 +46,18 @@ export const ResumeDocumentSchema = z.object({
 }).strict();
 export type ResumeDocument = z.infer<typeof ResumeDocumentSchema>;
 
+/**
+ * Whether a document has any substantive content — at least one entry or
+ * section-level bullet. An empty-but-titled section (heading with no
+ * entries/bullets yet) does not count, so export/improve/tailor routes don't
+ * operate on a resume that has nothing to work with.
+ */
+export function hasResumeContent(document: ResumeDocument): boolean {
+  return document.sections.some(
+    (section) => section.entries.length > 0 || section.loose_bullets.length > 0,
+  );
+}
+
 // ─── Index-addressed changes (improve / tailor proposals) ───
 //
 // Targets address the serialized snapshot the LLM saw (see serialize.ts):
@@ -97,7 +109,23 @@ export const JdMatchSchema = z.object({
   // Where in the existing resume the evidence lives. Empty only for gaps.
   evidence_refs: z.array(ResumeChangeTargetSchema).max(5),
   note: z.string().min(1).max(400),
-}).strict();
+}).strict().superRefine((value, ctx) => {
+  if (value.match === 'gap') {
+    if (value.evidence_refs.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'A gap match must not cite evidence_refs',
+        path: ['evidence_refs'],
+      });
+    }
+  } else if (value.evidence_refs.length === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Direct and stretch matches require at least one evidence reference',
+      path: ['evidence_refs'],
+    });
+  }
+});
 export type JdMatch = z.infer<typeof JdMatchSchema>;
 
 export const JdGapSchema = z.object({

@@ -41,8 +41,13 @@ describe('resume builder migration (0012)', () => {
 
   it('enforces idempotent job reuse with a partial unique index and a lease claim', () => {
     expect(migration).toContain('resume_ai_jobs_active_uidx');
+    expect(migration).toContain('on resume_ai_jobs (user_id, kind, generation_version, input_hash)');
     expect(migration).toContain("where status in ('pending', 'processing', 'completed')");
-    expect(migration).toContain("processing_started_at < now() - interval '2 minutes'");
+    expect(migration).toContain("processing_started_at < now() - interval '5 minutes'");
+  });
+
+  it('only nulls resume_id (not the NOT NULL user_id) when a resume is deleted', () => {
+    expect(migration).toContain('on delete set null (resume_id)');
   });
 
   it('leaves legacy bullets valid: entry_id is nullable', () => {

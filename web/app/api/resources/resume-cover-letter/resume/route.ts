@@ -35,11 +35,14 @@ export async function POST(request: Request) {
     .select(RESUME_COLUMNS)
     .single();
   if (error?.code === '23505') {
-    const { data: existing } = await context.service
+    const { data: existing, error: existingError } = await context.service
       .from('resumes')
       .select(RESUME_COLUMNS)
       .eq('user_id', context.user.id)
       .single();
+    if (existingError || !existing) {
+      return NextResponse.json({ error: 'Could not load existing resume' }, { status: 500 });
+    }
     return NextResponse.json({ resume: existing, existing: true });
   }
   if (error || !data) return NextResponse.json({ error: 'Could not create resume' }, { status: 500 });

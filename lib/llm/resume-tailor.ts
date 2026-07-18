@@ -8,6 +8,7 @@ import {
   type TailorOutput,
 } from '../resume/document';
 import { serializeResumeForPrompt } from '../resume/serialize';
+import { neutralizeTagSequences } from './prompt-safety';
 
 const MODEL = process.env.OPENAI_CRITIQUE_MODEL ?? 'gpt-5.6';
 const MAX_RETRIES = 2;
@@ -86,11 +87,11 @@ export function buildResumeTailorSystemPrompt(): string {
 export function buildResumeTailorUserMessage(input: ResumeTailorInput): string {
   return [
     '<resume_snapshot>',
-    serializeResumeForPrompt(input.document),
+    neutralizeTagSequences(serializeResumeForPrompt(input.document)),
     '</resume_snapshot>',
     '',
     '<job_description>',
-    input.job_description.trim().slice(0, JOB_DESCRIPTION_MAX_LENGTH),
+    neutralizeTagSequences(input.job_description.trim().slice(0, JOB_DESCRIPTION_MAX_LENGTH)),
     '</job_description>',
   ].join('\n');
 }

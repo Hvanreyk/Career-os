@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { zodTextFormat } from 'openai/helpers/zod';
 import 'dotenv/config';
 import { ResumeDocumentSchema, type ResumeDocument } from '../resume/document';
+import { neutralizeTagSequences } from './prompt-safety';
 
 const MODEL = process.env.OPENAI_CRITIQUE_MODEL ?? 'gpt-5.6';
 const MAX_RETRIES = 2;
@@ -57,7 +58,7 @@ export function buildResumeExtractSystemPrompt(): string {
  * Builds the user message wrapping the untrusted extracted resume text.
  */
 export function buildResumeExtractUserMessage(text: string): string {
-  return ['<resume_text>', text, '</resume_text>'].join('\n');
+  return ['<resume_text>', neutralizeTagSequences(text), '</resume_text>'].join('\n');
 }
 
 /**
