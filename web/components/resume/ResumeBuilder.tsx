@@ -10,10 +10,11 @@ import type {
   ResumeSectionRow,
   ResumeWorkspaceData,
 } from '@trajectoryos/core/resume/types';
-import { AlertTriangle, FileText, Plus, Trash2 } from 'lucide-react';
+import { AlertTriangle, FileText, FileUp, Plus, Trash2 } from 'lucide-react';
 import { api } from './api';
 import { CritiquePanel } from './CritiquePanel';
 import { ExportMenu } from './ExportMenu';
+import { ImportDialog } from './ai/ImportDialog';
 import { SectionList, SECTION_KINDS } from './builder/SectionList';
 import { ContactHeader } from './builder/ContactHeader';
 
@@ -44,6 +45,7 @@ export function ResumeBuilder({ initialData }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [newHeading, setNewHeading] = useState('Experience');
   const [newKind, setNewKind] = useState<ResumeSectionKind>('experience');
+  const [dialog, setDialog] = useState<'import' | 'autocreate' | 'improve' | 'tailor' | null>(null);
 
   const selected = bullets.find((bullet) => bullet.id === selectedId) ?? null;
 
@@ -220,10 +222,16 @@ export function ResumeBuilder({ initialData }: Props) {
         <FileText className="w-10 h-10 text-gold-400 mx-auto mb-4" />
         <h2 className="font-serif text-2xl font-bold text-white mb-3">Create your master resume</h2>
         <p className="text-slate-400 text-sm mb-6">Build a structured resume, auto-create one from your profile, import an existing PDF or Word file, and export a polished document — with AI help only when you ask for it.</p>
-        <button onClick={() => void createResume()} disabled={busy !== null} className="px-5 py-3 bg-gold-400 text-navy-950 font-semibold rounded-xl disabled:opacity-50">
-          {busy === 'resume' ? 'Creating…' : 'Create master resume'}
-        </button>
+        <div className="flex flex-wrap gap-3 justify-center">
+          <button onClick={() => void createResume()} disabled={busy !== null} className="px-5 py-3 bg-gold-400 text-navy-950 font-semibold rounded-xl disabled:opacity-50">
+            {busy === 'resume' ? 'Creating…' : 'Start from scratch'}
+          </button>
+          <button onClick={() => setDialog('import')} disabled={busy !== null} className="px-5 py-3 border border-gold-400/30 text-gold-300 font-semibold rounded-xl flex items-center gap-2 disabled:opacity-50">
+            <FileUp className="w-4 h-4" />Import PDF / Word
+          </button>
+        </div>
         {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
+        {dialog === 'import' && <ImportDialog onClose={() => setDialog(null)} onApplied={setWorkspace} />}
       </div>
     );
   }
@@ -252,9 +260,12 @@ export function ResumeBuilder({ initialData }: Props) {
           disabled={busy === 'resume'}
           className="px-4 py-2 rounded-lg bg-white/10 text-white text-sm"
         >Save details</button>
+        <button onClick={() => setDialog('import')} className="px-3 py-2 rounded-lg border border-white/15 text-slate-300 text-sm flex gap-1.5 items-center"><FileUp className="w-4 h-4" />Import</button>
         <ExportMenu />
         <button onClick={() => void deleteAll()} disabled={busy !== null} className="px-3 py-2 text-red-300 text-sm hover:bg-red-400/10 rounded-lg flex gap-2 items-center"><Trash2 className="w-4 h-4" />Delete all data</button>
       </div>
+
+      {dialog === 'import' && <ImportDialog onClose={() => setDialog(null)} onApplied={setWorkspace} />}
 
       <ContactHeader resume={resume} busy={busy === 'contact'} onSave={(patch) => void saveContact(patch)} />
 
