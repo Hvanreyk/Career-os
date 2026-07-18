@@ -10,12 +10,14 @@ import type {
   ResumeSectionRow,
   ResumeWorkspaceData,
 } from '@trajectoryos/core/resume/types';
-import { AlertTriangle, FileText, FileUp, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { AlertTriangle, Crosshair, FileText, FileUp, Plus, Sparkles, Trash2, Wand2 } from 'lucide-react';
 import { api } from './api';
 import { CritiquePanel } from './CritiquePanel';
 import { ExportMenu } from './ExportMenu';
 import { ImportDialog } from './ai/ImportDialog';
 import { AutoCreateDialog } from './ai/AutoCreateDialog';
+import { ImproveDialog } from './ai/ImproveDialog';
+import { TailorDialog } from './ai/TailorDialog';
 import { SectionList, SECTION_KINDS } from './builder/SectionList';
 import { ContactHeader } from './builder/ContactHeader';
 
@@ -267,12 +269,16 @@ export function ResumeBuilder({ initialData }: Props) {
         >Save details</button>
         <button onClick={() => setDialog('autocreate')} className="px-3 py-2 rounded-lg border border-gold-400/30 text-gold-300 text-sm flex gap-1.5 items-center"><Sparkles className="w-4 h-4" />Auto-create</button>
         <button onClick={() => setDialog('import')} className="px-3 py-2 rounded-lg border border-white/15 text-slate-300 text-sm flex gap-1.5 items-center"><FileUp className="w-4 h-4" />Import</button>
+        <button onClick={() => setDialog('improve')} disabled={sections.length === 0} className="px-3 py-2 rounded-lg border border-white/15 text-slate-300 text-sm flex gap-1.5 items-center disabled:opacity-40"><Wand2 className="w-4 h-4" />Improve</button>
+        <button onClick={() => setDialog('tailor')} disabled={sections.length === 0} className="px-3 py-2 rounded-lg border border-white/15 text-slate-300 text-sm flex gap-1.5 items-center disabled:opacity-40"><Crosshair className="w-4 h-4" />Tailor to JD</button>
         <ExportMenu />
         <button onClick={() => void deleteAll()} disabled={busy !== null} className="px-3 py-2 text-red-300 text-sm hover:bg-red-400/10 rounded-lg flex gap-2 items-center"><Trash2 className="w-4 h-4" />Delete all data</button>
       </div>
 
       {dialog === 'import' && <ImportDialog onClose={() => setDialog(null)} onApplied={setWorkspace} />}
       {dialog === 'autocreate' && <AutoCreateDialog hasExistingContent={sections.length > 0} onClose={() => setDialog(null)} onApplied={setWorkspace} />}
+      {dialog === 'improve' && <ImproveDialog onClose={() => setDialog(null)} onApplied={setWorkspace} />}
+      {dialog === 'tailor' && <TailorDialog onClose={() => setDialog(null)} onApplied={setWorkspace} />}
 
       <ContactHeader resume={resume} busy={busy === 'contact'} onSave={(patch) => void saveContact(patch)} />
 
