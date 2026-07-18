@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getResumeApiContext, recordResumeEvent } from '@/lib/resume/server';
+import { getResumeApiContext, recordResumeEvent, RESUME_BULLET_COLUMNS } from '@/lib/resume/server';
 
 const UpdateSchema = z.object({
   text: z.string().trim().min(1).max(1000).optional(),
@@ -33,7 +33,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { context } = result;
   const { data, error } = await context.service.from('resume_bullets').update(patch)
     .eq('id', id).eq('user_id', context.user.id)
-    .select('id, section_id, text, status, sort_order, created_at, updated_at').maybeSingle();
+    .select(RESUME_BULLET_COLUMNS).maybeSingle();
   if (error) return NextResponse.json({ error: 'Could not update bullet' }, { status: 500 });
   if (!data) return NextResponse.json({ error: 'Bullet not found' }, { status: 404 });
   await recordResumeEvent(context, 'resume_updated', { operation: 'bullet_updated' });

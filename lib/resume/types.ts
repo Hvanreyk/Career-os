@@ -54,6 +54,23 @@ export interface ResumeRow {
   id: string;
   title: string;
   status: ResumeStatus;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  linkedin_url: string | null;
+  location: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ResumeEntryRow {
+  id: string;
+  section_id: string;
+  org: string;
+  role_title: string | null;
+  location: string | null;
+  date_range: string | null;
+  sort_order: number;
   created_at: string;
   updated_at: string;
 }
@@ -71,6 +88,7 @@ export interface ResumeSectionRow {
 export interface ResumeBulletRow {
   id: string;
   section_id: string;
+  entry_id: string | null;
   text: string;
   status: ResumeBulletStatus;
   sort_order: number;
@@ -95,6 +113,7 @@ export interface ResumeBulletRevisionRow {
 export interface ResumeWorkspaceData {
   resume: ResumeRow | null;
   sections: ResumeSectionRow[];
+  entries: ResumeEntryRow[];
   bullets: ResumeBulletRow[];
   revisions: ResumeBulletRevisionRow[];
 }

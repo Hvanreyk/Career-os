@@ -7,6 +7,13 @@ import { createServiceClient } from '@/lib/supabase/server';
 
 export const RESUME_RESOURCE_SLUG = 'resume-cover-letter';
 
+export const RESUME_COLUMNS =
+  'id, title, status, full_name, email, phone, linkedin_url, location, created_at, updated_at';
+export const RESUME_ENTRY_COLUMNS =
+  'id, section_id, org, role_title, location, date_range, sort_order, created_at, updated_at';
+export const RESUME_BULLET_COLUMNS =
+  'id, section_id, entry_id, text, status, sort_order, created_at, updated_at';
+
 type ServiceClient = ReturnType<typeof createServiceClient>;
 
 export interface ResumeApiContext {
@@ -83,4 +90,23 @@ export async function recordResumeEvent(
 export function getResumeCritiqueDailyLimit(): number {
   const value = Number(process.env.RESUME_CRITIQUE_DAILY_LIMIT ?? '25');
   return Number.isInteger(value) && value >= 1 && value <= 1000 ? value : 25;
+}
+
+/**
+ * Determines the daily per-kind limit for the heavy resume AI generators
+ * (import / compose / improve / tailor) from environment configuration.
+ *
+ * @returns The configured integer limit from 1 through 1000, or `10` when the configuration is invalid or absent.
+ */
+export function getResumeAiDailyLimit(): number {
+  const value = Number(process.env.RESUME_AI_DAILY_LIMIT ?? '10');
+  return Number.isInteger(value) && value >= 1 && value <= 1000 ? value : 10;
+}
+
+/**
+ * Creates a SHA-256 hash of an AI job's canonical input string, used for
+ * idempotent job reuse via the resume_ai_jobs unique index.
+ */
+export function hashResumeAiInput(text: string): string {
+  return createHash('sha256').update(text).digest('hex');
 }
