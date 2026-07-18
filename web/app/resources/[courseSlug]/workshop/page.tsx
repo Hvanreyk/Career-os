@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import { ChevronLeft } from 'lucide-react';
 import type { ResumeWorkspaceData } from '@trajectoryos/core/resume/types';
 import { TrackProductEvent } from '@/components/analytics/TrackProductEvent';
-import { ResumeWorkshop } from '@/components/resume/ResumeWorkshop';
+import { ResumeBuilder } from '@/components/resume/ResumeBuilder';
 import { requireUser } from '@/lib/auth';
 import { resourceHasCapability } from '@/lib/resources/catalog';
 import { createClient } from '@/lib/supabase/server';
@@ -26,8 +26,9 @@ export default async function ResumeWorkshopPage({ params }: { params: Promise<{
   if (!course) notFound();
 
   const { data: resume } = await supabase.from('resumes')
-    .select('id, title, status, created_at, updated_at').maybeSingle();
+    .select('id, title, status, full_name, email, phone, linkedin_url, location, created_at, updated_at').maybeSingle();
   let sections: ResumeWorkspaceData['sections'] = [];
+  let entries: ResumeWorkspaceData['entries'] = [];
   let bullets: ResumeWorkspaceData['bullets'] = [];
   let revisions: ResumeWorkspaceData['revisions'] = [];
   if (resume) {
@@ -37,8 +38,12 @@ export default async function ResumeWorkshopPage({ params }: { params: Promise<{
     sections = (sectionRows ?? []) as ResumeWorkspaceData['sections'];
     const sectionIds = sections.map((section) => section.id);
     if (sectionIds.length > 0) {
+      const { data: entryRows } = await supabase.from('resume_entries')
+        .select('id, section_id, org, role_title, location, date_range, sort_order, created_at, updated_at')
+        .in('section_id', sectionIds).order('sort_order');
+      entries = (entryRows ?? []) as ResumeWorkspaceData['entries'];
       const { data: bulletRows } = await supabase.from('resume_bullets')
-        .select('id, section_id, text, status, sort_order, created_at, updated_at')
+        .select('id, section_id, entry_id, text, status, sort_order, created_at, updated_at')
         .in('section_id', sectionIds).order('sort_order');
       bullets = (bulletRows ?? []) as ResumeWorkspaceData['bullets'];
       const bulletIds = bullets.map((bullet) => bullet.id);
@@ -60,10 +65,10 @@ export default async function ResumeWorkshopPage({ params }: { params: Promise<{
         </Link>
         <div className="mb-8">
           <p className="text-xs font-semibold text-gold-400 uppercase tracking-widest mb-2">Private workspace</p>
-          <h1 className="font-serif text-3xl md:text-4xl font-bold text-white mb-2">AI Resume Workshop</h1>
-          <p className="text-slate-400 text-sm leading-relaxed max-w-3xl">Build one structured master resume, improve individual bullets with qualitative AI critique, and save only the revisions you choose.</p>
+          <h1 className="font-serif text-3xl md:text-4xl font-bold text-white mb-2">Resume Builder</h1>
+          <p className="text-slate-400 text-sm leading-relaxed max-w-3xl">Build one structured master resume — auto-create it from your profile, import an existing PDF or Word resume, refine it with AI critique and tailoring, and export a polished document.</p>
         </div>
-        <ResumeWorkshop initialData={{ resume: resume as ResumeWorkspaceData['resume'], sections, bullets, revisions }} />
+        <ResumeBuilder initialData={{ resume: resume as ResumeWorkspaceData['resume'], sections, entries, bullets, revisions }} />
       </div>
     </div>
   );
