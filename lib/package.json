@@ -17,6 +17,7 @@
     "./llm/networking": "./llm/networking.ts",
     "./networking": "./networking/index.ts",
     "./networking/types": "./networking/types.ts",
+    "./professionals": "./professionals/index.ts",
     "./db/xlsx": "./db/xlsx.ts",
     "./courses": "./courses/index.ts",
     "./courses/content": "./courses/content.ts",

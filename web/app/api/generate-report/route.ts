@@ -13,11 +13,7 @@ import {
 import type { OnboardData } from '@/lib/onboard/types';
 import { OnboardDataSchema } from '@/lib/onboard/schema';
 import { getTier, normalizeUniversityName } from '@/lib/onboard/universities';
-import { loadProfessionalSources, ProfessionalSourceError } from '@/lib/professionals/source';
-import {
-  summarizeProfessionalParity,
-  summarizeScoringParity,
-} from '@/lib/professionals/parity';
+import { loadProfessionals, ProfessionalSourceError } from '@/lib/professionals/source';
 
 // ─── Derivation helpers ───────────────────────────────────────
 
@@ -163,12 +159,12 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4. Load the selected professional source. Normalized mode fails closed
-    // on any rejected row; shadow mode returns the legacy result while
-    // comparing both sources without logging professional identifiers.
-    let loadedProfessionals;
+    // 4. Load every scoring-ready normalized professional. The loader uses
+    // ordered keyset pagination, reconciles its count with the readiness view,
+    // and fails closed on malformed or truncated cohorts.
+    let professionals;
     try {
-      loadedProfessionals = await loadProfessionalSources(serviceClient);
+      professionals = await loadProfessionals(serviceClient);
     } catch (error) {
       const reason = error instanceof ProfessionalSourceError ? error.reason : 'query_failed';
       console.error('generate-report: professional source unavailable', { reason });
@@ -177,25 +173,7 @@ export async function POST(request: Request) {
 
     // 5. Run scoring engine (fast, in-memory — safe to do inline).
     const scoringNow = new Date();
-    const scoringOutput = score(profile, loadedProfessionals.professionals, { now: scoringNow });
-
-    if (loadedProfessionals.mode === 'shadow') {
-      if (loadedProfessionals.shadowProfessionals) {
-        const normalizedOutput = score(profile, loadedProfessionals.shadowProfessionals, { now: scoringNow });
-        console.info('professional-source-parity', {
-          ...summarizeProfessionalParity(
-            loadedProfessionals.professionals,
-            loadedProfessionals.shadowProfessionals,
-          ),
-          scoring: summarizeScoringParity(scoringOutput, normalizedOutput),
-        });
-      } else {
-        console.warn('professional-source-parity', {
-          exact: false,
-          normalized_source_error: loadedProfessionals.shadowError ?? 'query_failed',
-        });
-      }
-    }
+    const scoringOutput = score(profile, professionals, { now: scoringNow });
 
     // 6. Persist the profile — one row per user. Updating (rather than
     //    inserting a new row each run) keeps the user's profile stable;

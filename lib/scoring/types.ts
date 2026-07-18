@@ -109,6 +109,38 @@ export type DataConfidence = z.infer<typeof DataConfidence>;
 export const SignalTag = ProfessionalCompatibilitySignalTagSchema;
 export type SignalTag = z.infer<typeof SignalTag>;
 
+export const ProfessionalAchievementDatePrecision = z.enum([
+  'unknown',
+  'year',
+  'month',
+  'day',
+]);
+export type ProfessionalAchievementDatePrecision = z.infer<
+  typeof ProfessionalAchievementDatePrecision
+>;
+
+export const ProfessionalAchievementSchema = z.object({
+  tag: SignalTag,
+  effective_year: z.number().int().min(1900).max(2100).nullable(),
+  date_precision: ProfessionalAchievementDatePrecision,
+}).superRefine((achievement, ctx) => {
+  if (achievement.effective_year === null && achievement.date_precision !== 'unknown') {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['effective_year'],
+      message: 'must be non-null when date_precision is not unknown',
+    });
+  }
+  if (achievement.effective_year !== null && achievement.date_precision === 'unknown') {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['date_precision'],
+      message: 'must not be unknown when effective_year is non-null',
+    });
+  }
+});
+export type ProfessionalAchievement = z.infer<typeof ProfessionalAchievementSchema>;
+
 // ============================================================
 // Per-experience slot
 // ============================================================
@@ -418,6 +450,9 @@ export const ProfessionalSchema = z.object({
   atar_band: AtarBand,
   experiences: z.array(ExperienceSchema),
   signals: z.array(SignalTag),
+  // Optional while older fixtures/imports are migrated. When present, these
+  // records provide the timing metadata used to stage-gate signal tags.
+  achievements: z.array(ProfessionalAchievementSchema).optional(),
   path_summary: z.string().nullable(),
   data_source: DataSource,
   data_confidence: DataConfidence,
