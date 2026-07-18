@@ -62,12 +62,17 @@ export function reconstructAtStage(
   const signals = [...candidateSignals].filter((tag) => {
     const achievements = achievementsByTag.get(tag);
     if (!achievements?.length) return target_stage !== 'S0';
-    return achievements.some((achievement) => {
-      if (achievement.effective_year !== null) {
-        return achievement.effective_year <= cutoff;
-      }
-      return target_stage !== 'S0';
-    });
+
+    // When a tag has any dated achievements, evaluate eligibility only from dated achievements
+    const hasAnyDatedAchievement = achievements.some((a) => a.effective_year !== null);
+    if (hasAnyDatedAchievement) {
+      return achievements.some((achievement) => {
+        return achievement.effective_year !== null && achievement.effective_year <= cutoff;
+      });
+    }
+
+    // Only fall back to S1-and-later behavior when no dated achievement exists
+    return target_stage !== 'S0';
   });
 
   const computed = computeFields({ experiences: past_experiences, signals });

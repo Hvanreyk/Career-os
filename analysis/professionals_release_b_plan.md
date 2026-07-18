@@ -1,6 +1,6 @@
 # Professional database Phase 2
 
-Status: implementation in progress.
+Status: implementation complete.
 
 Phase 2 makes the normalized professional model the only application scoring
 source. This environment has no customers and the legacy CSV remains the

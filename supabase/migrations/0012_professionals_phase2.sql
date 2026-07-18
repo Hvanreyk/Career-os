@@ -172,19 +172,37 @@ create unique index professional_education_one_primary_higher_uidx
 -- Keep the raw private value while enforcing a normalized identity key.
 alter table public.professional_private_identity
   add column linkedin_url_normalized text generated always as (
-    nullif(
-      lower(
-        rtrim(
-          split_part(
-            split_part(btrim(linkedin_url_internal), '#', 1),
-            '?',
-            1
-          ),
-          '/'
+    case
+      when linkedin_url_internal is null or btrim(linkedin_url_internal) = '' then null
+      else (
+        'https://www.linkedin.com' ||
+        lower(
+          rtrim(
+            regexp_replace(
+              split_part(
+                split_part(
+                  -- Extract path from URL after removing fragments and query strings
+                  regexp_replace(
+                    btrim(linkedin_url_internal),
+                    '^(?:https?://)?(?:www\.|m\.)?linkedin\.com',
+                    '',
+                    'i'
+                  ),
+                  '#',
+                  1
+                ),
+                '?',
+                1
+              ),
+              '/+',
+              '/',
+              'g'
+            ),
+            '/'
+          )
         )
-      ),
-      ''
-    )
+      )
+    end
   ) stored;
 
 create unique index professional_private_identity_linkedin_normalized_uidx

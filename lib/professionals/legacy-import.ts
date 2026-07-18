@@ -126,18 +126,18 @@ export function convertLegacyFlatRows(
       });
     }
 
-    legacySignals(row.signals).forEach((tag, index) => {
-      canonical.achievements.push({
-        professional_key: professionalKey,
-        sequence: index + 1,
-        tag,
-        effective_year: null,
-        date_precision: 'unknown',
-        source: (AUTO_DERIVED_SIGNAL_VALUES as readonly string[]).includes(tag)
-          ? 'derived'
-          : 'manual',
+    legacySignals(row.signals)
+      .filter((tag) => !(AUTO_DERIVED_SIGNAL_VALUES as readonly string[]).includes(tag))
+      .forEach((tag, index) => {
+        canonical.achievements.push({
+          professional_key: professionalKey,
+          sequence: index + 1,
+          tag,
+          effective_year: null,
+          date_precision: 'unknown',
+          source: 'manual',
+        });
       });
-    });
   }
 
   return canonical;

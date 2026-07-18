@@ -120,6 +120,38 @@ export const ProfessionalImportEducationSchema = z.object({
       });
     }
   }
+
+  // Validate date precision matches the provided dates
+  const inferredPrecision = (dateStr: string | null): DatePrecision | null => {
+    if (dateStr === null) return null;
+    const parts = dateStr.split('-');
+    if (parts.length === 3) return 'day';
+    if (parts.length === 2) return 'month';
+    if (parts.length === 1) return 'year';
+    return null;
+  };
+
+  if (education.started_on !== null) {
+    const startedPrecision = inferredPrecision(education.started_on);
+    if (startedPrecision !== null && startedPrecision !== education.date_precision) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['date_precision'],
+        message: `must be '${startedPrecision}' to match started_on date format`,
+      });
+    }
+  }
+
+  if (education.completed_on !== null) {
+    const completedPrecision = inferredPrecision(education.completed_on);
+    if (completedPrecision !== null && completedPrecision !== education.date_precision) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['date_precision'],
+        message: `must be '${completedPrecision}' to match completed_on date format`,
+      });
+    }
+  }
 });
 export type ProfessionalImportEducation = z.infer<typeof ProfessionalImportEducationSchema>;
 
@@ -140,6 +172,38 @@ export const ProfessionalImportExperienceSchema = z.object({
   acquisition_method: ProfessionalAcquisitionMethodSchema,
   transition_type: TransitionTypeSchema.nullable(),
   converted_to_full_time: z.boolean().nullable(),
+}).superRefine((experience, ctx) => {
+  // Validate date precision matches the provided dates
+  const inferredPrecision = (dateStr: string | null): DatePrecision | null => {
+    if (dateStr === null) return null;
+    const parts = dateStr.split('-');
+    if (parts.length === 3) return 'day';
+    if (parts.length === 2) return 'month';
+    if (parts.length === 1) return 'year';
+    return null;
+  };
+
+  if (experience.started_on !== null) {
+    const startedPrecision = inferredPrecision(experience.started_on);
+    if (startedPrecision !== null && startedPrecision !== experience.date_precision) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['date_precision'],
+        message: `must be '${startedPrecision}' to match started_on date format`,
+      });
+    }
+  }
+
+  if (experience.ended_on !== null) {
+    const endedPrecision = inferredPrecision(experience.ended_on);
+    if (endedPrecision !== null && endedPrecision !== experience.date_precision) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['date_precision'],
+        message: `must be '${endedPrecision}' to match ended_on date format`,
+      });
+    }
+  }
 });
 export type ProfessionalImportExperience = z.infer<typeof ProfessionalImportExperienceSchema>;
 

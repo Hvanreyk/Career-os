@@ -1,8 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
-import type { Professional } from '../../lib/scoring/types';
-import { loadPros } from '../scoring/fixtures';
+import type { Professional } from '../../lib/scoring/types.js';
+import { loadPros } from '../scoring/fixtures.js';
 
 vi.mock('server-only', () => ({}));
 

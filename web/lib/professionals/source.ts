@@ -63,8 +63,7 @@ function parsePageOrThrow(rows: readonly unknown[]): Professional[] {
       || professional.experiences.some((experience) =>
         experience.firm_tier === 'elite_boutique_and_mm'
         || experience.type === 'internship'
-        || experience.type === 'casual'
-        || experience.industry === 'capital_markets'));
+        || experience.type === 'casual'));
     if (containsCompatibilityOnlyValue) {
       throw new ProfessionalSourceError('validation_failed');
     }

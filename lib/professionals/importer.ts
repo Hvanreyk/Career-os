@@ -529,8 +529,16 @@ function buildReadiness(
     );
   }
 
+  // Preserve requested draft status; only promote to ready if requested and no blockers
+  const lifecycle_status =
+    profile.requested_lifecycle_status === 'draft'
+      ? 'draft'
+      : blockers.length === 0
+        ? 'ready'
+        : 'draft';
+
   return {
-    lifecycle_status: blockers.length === 0 ? 'ready' : 'draft',
+    lifecycle_status,
     readiness_blockers: blockers,
   };
 }
@@ -656,6 +664,30 @@ function headerIssues(
 
   for (const sheet of PROFESSIONAL_WORKBOOK_SHEETS) {
     if (missingSheets.includes(sheet)) continue;
+
+    // Check for duplicate normalized headers
+    const seen = new Map<string, number>();
+    for (const header of headers[sheet]) {
+      if (header) {
+        const count = seen.get(header) ?? 0;
+        seen.set(header, count + 1);
+      }
+    }
+
+    for (const [normalized, count] of seen) {
+      if (count > 1) {
+        issues.push({
+          severity: 'error',
+          code: 'missing_column',
+          sheet,
+          row: 1,
+          column: normalized,
+          professional_key: null,
+          message: `duplicate normalized column '${normalized}' in sheet '${sheet}'`,
+        });
+      }
+    }
+
     const present = new Set(headers[sheet]);
     for (const column of REQUIRED_COLUMNS[sheet]) {
       if (!present.has(column)) {
@@ -947,7 +979,21 @@ function workbookRows(input: XLSX.WorkBook | ArrayBuffer | Uint8Array): Workbook
       blankrows: true,
     });
     const rawHeaders = matrix[0] ?? [];
-    headers[sheetName] = rawHeaders.map(normalizeHeader);
+    const normalizedHeaders = rawHeaders.map(normalizeHeader);
+
+    // Check for duplicate normalized headers
+    const seenHeaders = new Map<string, number>();
+    for (let i = 0; i < normalizedHeaders.length; i++) {
+      const normalized = normalizedHeaders[i];
+      if (normalized && seenHeaders.has(normalized)) {
+        // Found a duplicate - this will be caught by headerIssues
+      }
+      if (normalized) {
+        seenHeaders.set(normalized, i);
+      }
+    }
+
+    headers[sheetName] = normalizedHeaders;
     rows[sheetName] = matrix.slice(1)
       .map((values, index) => ({ values, sourceRow: index + 2 }))
       .filter(({ values }) => values.some((value) => !isBlank(value)))

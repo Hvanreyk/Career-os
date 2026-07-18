@@ -28,6 +28,7 @@ function profile(
     path_summary: 'A path',
     data_source: 'linkedin',
     data_confidence: 'high',
+    lifecycle_status: 'ready',
     ...overrides,
   };
 }
@@ -426,7 +427,8 @@ describe('legacy flat-row converter', () => {
     });
     expect(result.records[0]!.achievements).toEqual([
       expect.objectContaining({ tag: 'deans_list', source: 'manual' }),
-      expect.objectContaining({ tag: 'wam_hd', source: 'derived' }),
     ]);
+    // wam_hd should be absent from achievements (derivable from education data instead)
+    expect(result.records[0]!.achievements.some((a) => a.tag === 'wam_hd')).toBe(false);
   });
 });

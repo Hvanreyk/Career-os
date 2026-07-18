@@ -123,6 +123,21 @@ export const ProfessionalAchievementSchema = z.object({
   tag: SignalTag,
   effective_year: z.number().int().min(1900).max(2100).nullable(),
   date_precision: ProfessionalAchievementDatePrecision,
+}).superRefine((achievement, ctx) => {
+  if (achievement.effective_year === null && achievement.date_precision !== 'unknown') {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['effective_year'],
+      message: 'must be non-null when date_precision is not unknown',
+    });
+  }
+  if (achievement.effective_year !== null && achievement.date_precision === 'unknown') {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['date_precision'],
+      message: 'must not be unknown when effective_year is non-null',
+    });
+  }
 });
 export type ProfessionalAchievement = z.infer<typeof ProfessionalAchievementSchema>;
 

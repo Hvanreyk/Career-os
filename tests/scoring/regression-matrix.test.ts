@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { score } from '../../lib/scoring';
-import type { StudentProfile, TargetFirmTier, TargetGeography } from '../../lib/scoring/types';
+import { score } from '../../lib/scoring/index.js';
+import type { StudentProfile, TargetFirmTier, TargetGeography } from '../../lib/scoring/types.js';
 import {
   LATERAL_BIG4_AUDIT,
   TEST_NOW,
@@ -9,7 +9,7 @@ import {
   Y2_UNSW_COOP_HD_JPM,
   Y3_NO_IB_PRE_RECRUITING,
   loadPros,
-} from './fixtures';
+} from './fixtures.js';
 
 const TARGET_TIERS: TargetFirmTier[] = [
   'bb',

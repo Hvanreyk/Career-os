@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { reconstructAtStage } from '../../lib/scoring/snapshot';
-import type { Professional } from '../../lib/scoring/types';
-import { loadPros } from './fixtures';
+import { reconstructAtStage } from '../../lib/scoring/snapshot.js';
+import type { Professional } from '../../lib/scoring/types.js';
+import { loadPros } from './fixtures.js';
 
 function professionalWithTimedAchievements(): Professional {
   return {
