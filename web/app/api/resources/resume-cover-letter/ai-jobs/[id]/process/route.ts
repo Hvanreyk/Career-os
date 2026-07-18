@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { generateResumeExtract } from '@trajectoryos/core/llm/resume-extract';
+import type { ResumeComposeInput } from '@trajectoryos/core/llm/resume-compose';
+import type { ResumeImproveInput } from '@trajectoryos/core/llm/resume-improve';
+import type { ResumeTailorInput } from '@trajectoryos/core/llm/resume-tailor';
 import type { ResumeAiJobKind } from '@trajectoryos/core/resume/document';
 import { getResumeApiContext, recordResumeEvent } from '@/lib/resume/server';
 
@@ -24,17 +27,17 @@ async function runGenerator(kind: ResumeAiJobKind, input: Record<string, unknown
     }
     case 'compose': {
       const { generateResumeCompose } = await import('@trajectoryos/core/llm/resume-compose');
-      const result = await generateResumeCompose(input as never);
+      const result = await generateResumeCompose(input as ResumeComposeInput);
       return { output: { document: result.document }, model: result.model, usage: result.usage };
     }
     case 'improve': {
       const { generateResumeImprove } = await import('@trajectoryos/core/llm/resume-improve');
-      const result = await generateResumeImprove(input as never);
+      const result = await generateResumeImprove(input as ResumeImproveInput);
       return { output: { ...result.improvement }, model: result.model, usage: result.usage };
     }
     case 'tailor': {
       const { generateResumeTailor } = await import('@trajectoryos/core/llm/resume-tailor');
-      const result = await generateResumeTailor(input as never);
+      const result = await generateResumeTailor(input as ResumeTailorInput);
       return { output: { ...result.tailored }, model: result.model, usage: result.usage };
     }
   }
@@ -99,12 +102,15 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   } catch (error) {
     const message = error instanceof Error ? error.message : 'AI generation failed';
     console.error('resume ai job error:', message);
-    await context.service.from('resume_ai_jobs')
+    const { error: failUpdateError } = await context.service.from('resume_ai_jobs')
       .update({ status: 'error', error_message: message })
       .eq('id', id)
       .eq('user_id', context.user.id)
       .eq('status', 'processing')
       .eq('processing_started_at', claimed.processing_started_at);
+    if (failUpdateError) {
+      console.error('Failed to mark resume AI job as error:', failUpdateError);
+    }
     // Quota is NOT refunded here. The claim RPC allows reclaiming a job
     // already in 'error' status (so an interrupted/failed attempt can be
     // retried for free) — if a failure also refunded the quota, retrying
