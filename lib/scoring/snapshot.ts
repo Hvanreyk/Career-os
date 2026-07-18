@@ -14,6 +14,7 @@ import type {
   Experience,
   Professional,
   ProfileSnapshot,
+  SignalTag,
   Stage,
 } from './types';
 import { computeFields } from './computed';
@@ -44,8 +45,30 @@ export function reconstructAtStage(
   const cutoff = cutoffYearForStage(prof, target_stage);
   const past_experiences: Experience[] = prof.experiences.filter(e => e.year <= cutoff);
 
-  // Signals are stage-gated: S0 is too early to credit most of them.
-  const signals = target_stage === 'S0' ? [] : prof.signals;
+  // Achievement timing supersedes the old blanket S1 gate when it is known.
+  // Existing signals without timing metadata, plus explicitly undated
+  // achievements, retain the conservative S1-and-later behavior.
+  const achievementsByTag = new Map<SignalTag, NonNullable<Professional['achievements']>>();
+  for (const achievement of prof.achievements ?? []) {
+    const rows = achievementsByTag.get(achievement.tag) ?? [];
+    rows.push(achievement);
+    achievementsByTag.set(achievement.tag, rows);
+  }
+
+  const candidateSignals = new Set<SignalTag>([
+    ...prof.signals,
+    ...(prof.achievements ?? []).map((achievement) => achievement.tag),
+  ]);
+  const signals = [...candidateSignals].filter((tag) => {
+    const achievements = achievementsByTag.get(tag);
+    if (!achievements?.length) return target_stage !== 'S0';
+    return achievements.some((achievement) => {
+      if (achievement.effective_year !== null) {
+        return achievement.effective_year <= cutoff;
+      }
+      return target_stage !== 'S0';
+    });
+  });
 
   const computed = computeFields({ experiences: past_experiences, signals });
 

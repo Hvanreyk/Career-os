@@ -1,10 +1,13 @@
 # Professional database redesign and compatibility plan
 
-Status: Release A implemented and applied to production on 2026-07-15. The
-normalized schema, deterministic backfill, service-only scoring view, semantic
-review gates, and live aggregate parity checks are active. The website remains
-on `PROFESSIONALS_SOURCE=legacy`; no scorer semantics or client data contract
-has been switched.
+Status: Release A was implemented on 2026-07-15. Phase 2 now makes the
+normalized model authoritative in the preliminary, customer-free environment.
+The active implementation roadmap is
+[`professionals_release_b_plan.md`](./professionals_release_b_plan.md); the
+normalized operating procedure is
+[`professional_migration_runbook.md`](./professional_migration_runbook.md).
+The original dual-read and long rollback gates below are retained as design
+history, not as current deployment requirements.
 
 ## Implementation result
 

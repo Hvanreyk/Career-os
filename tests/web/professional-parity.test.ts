@@ -5,7 +5,6 @@ import {
   summarizeProfessionalParity,
   summarizeScoringParity,
 } from '../../web/lib/professionals/parity';
-import { getProfessionalSourceMode } from '../../web/lib/professionals/mode';
 
 describe('professional migration parity', () => {
   it('reports exact parity without exposing professional identifiers', () => {
@@ -36,9 +35,4 @@ describe('professional migration parity', () => {
     expect(summary.equivalent_within_tolerance).toBe(true);
   });
 
-  it('defaults the server-only source switch to legacy and rejects invalid modes', () => {
-    expect(getProfessionalSourceMode(undefined)).toBe('legacy');
-    expect(getProfessionalSourceMode('shadow')).toBe('shadow');
-    expect(() => getProfessionalSourceMode('NEXT_PUBLIC_normalized')).toThrow();
-  });
 });
