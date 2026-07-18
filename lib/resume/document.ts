@@ -69,6 +69,9 @@ export const ResumeChangeSchema = z.object({
 }).strict();
 export type ResumeChange = z.infer<typeof ResumeChangeSchema>;
 
+// Exported for zod-v4 consumers (web) that cannot wrap v3 schemas.
+export const ResumeChangeListSchema = z.array(ResumeChangeSchema).max(40);
+
 export const ResumeImproveOutputSchema = z.object({
   summary: z.string().min(1).max(800),
   changes: z.array(ResumeChangeSchema).max(40),
