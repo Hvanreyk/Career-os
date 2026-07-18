@@ -96,6 +96,25 @@ Migration `0007_resource_shell_hardening.sql` adds:
 - unique/leased roadmap jobs to prevent duplicate LLM calls, and
 - a private `product_events` stream written through `/api/events`.
 
+### Resume Builder (`resume-cover-letter` resource)
+
+`/resources/resume-cover-letter/workshop` is a full resume builder (see
+`RESUME_BUILDER_PLAN.md`): structured document model (contact header +
+sections + entries + bullets, migration 0012), PDF/DOCX import (parsed
+in-request via mammoth/unpdf, never stored) and export (`@react-pdf/renderer`
+/ `docx`, dynamic-imported), auto-create from `student_profiles.profile`
+after an additional-details screen, and AI improve/JD-tailor flows modelled
+on truth-preserving tailoring (never fabricate; `[add metric if truthful]`
+placeholders; per-change user checkpoints; JD coverage % computed in code by
+`lib/resume/coverage.ts`, never by the LLM). All four generators
+(`lib/llm/resume-{extract,compose,improve,tailor}.ts`) run through one leased
+`resume_ai_jobs` two-phase rail (`web/lib/resume/jobs.ts` +
+`/api/resources/resume-cover-letter/ai-jobs/[id]/process`) with per-kind
+Sydney-day quotas (`RESUME_AI_DAILY_LIMIT`). The compose profile projection
+(`toComposeProfileInput`) must never include high-school/ATAR fields —
+regression-locked in `tests/resume/prompts.test.ts`. The per-bullet critique
+surface from migration 0008 is unchanged and lives on inside the builder.
+
 ### Resource Admin UI
 
 `/admin/resources` is protected by a secure page/API check against signed
