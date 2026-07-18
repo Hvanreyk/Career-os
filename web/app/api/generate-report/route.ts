@@ -40,24 +40,6 @@ export function buildStudentProfile(form: OnboardData, userId: string, email: st
   ])];
   const hasHonoursSignal = uniqueSignals.includes('honours');
 
-  // Expected graduation year: current year of study + remaining years
-  // (assume 4-year co-op or 3-year bachelor from now; an Honours year adds
-  // one to the bachelor length, since Honours is no longer a degree_type)
-  const currentCalendarYear = new Date().getFullYear();
-  const degreeLength = form.is_co_op
-    ? 4
-    : form.degree_type === 'double_degree'
-    ? 5
-    : form.degree_type === 'combined_degree'
-    ? 4
-    : form.degree_type === 'bachelor'
-    ? (hasHonoursSignal ? 4 : 3)
-    : 4;
-  // Clamp to at least 1 remaining year — an extended-duration student
-  // (e.g. Year 6 on a nominally 3-4 year degree) shouldn't get a graduation
-  // year in the past.
-  const expectedGradYear = currentCalendarYear + Math.max(degreeLength - form.current_year, 1);
-
   const experiences: StudentProfile['experiences'] = form.experiences.map((exp) => ({
     type: exp.type,
     firm: exp.firm,
@@ -80,7 +62,7 @@ export function buildStudentProfile(form: OnboardData, userId: string, email: st
     degree_type: form.degree_type,
     majors: form.majors,
     current_year: form.current_year,
-    expected_graduation_year: expectedGradYear,
+    expected_graduation_year: form.expected_graduation_year,
     wam_band: form.wam_band,
     has_honours: hasHonoursSignal,
     has_masters_or_second_degree: ['masters', 'mba', 'double_degree'].includes(form.degree_type),

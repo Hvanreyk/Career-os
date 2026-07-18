@@ -638,6 +638,7 @@ export const CareerCompassOnboardDataSchema = z.object({
   degree_type: SelectableDegreeTypeSchema,
   majors: z.array(z.string().max(100)).max(10),
   current_year: z.number().int().min(1).max(6),
+  expected_graduation_year: z.number().int().min(2020).max(2100),
   is_co_op: z.boolean(),
   wam_band: WamBandSchema,
   high_school_type: SelectableHighSchoolTypeSchema,

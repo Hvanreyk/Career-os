@@ -9,6 +9,8 @@ import { X } from 'lucide-react';
 import { DEGREE_TYPE_OPTIONS as DEGREE_TYPES } from '@trajectoryos/core/career-compass/taxonomy';
 
 const YEARS = [1, 2, 3, 4, 5, 6];
+const CURRENT_CALENDAR_YEAR = new Date().getFullYear();
+const GRAD_YEARS = Array.from({ length: 8 }, (_, i) => CURRENT_CALENDAR_YEAR + i);
 
 export default function UniversityPage() {
   const { data, update } = useOnboard();
@@ -28,7 +30,8 @@ export default function UniversityPage() {
   };
 
   const canContinue =
-    data.university && data.degree && data.degree_type && data.current_year && data.majors.length > 0;
+    data.university && data.degree && data.degree_type && data.current_year &&
+    data.expected_graduation_year && data.majors.length > 0;
 
   const addMajor = () => {
     const trimmed = majorInput.trim();
@@ -169,6 +172,33 @@ export default function UniversityPage() {
                 }`}
               >
                 Y{y}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Expected graduation year */}
+        <div>
+          <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">
+            Expected graduation year
+          </label>
+          <p className="text-[11px] text-slate-600 mb-2">
+            If you&apos;re extending your degree (e.g. underloading), pick the year you actually
+            expect to finish — not the standard length for your degree type.
+          </p>
+          <div className="grid grid-cols-4 gap-2">
+            {GRAD_YEARS.map((y) => (
+              <button
+                key={y}
+                type="button"
+                onClick={() => update({ expected_graduation_year: y })}
+                className={`py-2.5 rounded-xl text-sm font-medium border transition-all ${
+                  data.expected_graduation_year === y
+                    ? 'border-gold-400/60 bg-gold-400/10 text-gold-300'
+                    : 'border-white/10 text-slate-400 hover:border-white/25 hover:text-white'
+                }`}
+              >
+                {y}
               </button>
             ))}
           </div>
