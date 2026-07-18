@@ -48,6 +48,7 @@ export interface OnboardData {
   degree_type: DegreeType;
   majors: string[];
   current_year: number;
+  expected_graduation_year: number;
   is_co_op: boolean;
 
   // Step 3 — Grades
@@ -72,6 +73,7 @@ export const EMPTY_ONBOARD: OnboardData = {
   degree_type: 'bachelor',
   majors: [],
   current_year: 2,
+  expected_graduation_year: new Date().getFullYear() + 2,
   is_co_op: false,
   wam_band: 'unknown',
   high_school_type: 'unknown',

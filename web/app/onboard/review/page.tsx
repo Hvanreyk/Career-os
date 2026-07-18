@@ -52,6 +52,7 @@ export default function ReviewPage() {
         ['Type', data.degree_type],
         ['Majors', data.majors.join(', ') || '—'],
         ['Year', `Year ${data.current_year}`],
+        ['Expected graduation', String(data.expected_graduation_year)],
         ['Co-op', data.is_co_op ? 'Yes' : 'No'],
       ],
     },
