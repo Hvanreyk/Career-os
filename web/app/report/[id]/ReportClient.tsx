@@ -92,6 +92,12 @@ export default function ReportClient({
   const successPct = report.match_summary.matched_count > 0
     ? Math.round((report.match_summary.reached_target_count / report.match_summary.matched_count) * 100)
     : 0;
+  const { fit_lift, avg_top5_distance } = report.match_summary;
+  // Older stored reports predate these fields — only render what we have.
+  const fitDetailParts = [
+    fit_lift != null ? `${fit_lift.toFixed(1)}x the pool base rate` : null,
+    avg_top5_distance != null ? `${Math.round((1 - avg_top5_distance) * 100)}% match confidence` : null,
+  ].filter((p): p is string => p !== null);
   const createdDate = new Date(createdAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
@@ -147,6 +153,11 @@ export default function ReportClient({
             <div className="text-xs text-slate-400">
               {successPct}% of matched profiles reached your target
             </div>
+            {fitDetailParts.length > 0 && (
+              <div className="text-[11px] text-slate-500 mt-1">
+                {fitDetailParts.join(' · ')}
+              </div>
+            )}
           </div>
         </motion.div>
 
