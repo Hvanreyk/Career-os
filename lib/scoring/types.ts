@@ -601,6 +601,17 @@ export interface ScoringOutput {
     matched_count: number;
     reached_target_count: number;
     fit_band: FitBand;
+    /** reached_target_count / matched_count — the raw rate fit_band is cut from.
+     * Optional: absent on reports stored before this field existed. */
+    fit_ratio?: number;
+    /** fit_ratio / pool base rate. Null when the pool base rate is 0 (no
+     * comparison possible). Optional: absent on reports stored before this
+     * field existed. */
+    fit_lift?: number | null;
+    /** Average match distance among the top 5 — lower means closer, more
+     * confident matches. Optional: absent on reports stored before this
+     * field existed. */
+    avg_top5_distance?: number;
     low_data_warning: boolean;
     boutique_data_warning: boolean;
   };

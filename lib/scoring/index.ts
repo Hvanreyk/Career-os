@@ -85,25 +85,42 @@ export function score(
  * for the old tier-pre-filtered funnel (where ratio was always 1.0) would
  * mislabel everyone as a reach.
  */
+interface FitBandResult {
+  band: FitBand;
+  ratio: number;
+  // Null (not Infinity — that doesn't survive JSON round-tripping through
+  // the DB) when the pool base rate is 0, i.e. lift can't be computed.
+  lift: number | null;
+  avg_top5_distance: number;
+}
+
 function fitBand(
   matches: MatchResult[],
   reachedTarget: number,
   poolBaseRate: number,
-): FitBand {
-  if (matches.length === 0) return 'long_shot';
+): FitBandResult {
+  if (matches.length === 0) {
+    return { band: 'long_shot', ratio: 0, lift: null, avg_top5_distance: 1 };
+  }
   const ratio = reachedTarget / matches.length;
-  const lift = poolBaseRate > 0 ? ratio / poolBaseRate : ratio > 0 ? Infinity : 1;
+  const liftRaw = poolBaseRate > 0 ? ratio / poolBaseRate : ratio > 0 ? Infinity : 1;
+  const lift = Number.isFinite(liftRaw) ? liftRaw : null;
   // Average distance among the top-5 — closer = more confident
   const top = matches.slice(0, 5);
-  const avgDist = top.reduce((acc, m) => acc + m.distance, 0) / top.length;
+  const avg_top5_distance = top.reduce((acc, m) => acc + m.distance, 0) / top.length;
 
-  if (ratio >= 0.45 && lift >= 1.2 && avgDist < 0.35) return 'strong_fit';
+  // Threshold checks below use liftRaw (pre-null) so an infinite lift still
+  // clears the >= comparisons rather than failing them.
+  let band: FitBand;
+  if (ratio >= 0.45 && liftRaw >= 1.2 && avg_top5_distance < 0.35) band = 'strong_fit';
   // A saturated base rate (e.g. target tier 'any') can't produce lift; treat
   // matching the base rate as achievable when the base rate itself is high.
-  if (ratio >= 0.45 && poolBaseRate >= 0.9 && avgDist < 0.35) return 'strong_fit';
-  if (ratio >= 0.3 && lift >= 0.9) return 'stretch_but_achievable';
-  if (ratio >= 0.15 || lift >= 0.5) return 'reach';
-  return 'long_shot';
+  else if (ratio >= 0.45 && poolBaseRate >= 0.9 && avg_top5_distance < 0.35) band = 'strong_fit';
+  else if (ratio >= 0.3 && liftRaw >= 0.9) band = 'stretch_but_achievable';
+  else if (ratio >= 0.15 || liftRaw >= 0.5) band = 'reach';
+  else band = 'long_shot';
+
+  return { band, ratio, lift, avg_top5_distance };
 }
 
 function stageDescription(stage: Stage): string {
@@ -176,7 +193,7 @@ function assembleOutput(
   ).length;
   const poolBaseRate = pool.length > 0 ? pool_reached_target_count / pool.length : 0;
 
-  const fit_band = fitBand(matches, reached_target_count, poolBaseRate);
+  const fitResult = fitBand(matches, reached_target_count, poolBaseRate);
 
   const top_paths = matches.slice(0, 5).map(m => ({
     path_summary: m.professional.path_summary ?? '—',
@@ -186,7 +203,7 @@ function assembleOutput(
   }));
 
   return {
-    student_summary: buildSummary(student, fit_band),
+    student_summary: buildSummary(student, fitResult.band),
     stage,
     stage_description: stageDescription(stage),
 
@@ -202,7 +219,10 @@ function assembleOutput(
       pool_reached_target_count,
       matched_count: matches.length,
       reached_target_count,
-      fit_band,
+      fit_band: fitResult.band,
+      fit_ratio: fitResult.ratio,
+      fit_lift: fitResult.lift,
+      avg_top5_distance: fitResult.avg_top5_distance,
       low_data_warning: matches.length < DEFAULT_K,
       boutique_data_warning: student.target_firm_tier === 'boutique',
     },

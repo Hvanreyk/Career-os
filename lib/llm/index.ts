@@ -41,6 +41,10 @@ export async function generateReport(scoringOutput: ScoringOutput): Promise<LLMR
     response = await client.chat.completions.create({
       model: MODEL,
       max_completion_tokens: 2048,
+      // Low temperature: the underlying scoring (fit_band, gaps, actions) is
+      // deterministic — the prose narrating it shouldn't add its own variance
+      // on top for an identical ScoringOutput.
+      temperature: 0.2,
       // Force valid JSON so we never have to salvage prose into sections.
       response_format: { type: 'json_object' },
       messages: [
