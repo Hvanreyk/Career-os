@@ -12,12 +12,14 @@ Output ONLY valid JSON with exactly this structure (no code block, no extra text
   "what_to_do_next": "<markdown string>"
 }
 
-Each value is a self-contained Markdown string that will be rendered in the app as its own section. Include the section heading (##) as the first line of each value. Use bold, bullet points, and short paragraphs freely. Be specific — cite numbers, firm names, and timelines drawn from the data.
+Each value is a self-contained Markdown string that will be rendered in the app as its own section. Include the section heading (##) as the first line of each value. Use bold, bullet points, and short paragraphs freely. Be specific — cite numbers, firm names, and timelines drawn from the data. Be generous with explanation: this report should read like a mentor who has studied *this* student's profile and is walking them through the reasoning, not a generic summary. Explain the "why" behind every claim.
+
+Hard rule — explain the data, never invent it. The stage, fit, matched statistics, gaps, and recommended actions (including their order, effort, and deadlines) are already computed and fixed. Do not add, drop, reorder, or contradict them. Your job is to make the reasoning behind them clear, specific, and motivating.
 
 Section guidance:
-- **where_you_stand**: Start with a direct, honest assessment. What stage are they at? What does their fit band actually mean in plain English? How does their profile compare to the professionals who made it? Be encouraging but grounded — don't oversell. 2–3 short paragraphs.
-- **matched_paths**: What did the professionals who succeeded from a similar starting point actually do? Surface the most common pattern (e.g. "7 of 10 had a penultimate at BB"). Name real firms from the data. Give the student a mental model of the path ahead. 3–5 bullet points or a short narrative.
-- **what_to_do_next**: Turn the recommended actions into coaching advice. Explain the *why* behind each action — what does it unlock, why does timing matter? Be specific about deadlines and effort. Numbered list by priority. Max 3 actions.`;
+- **where_you_stand**: A direct, honest read of where they are. What does their fit band actually mean in plain English, and *why* did they land there — which parts of their profile lift them and which hold them back? How do they compare to the professionals who made it? Encouraging but grounded — never oversell, especially on a reach or long-shot. 3–4 short paragraphs.
+- **matched_paths**: What did people who started from a similar point actually do? Surface the dominant pattern (e.g. "7 of 10 had a penultimate at BB"), name real firms from the data, and explain what that pattern *implies for this student's own path*. 4–6 bullets or a short narrative, always concrete.
+- **what_to_do_next**: The heart of the report. The actions are given to you in priority order, each with an effort level and deadline — treat that order and those facts as fixed. For EACH action, write a full explanation (2–4 sentences) that covers: (1) **why this is the highest-leverage move for them right now** — what it unlocks and how it shifts their standing, citing the numbers in the data; (2) **why the timing matters** — tie it to their recruiting-cycle deadline; (3) **why it sits where it does in the sequence** — the ordering logic (it compounds, it's a prerequisite for the next move, or it's simply the best effort-to-impact ratio). Be their mentor explaining the plan, not a checklist. Numbered list by priority.`;
 }
 
 export function buildUserMessage(output: ScoringOutput): string {
@@ -81,7 +83,7 @@ ${topPathLines}
 PROFILE GAPS (features common in successful matches but missing in student)
 ${gapLines}
 
-RECOMMENDED ACTIONS
+RECOMMENDED ACTIONS (priority order — preserve it; explain the reasoning and the sequencing for each)
 ${actionLines}
 
 Produce the JSON report now.`;

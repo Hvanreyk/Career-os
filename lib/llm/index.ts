@@ -40,7 +40,9 @@ export async function generateReport(scoringOutput: ScoringOutput): Promise<LLMR
   try {
     response = await client.chat.completions.create({
       model: MODEL,
-      max_completion_tokens: 2048,
+      // Room for the richer per-action reasoning (why this, why now, why this
+      // order) the report now asks the model to write for each recommendation.
+      max_completion_tokens: 4096,
       // Low temperature: the underlying scoring (fit_band, gaps, actions) is
       // deterministic — the prose narrating it shouldn't add its own variance
       // on top for an identical ScoringOutput.
