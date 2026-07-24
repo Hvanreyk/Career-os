@@ -83,8 +83,7 @@ function cleanMarkdown(text: string) {
   return text
     .replace(/^#{1,6}\s*/gm, '')
     .replace(/\*\*(.*?)\*\*/g, '$1')
-    .replace(/^\s*[-*]\s+/gm, '')
-    .replace(/\s+-\s+/g, ' ')
+    .replace(/^\s*[-*]\s+/gm, '\n\n')
     .trim();
 }
 
@@ -116,19 +115,37 @@ const pctText = (p: number) => `${(p * 100).toFixed(p < 0.1 ? 1 : 0)}%`;
 
 type Competitiveness = NonNullable<ScoringOutput['competitiveness']>;
 
+const COMP_GUIDANCE: Record<Competitiveness['band'], string> = {
+  strong:
+    'Your profile is already credible for front-office recruiting. Focus on converting that strength into interviews and closing the few visible gaps before applications matter.',
+  competitive:
+    'Your profile can credibly compete for front-office roles. The highest-leverage unlock is closing the few visible gaps before applications matter.',
+  developing:
+    'Your profile is still developing for front-office recruiting. Closing the highest-impact gaps now will make your applications materially more credible.',
+  reach:
+    'This target is currently a reach. Build the highest-impact signals first, then use a wider application strategy while you strengthen your profile.',
+};
 
-function CompetitivenessSection({ comp }: { comp: Competitiveness }) {
+function CompetitivenessSection({
+  comp,
+  actions,
+}: {
+  comp: Competitiveness;
+  actions: ScoringOutput['actions'];
+}) {
   const band = COMP_BAND[comp.band] ?? COMP_BAND.developing;
   const maxMag = Math.max(1, ...comp.contributions.map((c) => Math.abs(c.points)));
-  const finalIndex = Math.min(100, comp.index + 16);
+  const projectedImpact = actions.reduce((total, action) => total + (action.index_impact ?? 0), 0);
+  const finalIndex = Math.max(0, Math.min(100, comp.index + projectedImpact));
   const targetLabel = tierLabel(comp.primary_tier);
-  const bestTier = comp.per_tier.reduce((best, tier) => tier.index > best.index ? tier : best, comp.per_tier[0] ?? {
-    tier: comp.primary_tier,
-    index: comp.index,
-    band: comp.band,
-    estimated_probability: comp.estimated_probability,
-    multiplier_vs_field: comp.multiplier_vs_field,
-  });
+  const projectedBandKey = finalIndex >= 80
+    ? 'strong'
+    : finalIndex >= 65
+      ? 'competitive'
+      : finalIndex >= 45
+        ? 'developing'
+        : 'reach';
+  const projectedBand = COMP_BAND[projectedBandKey];
 
   return (
     <div className="space-y-8">
@@ -145,7 +162,11 @@ function CompetitivenessSection({ comp }: { comp: Competitiveness }) {
             You&apos;re {band.label.toLowerCase()} for {targetLabel} — and closer than most.
           </h1>
           <div className="mt-7 grid gap-8 lg:grid-cols-[380px_1fr] lg:items-center">
-            <div className="relative mx-auto h-72 w-72 sm:h-80 sm:w-80">
+            <div
+              className="relative mx-auto h-72 w-72 sm:h-80 sm:w-80"
+              role="img"
+              aria-label={`${comp.index} out of 100 for ${targetLabel}`}
+            >
               <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90">
                 <circle cx="18" cy="18" r="15.9155" fill="none" stroke="rgba(148,163,184,0.14)" strokeWidth="2.4" />
                 <motion.circle cx="18" cy="18" r="15.9155" fill="none" stroke={band.bar} strokeWidth="2.4"
@@ -163,7 +184,7 @@ function CompetitivenessSection({ comp }: { comp: Competitiveness }) {
                 <span className="text-slate-400">for <strong className="text-white">{targetLabel}</strong></span>
               </div>
               <p className="text-xl leading-9 text-slate-300">
-                Your current profile is already credible for front-office recruiting. The highest-leverage unlock is closing the few visible gaps before applications matter.
+                {COMP_GUIDANCE[comp.band]}
               </p>
               <div className="rounded-2xl border border-slate-700/80 bg-slate-950/35 p-6 flex gap-5">
                 <div className={`font-serif text-5xl ${band.colour}`}>~{pctText(comp.estimated_probability)}</div>
@@ -206,7 +227,7 @@ function CompetitivenessSection({ comp }: { comp: Competitiveness }) {
                   <span className="text-lg text-slate-200 leading-8">{f.label}</span>
                   <span className={`text-xl font-bold ${pos ? 'text-emerald-400' : 'text-red-400'}`}>{pos ? '+' : ''}{f.points}</span>
                   <div className="h-7 rounded-md overflow-hidden bg-transparent flex items-center">
-                    <div className={`h-full rounded-md ${pos ? 'bg-gradient-to-r from-emerald-700 to-emerald-400' : 'bg-gradient-to-r from-red-400 to-red-900'}`} style={{ width: `${(Math.abs(f.points) / maxMag) * 100}%` }} />
+                    <div className={`h-full rounded-md ${pos ? 'bg-linear-to-r from-emerald-700 to-emerald-400' : 'bg-linear-to-r from-red-400 to-red-900'}`} style={{ width: `${(Math.abs(f.points) / maxMag) * 100}%` }} />
                   </div>
                 </div>
               );
@@ -220,8 +241,8 @@ function CompetitivenessSection({ comp }: { comp: Competitiveness }) {
         <h2 className="font-serif text-3xl font-bold text-white">If you close the top moves</h2>
         <div className="mt-6 flex items-center gap-5">
           <span className="font-serif text-3xl text-gold-400">{comp.index}</span><span className="text-slate-400">→</span><span className="font-serif text-3xl text-emerald-400">{finalIndex}</span>
-          <div className="h-3 flex-1 rounded-full bg-slate-800 overflow-hidden"><div className="h-full bg-gradient-to-r from-gold-400 via-gold-400 to-emerald-400" style={{ width: `${finalIndex}%` }} /></div>
-          <span className="text-slate-300">Strong for {tierLabel(bestTier.tier)}</span>
+          <div className="h-3 flex-1 rounded-full bg-slate-800 overflow-hidden"><div className="h-full bg-linear-to-r from-gold-400 via-gold-400 to-emerald-400" style={{ width: `${finalIndex}%` }} /></div>
+          <span className="text-slate-300">{projectedBand.label} for {targetLabel}</span>
         </div>
       </div>
     </div>
@@ -284,7 +305,7 @@ export default function ReportClient({
         </motion.div>
 
         {/* ── Competitiveness (primary lens) ── */}
-        {report.competitiveness && <CompetitivenessSection comp={report.competitiveness} />}
+        {report.competitiveness && <CompetitivenessSection comp={report.competitiveness} actions={report.actions} />}
 
         {/* ── Stage + Fit band (fallback for reports predating competitiveness) ── */}
         {!report.competitiveness && (
@@ -329,7 +350,7 @@ export default function ReportClient({
                 <div key={gap.gap_key} className="grid grid-cols-[1.3fr_0.8fr_0.8fr_0.5fr] gap-3 border-b border-slate-800 px-4 py-4 last:border-b-0">
                   <span className="text-slate-200">{gap.display_name}</span>
                   <span className="font-semibold text-white">{gap.student_has ? 'Yes' : 'Not yet'}</span>
-                  <span className="text-slate-400">{gap.match_pct}% have this</span>
+                  <span className="text-slate-400">{Math.round(gap.match_pct * 100)}% have this</span>
                   <span className={`text-right text-xs font-bold tracking-[0.18em] uppercase ${gap.student_has ? 'text-emerald-400' : gap.actionability === 'high' ? 'text-orange-400' : 'text-slate-400'}`}>
                     {gap.student_has ? 'On par' : gap.actionability === 'high' ? 'Gap' : 'Build'}
                   </span>
@@ -433,7 +454,7 @@ export default function ReportClient({
                       gap.actionability === 'high' ? 'text-emerald-400' :
                       gap.actionability === 'medium' ? 'text-gold-400' : 'text-slate-500'
                     }`}>
-                      {gap.match_pct}% have this
+                      {Math.round(gap.match_pct * 100)}% have this
                     </span>
                   </div>
                   <div className="h-1.5 rounded-full bg-white/6 overflow-hidden">
@@ -444,7 +465,7 @@ export default function ReportClient({
                           gap.actionability === 'medium' ? '#d4af37' : '#64748b'
                       }}
                       initial={{ width: 0 }}
-                      animate={{ width: `${gap.match_pct}%` }}
+                      animate={{ width: `${Math.round(gap.match_pct * 100)}%` }}
                       transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' }}
                     />
                   </div>
