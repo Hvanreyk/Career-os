@@ -25,6 +25,7 @@ import { filterPool } from './pool';
 import { findKNearest, DEFAULT_K } from './matcher';
 import { analyzeGaps } from './gaps';
 import { generateActions } from './actions';
+import { computeScorecard, type Scorecard } from './scorecard';
 
 export interface ScoreOptions {
   K?: number;
@@ -66,11 +67,16 @@ export function score(
   // 6. Gaps
   const gaps = analyzeGaps(student, computed, matches, student.target_firm_tier);
 
-  // 7. Actions
-  const actions = generateActions(stage, student, computed, matches, now);
+  // 6b. Competitiveness scorecard — the report's primary lens. Feature-based
+  // (not kNN) so it decomposes into attribution and supports action ROI.
+  const scorecard = computeScorecard(student, computed);
+
+  // 7. Actions — driven by the recruiting timeline + scorecard + gaps, NOT the
+  // S0–S5 stage. Stage is still computed above for snapshot reconstruction.
+  const actions = generateActions(student, computed, scorecard, gaps, matches, now);
 
   // 8. Output structuring
-  return assembleOutput(student, stage, professionals.length, pool, matches, gaps, actions, now);
+  return assembleOutput(student, stage, professionals.length, pool, matches, gaps, actions, scorecard, now);
 }
 
 // ============================================================
@@ -171,6 +177,7 @@ function assembleOutput(
   matches: MatchResult[],
   gaps: Gap[],
   actions: Action[],
+  scorecard: Scorecard,
   now: Date,
 ): ScoringOutput {
   const tgtLevel =
@@ -227,6 +234,26 @@ function assembleOutput(
       boutique_data_warning: student.target_firm_tier === 'boutique',
     },
 
+    competitiveness: {
+      primary_tier: scorecard.primaryTier,
+      index: scorecard.index,
+      band: scorecard.band,
+      estimated_probability: scorecard.perTier.find(t => t.tier === scorecard.primaryTier)?.estimatedProbability ?? 0,
+      multiplier_vs_field: scorecard.perTier.find(t => t.tier === scorecard.primaryTier)?.multiplierVsField ?? 1,
+      any_front_office_probability: scorecard.anyFrontOfficeProbability,
+      contributions: scorecard.contributions,
+      per_tier: scorecard.perTier.map(t => ({
+        tier: t.tier,
+        index: t.index,
+        band: t.band,
+        estimated_probability: t.estimatedProbability,
+        multiplier_vs_field: t.multiplierVsField,
+      })),
+      recommended_target: scorecard.recommendedTarget,
+      stretch_target: scorecard.stretchTarget,
+      safety_target: scorecard.safetyTarget,
+    },
+
     probability_data: {
       matched_count: matches.length,
       reached_target: reached_target_count,
@@ -251,6 +278,9 @@ export { classifyStage } from './stage';
 export { filterPool } from './pool';
 export { reconstructAtStage } from './snapshot';
 export { computeDistance, computeDistanceWithBreakdown, studentForDistance } from './distance';
+export { computeScorecard, actionImpact, indexToMultiplier } from './scorecard';
+export type { Scorecard, TierCompetitiveness, FeatureContribution, CompetitivenessBand } from './scorecard';
+export * as funnel from './funnel';
 export { findKNearest } from './matcher';
 export { analyzeGaps } from './gaps';
 export { generateActions } from './actions';

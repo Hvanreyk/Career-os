@@ -573,6 +573,10 @@ export interface Action {
   description: string;
   deadline: string | null; // ISO date or null
   estimated_effort: 'low' | 'medium' | 'high';
+  /** Counterfactual competitiveness-index point delta for a gap-closing
+   * action (from `actionImpact`). Omitted where there's no clean
+   * counterfactual (e.g. a WAM gap). */
+  index_impact?: number;
 }
 
 export type FitBand = 'strong_fit' | 'stretch_but_achievable' | 'reach' | 'long_shot';
@@ -614,6 +618,31 @@ export interface ScoringOutput {
     avg_top5_distance?: number;
     low_data_warning: boolean;
     boutique_data_warning: boolean;
+  };
+
+  /**
+   * Competitiveness scorecard — the report's primary lens (replaces the old
+   * S0–S5 stage framing for the user). Optional: absent on reports stored
+   * before this field existed. See lib/scoring/scorecard.ts.
+   */
+  competitiveness?: {
+    primary_tier: string;
+    index: number;
+    band: 'strong' | 'competitive' | 'developing' | 'reach';
+    estimated_probability: number;
+    multiplier_vs_field: number;
+    any_front_office_probability: number;
+    contributions: Array<{ feature: string; label: string; points: number }>;
+    per_tier: Array<{
+      tier: string;
+      index: number;
+      band: 'strong' | 'competitive' | 'developing' | 'reach';
+      estimated_probability: number;
+      multiplier_vs_field: number;
+    }>;
+    recommended_target: string;
+    stretch_target: string;
+    safety_target: string;
   };
 
   probability_data: {

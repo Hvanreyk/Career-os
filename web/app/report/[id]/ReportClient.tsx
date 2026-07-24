@@ -77,6 +77,116 @@ function Prose({ text }: { text: string }) {
   );
 }
 
+// ─── Competitiveness (primary report lens) ────────────────────
+
+const COMP_BAND: Record<string, { label: string; colour: string; bg: string; bar: string }> = {
+  strong:      { label: 'Strong',      colour: 'text-emerald-400', bg: 'border-emerald-400/20 bg-emerald-400/5', bar: '#34d399' },
+  competitive: { label: 'Competitive', colour: 'text-gold-400',    bg: 'border-gold-400/20 bg-gold-400/5',       bar: '#d4af37' },
+  developing:  { label: 'Developing',  colour: 'text-orange-400',  bg: 'border-orange-400/20 bg-orange-400/5',   bar: '#fb923c' },
+  reach:       { label: 'Reach',       colour: 'text-red-400',     bg: 'border-red-400/20 bg-red-400/5',         bar: '#f87171' },
+};
+const TIER_LABEL: Record<string, string> = {
+  bb: 'Bulge Bracket', elite_boutique: 'Elite Boutique', mid_market: 'Mid-Market', boutique: 'Boutique', any: 'Any Tier',
+};
+const tierLabel = (t: string) => TIER_LABEL[t] ?? t;
+const pctText = (p: number) => `${(p * 100).toFixed(p < 0.1 ? 1 : 0)}%`;
+
+type Competitiveness = NonNullable<ScoringOutput['competitiveness']>;
+
+function CompetitivenessSection({ comp }: { comp: Competitiveness }) {
+  const band = COMP_BAND[comp.band] ?? COMP_BAND.developing;
+  const maxMag = Math.max(1, ...comp.contributions.map((c) => Math.abs(c.points)));
+  return (
+    <div className="space-y-4">
+      {/* Hero: index + band + honest odds */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className={`glass border rounded-2xl p-6 ${band.bg}`}
+      >
+        <div className="flex items-center gap-6 flex-wrap">
+          <div className="relative w-28 h-28 flex-shrink-0">
+            <svg viewBox="0 0 36 36" className="w-28 h-28 -rotate-90">
+              <circle cx="18" cy="18" r="15.9155" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="2.5" />
+              <circle cx="18" cy="18" r="15.9155" fill="none" stroke={band.bar} strokeWidth="2.5"
+                strokeDasharray={`${comp.index}, 100`} strokeLinecap="round" />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-3xl font-bold font-serif text-white leading-none">{comp.index}</span>
+              <span className="text-[10px] text-slate-500 mt-0.5">/ 100</span>
+            </div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs text-slate-500 uppercase tracking-widest mb-1">
+              Competitiveness · {tierLabel(comp.primary_tier)}
+            </div>
+            <div className={`text-2xl font-bold font-serif mb-2 ${band.colour}`}>{band.label}</div>
+            <p className="text-sm text-slate-300 leading-relaxed">
+              ~<span className="text-white font-semibold">{pctText(comp.estimated_probability)}</span> shot at a {tierLabel(comp.primary_tier)} seat this cycle
+              <span className="text-slate-500"> ({comp.multiplier_vs_field.toFixed(1)}× the typical serious candidate)</span>.
+              Roughly <span className="text-white font-semibold">{pctText(comp.any_front_office_probability)}</span> chance of landing some front-office IB seat across the ladder.
+            </p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Per-tier ladder */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.15 }}
+        className="glass border border-white/8 rounded-2xl p-5"
+      >
+        <div className="text-xs text-slate-500 uppercase tracking-widest mb-4">Where You Stand, By Tier</div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {comp.per_tier.map((t) => {
+            const b = COMP_BAND[t.band] ?? COMP_BAND.developing;
+            return (
+              <div key={t.tier} className="border border-white/8 rounded-xl p-3 bg-white/2">
+                <div className="text-xs text-slate-400 mb-1">{tierLabel(t.tier)}</div>
+                <div className={`text-2xl font-bold font-serif leading-none ${b.colour}`}>{t.index}</div>
+                <div className={`text-[10px] font-semibold uppercase tracking-wide mt-1 ${b.colour}`}>{b.label}</div>
+                <div className="text-[11px] text-slate-500 mt-1">~{pctText(t.estimated_probability)} shot</div>
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-sm text-slate-300 mt-4 border-l-2 border-gold-400 pl-3">
+          Recommended aim: <span className="text-white font-semibold">{tierLabel(comp.recommended_target)}</span>
+          {' · '}stretch {tierLabel(comp.stretch_target)}{' · '}safety {tierLabel(comp.safety_target)}.
+        </p>
+      </motion.div>
+
+      {/* Attribution — what's driving the score */}
+      {comp.contributions.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="glass border border-white/8 rounded-2xl p-5"
+        >
+          <div className="text-xs text-slate-500 uppercase tracking-widest mb-4">What&apos;s Driving Your Score</div>
+          <div className="space-y-2">
+            {comp.contributions.map((f, i) => {
+              const pos = f.points >= 0;
+              return (
+                <div key={i} className="flex items-center gap-3">
+                  <span className="text-sm text-slate-300 w-40 flex-shrink-0 truncate">{f.label}</span>
+                  <div className="flex-1 h-2 rounded-full bg-white/5 overflow-hidden">
+                    <div className="h-full rounded-full"
+                      style={{ width: `${(Math.abs(f.points) / maxMag) * 100}%`, background: pos ? '#34d399' : '#f87171' }} />
+                  </div>
+                  <span className={`text-xs font-mono w-9 text-right ${pos ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {pos ? '+' : ''}{f.points}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────
 
 export default function ReportClient({
@@ -132,7 +242,11 @@ export default function ReportClient({
           <p className="text-slate-500 text-sm">Generated {createdDate}</p>
         </motion.div>
 
-        {/* ── Stage + Fit band ── */}
+        {/* ── Competitiveness (primary lens) ── */}
+        {report.competitiveness && <CompetitivenessSection comp={report.competitiveness} />}
+
+        {/* ── Stage + Fit band (fallback for reports predating competitiveness) ── */}
+        {!report.competitiveness && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -160,6 +274,7 @@ export default function ReportClient({
             )}
           </div>
         </motion.div>
+        )}
 
         {/* ── Match stats ── */}
         <motion.div
@@ -300,8 +415,19 @@ export default function ReportClient({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <span className="text-sm font-semibold text-white">{action.title}</span>
-                      <span className={`text-xs flex-shrink-0 ${EFFORT_COLOUR[action.estimated_effort]}`}>
-                        {action.estimated_effort} effort
+                      <span className="flex items-center gap-2 flex-shrink-0">
+                        {(() => {
+                          const impact = (action as { index_impact?: number }).index_impact;
+                          if (impact == null) return null;
+                          return (
+                            <span className={`text-xs font-mono ${impact >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {impact >= 0 ? '+' : ''}{impact} pts
+                            </span>
+                          );
+                        })()}
+                        <span className={`text-xs ${EFFORT_COLOUR[action.estimated_effort]}`}>
+                          {action.estimated_effort} effort
+                        </span>
                       </span>
                     </div>
                     <p className="text-xs text-slate-400 leading-relaxed">{action.description}</p>
