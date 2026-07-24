@@ -12,3 +12,9 @@ build/
 .env
 .env.*
 !.env.example
+
+# Real professional data pulled from Supabase for local calibration — never
+# commit real people's career histories. The committed test fixture is
+# synthetic (tests/scoring/professionals.snapshot.json); see
+# scripts/snapshot-professionals.ts.
+tests/scoring/professionals.snapshot.local.json

@@ -32,7 +32,10 @@ describe('professional source adapters', () => {
     const { professional, row } = legacyRowFromProfessional();
     const result = parseLegacyProfessionalRows([row]);
     expect(result.rejects).toEqual([]);
-    expect(result.professionals).toEqual([professional]);
+    // The legacy flat format has no achievements column, so a round-trip
+    // necessarily drops them — compare against the professional sans achievements.
+    const { achievements: _achievements, ...expectedWithoutAchievements } = professional;
+    expect(result.professionals).toEqual([expectedWithoutAchievements]);
     expect(result.professionals[0]).not.toHaveProperty('full_name_internal');
   });
 

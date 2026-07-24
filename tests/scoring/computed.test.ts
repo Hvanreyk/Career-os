@@ -3,7 +3,7 @@ import { computeFields } from '../../lib/scoring/computed.js';
 import { loadPros, TEST_NOW, Y2_UNSW_COOP_HD_JPM } from './fixtures.js';
 import { TIER_LEVEL } from '../../lib/scoring/types.js';
 
-describe('computeFields — P001 Thomas Sukkar', () => {
+describe('computeFields — P001 (synthetic fixture)', () => {
   const p001 = loadPros().find(p => p.id === 'P001')!;
 
   it('matches the spec test conditions', () => {

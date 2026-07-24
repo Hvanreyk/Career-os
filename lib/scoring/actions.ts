@@ -1,26 +1,38 @@
 /**
- * Layer 7 — Action generation. Stage-specific deterministic rules.
- * Three actions per stage, prioritised. Always cap at 3.
+ * Layer 7 — Action generation.
  *
- * The LLM never invents actions; it only formats what we produce
- * here. So the descriptions need to be specific (named firms,
- * named match counts, named deadlines) before they hit the LLM.
+ * "What to do next" is driven by three things, NOT the S0–S5 stage:
+ *   1. WHERE the student sits in the AU recruiting timeline (a phase derived
+ *      from months-until-penultimate / months-until-grad plus what they've
+ *      already secured),
+ *   2. HOW competitive they screen (the scorecard band + recommended target),
+ *   3. WHICH gaps close the most index points and are still feasible in the
+ *      remaining window (the ranked `gaps`, priced with the counterfactual
+ *      `actionImpact`).
+ *
+ * Always cap at 3 actions, priority 1 (most important) .. 3.
+ *
+ * The LLM never invents actions; it only formats what we produce here. So the
+ * descriptions carry the specifics (named firms, real percentages, deadlines,
+ * index-point deltas) before they ever hit the LLM.
  */
 
 import type {
   Action,
   ComputedFields,
   Experience,
+  Gap,
   MatchResult,
-  Stage,
   StudentProfile,
   TargetFirmTier,
 } from './types';
-import { TIER_LEVEL, WAM_RANKS } from './types';
-import { societyRecommendationText, orgsFor } from './universities';
+import { TIER_LEVEL } from './types';
+import { actionImpact, type Scorecard, type CompetitivenessBand } from './scorecard';
+import { PENULTIMATE_TO_FT_RATE } from './funnel';
+import { orgsFor } from './universities';
 
 // ============================================================
-// Helpers
+// Date / deadline helpers
 // ============================================================
 
 function addMonths(date: Date, n: number): Date {
@@ -33,36 +45,20 @@ function isoDate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-function nextSemesterEnd(now: Date): string {
-  // Australian academic calendar: S1 ends ~end of June, S2 ends ~end of November.
-  const month = now.getMonth(); // 0-indexed
-  const year = now.getFullYear();
-  if (month <= 5) return `${year}-06-30`;     // before/during S1
-  if (month <= 10) return `${year}-11-30`;    // S2
-  return `${year + 1}-06-30`;                 // summer/break → next S1
-}
-
-function nextSocietyApplicationDeadline(now: Date): string {
-  // Most AU finance societies open recruitment early in each semester.
-  // Use the start of the next semester window as deadline guidance.
-  const month = now.getMonth();
-  const year = now.getFullYear();
-  if (month < 2) return `${year}-03-15`;      // before S1 → mid-March
-  if (month < 7) return `${year}-08-15`;      // before/during S1 → mid-August
-  return `${year + 1}-03-15`;                 // late year → next March
-}
-
-/** July 31 of the year that the student's penultimate apps open. */
-function penultimateAppsDeadline(student: StudentProfile, now: Date): string {
+/** Close of the penultimate application window (~end Aug of the penult year). */
+function penultimateAppsDeadline(student: StudentProfile): string {
   const penultYear = student.expected_graduation_year - 1;
-  // Apps open mid-July, close mid-August; "deadline" we render is the close.
   return `${penultYear}-08-31`;
 }
 
-/** March 31 of the student's grad year (grad apps close ~end of March). */
+/** Grad apps close ~end of March of the student's grad year. */
 function gradAppsDeadline(student: StudentProfile): string {
   return `${student.expected_graduation_year}-03-31`;
 }
+
+// ============================================================
+// Match-derived firm helpers
+// ============================================================
 
 /** Top firms by frequency among matches' current employers. */
 function topCurrentFirms(matches: MatchResult[], n: number): string[] {
@@ -77,7 +73,7 @@ function topCurrentFirms(matches: MatchResult[], n: number): string[] {
     .map(([firm]) => firm);
 }
 
-/** All distinct firms across any of the given tiers. */
+/** Distinct firms (frequency-ordered) appearing in any experience at the given tiers. */
 function firmsAtTiers(matches: MatchResult[], tiers: Experience['firm_tier'][]): string[] {
   const seen = new Map<string, number>();
   for (const m of matches) {
@@ -92,28 +88,29 @@ function firmsAtTiers(matches: MatchResult[], tiers: Experience['firm_tier'][]):
     .map(([f]) => f);
 }
 
-/** Firm-tier values that count toward a given student target, for copy
- * purposes. Elite Boutique / Mid-Market targets also match the legacy
- * combined tier, since existing professional records haven't been split
- * into the two new tiers yet. */
+/** Firm-tier values that count toward a given target tier, for copy purposes.
+ * Elite Boutique / Mid-Market also match the legacy combined tier, since older
+ * professional records haven't been split into the two new tiers yet. */
 function firmTiersForTarget(target: TargetFirmTier): Experience['firm_tier'][] {
   switch (target) {
     case 'elite_boutique': return ['elite_boutique', 'elite_boutique_and_mm'];
     case 'mid_market': return ['mid_market', 'elite_boutique_and_mm'];
+    case 'boutique': return ['boutique'];
     default: return ['bb'];
   }
 }
 
-/** Short display label for a student's target tier. */
+/** Short display label for a target tier. */
 function tierLabelForTarget(target: TargetFirmTier): string {
   switch (target) {
     case 'elite_boutique': return 'Elite Boutique';
     case 'mid_market': return 'Mid-Market';
+    case 'boutique': return 'Boutique';
     default: return 'BB';
   }
 }
 
-/** Most-common first-experience firm (by tier filter). */
+/** Most-common first-experience firm across matches (by tier filter). */
 function mostCommonFirstFirm(
   matches: MatchResult[],
   tiers: Experience['firm_tier'][],
@@ -135,459 +132,361 @@ function countMatches(matches: MatchResult[], pred: (m: MatchResult) => boolean)
   return matches.filter(pred).length;
 }
 
-/** Snapshot-based: did the pro have this feature AT THE STUDENT'S STAGE? */
-function hadFeature(m: MatchResult, key: keyof ComputedFields): boolean {
-  return Boolean(m.snapshot.computed[key]);
-}
-
-/** Full-career: did the pro EVER have this feature? Used for "what did
- * successful paths look like end-to-end" framing, where snapshot-at-stage
- * is too early to credit the move. */
-function hadFeatureEver(m: MatchResult, key: keyof ComputedFields): boolean {
-  // Re-derive from the full experiences + signals (cheap; small lists).
-  const exps = m.professional.experiences;
-  const sigs = new Set<string>(m.professional.signals);
-  switch (key) {
-    case 'has_modelling_course':
-      return sigs.has('modelling_course');
-    case 'has_dean_list':
-      return sigs.has('deans_list');
-    case 'has_smif':
-      return ['investment_society_member', 'investment_society_committee', 'investment_society_president']
-        .some(s => sigs.has(s));
-    case 'has_society_committee':
-      return ['fin_society_committee', 'investment_society_committee', 'investment_society_president',
-              'consulting_society_committee', 'society_committee'].some(s => sigs.has(s));
-    case 'has_big4_advisory_experience':
-      return exps.some(e => (e.industry === 'big4_advisory' || e.industry === 'big4_business_advisory') && e.role_relevance >= 3);
-    case 'has_pe_experience':
-      return exps.some(e => e.industry === 'private_equity');
-    case 'is_co_op_program':
-      return sigs.has('co_op_program');
-    case 'cfa_level':
-      return sigs.has('cfa_l1') || sigs.has('cfa_l2') || sigs.has('cfa_l3');
-    default:
-      return Boolean(m.snapshot.computed[key]);
-  }
-}
-
 function fmtList(xs: string[], joiner = ', '): string {
   return xs.length === 0 ? '' : xs.join(joiner);
 }
 
-// ============================================================
-// S0 — Foundation
-// ============================================================
-
-function generateS0Actions(
-  student: StudentProfile,
-  computed: ComputedFields,
-  matches: MatchResult[],
-  now: Date,
-): Action[] {
-  const actions: Action[] = [];
-
-  // 1) WAM target if unknown or below D
-  const wamRank = student.wam_band === 'unknown' ? -1 : WAM_RANKS[student.wam_band];
-  if (wamRank < WAM_RANKS.d) {
-    const knownWamMatches = matches.filter(m => m.snapshot.wam_band !== 'unknown');
-    const dOrAbove = countMatches(
-      knownWamMatches,
-      m => WAM_RANKS[m.snapshot.wam_band as 'hd' | 'd' | 'c' | 'p'] >= WAM_RANKS.d,
-    );
-    actions.push({
-      priority: 1,
-      action_type: 'wam_target',
-      title: 'Target Distinction (75+) WAM minimum',
-      description:
-        `Aim for D or HD this semester. Of ${knownWamMatches.length} matched paths with known WAM, ` +
-        `${dOrAbove} maintained D or HD throughout. Below D significantly narrows your IB options.`,
-      deadline: nextSemesterEnd(now),
-      estimated_effort: 'high',
-    });
-  }
-
-  // 2) Join finance society + investment fund
-  if (!computed.has_society_committee && !computed.has_smif) {
-    actions.push({
-      priority: 1,
-      action_type: 'join_society',
-      title: "Join your university's finance society and student investment fund",
-      description: societyRecommendationText(student.university),
-      deadline: nextSocietyApplicationDeadline(now),
-      estimated_effort: 'medium',
-    });
-  }
-
-  // 3) First relevant experience
-  if (computed.experience_count_relevant === 0) {
-    const commonFirstFirms = mostCommonFirstFirm(
-      matches,
-      ['boutique', 'big4', 'private_equity'],
-      5,
-    );
-    const firmList = commonFirstFirms.length
-      ? commonFirstFirms.join(', ')
-      : 'boutique IB shops, Big 4 TS practices, and PE firms';
-    actions.push({
-      priority: 2,
-      action_type: 'first_experience',
-      title: 'Land your first relevant experience this semester',
-      description:
-        `Cold email these firms — most common starting points in your matched paths: ${firmList}. ` +
-        `Your first experience doesn't need to be prestigious; it needs to be relevant. ` +
-        `Insight programs (Optiver, Jane Street, MS, GS) are a low-friction entry.`,
-      deadline: isoDate(addMonths(now, 3)),
-      estimated_effort: 'medium',
-    });
-  }
-
-  return actions.slice(0, 3);
-}
-
-// ============================================================
-// S1 — Building (1+ relevant exp, pre-penultimate)
-// ============================================================
-
-function generateS1Actions(
-  student: StudentProfile,
-  computed: ComputedFields,
-  matches: MatchResult[],
-  now: Date,
-): Action[] {
-  const actions: Action[] = [];
-
-  // 1) Secure penultimate at BB / EB-MM (always — the central S1 task)
-  const reachedTarget = matches.filter(m => {
-    const pl = TIER_LEVEL[m.professional.current_firm_tier as keyof typeof TIER_LEVEL] ?? 0;
-    const tl = student.target_firm_tier === 'any'
-      ? 0
-      : TIER_LEVEL[student.target_firm_tier as keyof typeof TIER_LEVEL] ?? 0;
-    return pl >= tl;
-  });
-  // End-to-end view: did this pro EVER have a penultimate/summer at BB/EB-MM
-  // in their pre-FT career? (Snapshot at S1 is too early — most BB summers
-  // happen in Y3, after the S1 cutoff.) We exclude their FT current role
-  // by only counting non-full_time experiences.
-  const targetFirmTiers = firmTiersForTarget(student.target_firm_tier);
-  const hadPenult = countMatches(
-    reachedTarget,
-    m =>
-      m.professional.experiences.some(
-        e =>
-          (e.type === 'penultimate_internship' || e.type === 'summer_internship') &&
-          (e.firm_tier === 'bb' || targetFirmTiers.includes(e.firm_tier)),
-      ),
+/** Matches whose current firm sits at (or above) the target tier. */
+function reachedTargetMatches(matches: MatchResult[], target: TargetFirmTier): MatchResult[] {
+  const tl = target === 'any' ? 0 : TIER_LEVEL[target as keyof typeof TIER_LEVEL] ?? 0;
+  return matches.filter(
+    m => (TIER_LEVEL[m.professional.current_firm_tier as keyof typeof TIER_LEVEL] ?? 0) >= tl,
   );
-  const targetTierFirms = firmsAtTiers(reachedTarget, targetFirmTiers).slice(0, 5);
-  const tierLabel = tierLabelForTarget(student.target_firm_tier);
+}
 
-  actions.push({
-    priority: 1,
-    action_type: 'secure_penultimate',
-    title: `Secure your penultimate summer at a ${tierLabel}`,
-    description:
-      `Of the ${reachedTarget.length} ${tierLabel}-reaching matches, ${hadPenult} had a penultimate ` +
-      `or summer internship at a ${tierLabel} firm. Apply to ` +
-      `${fmtList(targetTierFirms)} penultimate programs — apps open July ${student.expected_graduation_year - 1}.`,
-    deadline: penultimateAppsDeadline(student, now),
-    estimated_effort: 'high',
+/** Firms matches most often INTERNED at, for the given target tier. */
+function internFirmsAtTarget(matches: MatchResult[], target: TargetFirmTier, n: number): string[] {
+  return firmsAtTiers(matches, firmTiersForTarget(target)).slice(0, n);
+}
+
+/** Firms matches currently WORK at, for the given target tier (falls back to
+ * intern firms when no match currently sits at the tier). */
+function currentFirmsAtTarget(matches: MatchResult[], target: TargetFirmTier, n: number): string[] {
+  const tiers = firmTiersForTarget(target);
+  const atTier = matches.filter(m =>
+    tiers.includes(m.professional.current_firm_tier as Experience['firm_tier']),
+  );
+  const cur = topCurrentFirms(atTier, n);
+  return cur.length ? cur : internFirmsAtTarget(matches, target, n);
+}
+
+/** Matched lateral movers: > 3 years to current role AND a non-IB first job. */
+function lateralMovers(matches: MatchResult[]): MatchResult[] {
+  return matches.filter(m => {
+    if (m.professional.years_to_current_role <= 3) return false;
+    const sorted = [...m.professional.experiences].sort((a, b) => a.year - b.year);
+    return sorted[0] ? sorted[0].industry !== 'ib' : false;
   });
-
-  // 2) Build conversion-favourable signals (gap-driven)
-  const signalActions: { feature: keyof ComputedFields; title: string; desc: (n: number, d: number) => string }[] = [
-    {
-      feature: 'has_modelling_course',
-      title: 'Complete a financial modelling course (WSP / BIWS / Mazars)',
-      desc: (n, d) => `${n} of ${d} matches had completed a modelling course before penultimate apps. Knock this out in 2-3 weekends — high signal, low time cost.`,
-    },
-    {
-      feature: 'has_dean_list',
-      title: "Lock in Dean's List (or equivalent) recognition",
-      desc: (n, d) => `${n} of ${d} matches had Dean's List or a faculty prize by the time they applied for penultimate. Push HD in your finance subjects this semester.`,
-    },
-  ];
-  for (const s of signalActions) {
-    if (computed[s.feature]) continue;
-    const had = countMatches(reachedTarget, m => hadFeatureEver(m, s.feature));
-    if (reachedTarget.length === 0 || had / reachedTarget.length < 0.5) continue;
-    actions.push({
-      priority: 2,
-      action_type: `build_${String(s.feature)}`,
-      title: s.title,
-      description: s.desc(had, reachedTarget.length),
-      deadline: nextSemesterEnd(now),
-      estimated_effort: s.feature === 'has_modelling_course' ? 'low' : 'high',
-    });
-    if (actions.length === 2) break; // we want at most one signal-action so action 3 can be networking
-  }
-
-  // 3) Network targeted at coverage groups (always)
-  const topFirms = topCurrentFirms(reachedTarget, 3);
-  actions.push({
-    priority: 3,
-    action_type: 'coverage_networking',
-    title: 'Network targeted at high-conversion Sydney coverage groups',
-    description:
-      topFirms.length
-        ? `Sydney groups featured in your matched paths: ${fmtList(topFirms)}. ` +
-          `Map analysts in those groups via LinkedIn and request 15-min coffees ` +
-          `before penultimate apps open in July.`
-        : `Map Sydney BB analysts via LinkedIn and request 15-min coffees before penultimate apps open in July.`,
-    deadline: penultimateAppsDeadline(student, now),
-    estimated_effort: 'medium',
-  });
-
-  return actions.slice(0, 3);
 }
 
 // ============================================================
-// S2 — Pre-Penultimate (Y3+, recruiting in <6 months)
+// Recruiting-timeline phase
 // ============================================================
 
-function generateS2Actions(
+type TimelinePhase =
+  | 'HAS_FT_OFFER'
+  | 'PENULT_SECURED'
+  | 'PENULT_WINDOW'
+  | 'BUILDING'
+  | 'LATE'
+  | 'PASSED';
+
+/**
+ * Where the student sits in the AU recruiting timeline. Derived from the
+ * computed month-distances plus what's already been secured — NOT the stage.
+ */
+function timelinePhase(computed: ComputedFields): TimelinePhase {
+  if (computed.has_full_time_ib) return 'HAS_FT_OFFER';
+  if (computed.has_penultimate_internship) return 'PENULT_SECURED';
+
+  const toPenult = computed.months_until_penultimate_recruiting;
+  const toGrad = computed.months_until_grad_recruiting;
+
+  if (toPenult > 6) return 'BUILDING';
+  if (toPenult > -3) return 'PENULT_WINDOW'; // in (-3, 6]
+  // Penultimate window has passed.
+  if (toGrad > -3) return 'LATE'; // grad cycle still ahead
+  return 'PASSED';
+}
+
+/** Months to the recruiting window that's actually next for this phase. */
+function monthsToRelevantWindow(phase: TimelinePhase, computed: ComputedFields): number {
+  switch (phase) {
+    case 'BUILDING':
+    case 'PENULT_WINDOW':
+      return computed.months_until_penultimate_recruiting;
+    default:
+      return computed.months_until_grad_recruiting;
+  }
+}
+
+// ============================================================
+// PRIMARY action (priority 1) — phase × scorecard band
+// ============================================================
+
+function primaryAction(
   student: StudentProfile,
   computed: ComputedFields,
+  scorecard: Scorecard,
   matches: MatchResult[],
-  _now: Date,
-): Action[] {
-  const actions: Action[] = [];
-  const targetTier = student.target_firm_tier;
-  const reached = matches.filter(m => {
-    const pl = TIER_LEVEL[m.professional.current_firm_tier as keyof typeof TIER_LEVEL] ?? 0;
-    const tl = targetTier === 'any' ? 0 : TIER_LEVEL[targetTier as keyof typeof TIER_LEVEL] ?? 0;
-    return pl >= tl;
-  });
-  const tierLabel = tierLabelForTarget(targetTier);
-  const targetFirms = firmsAtTiers(reached, firmTiersForTarget(targetTier)).slice(0, 6);
+  phase: TimelinePhase,
+  band: CompetitivenessBand,
+  now: Date,
+): Action {
+  const rec = scorecard.recommendedTarget;
+  const tierLabel = tierLabelForTarget(rec);
 
-  actions.push({
-    priority: 1,
-    action_type: 'apply_now_penultimate',
-    title: `Apply now to ${tierLabel} penultimate programs`,
-    description:
-      `Penultimate apps open in <6 months. Submit to ${fmtList(targetFirms)}. ` +
-      `${reached.length} matches reached ${tierLabel} via this exact entry point.`,
-    deadline: penultimateAppsDeadline(student, _now),
-    estimated_effort: 'high',
-  });
-
-  actions.push({
-    priority: 2,
-    action_type: 'interview_prep',
-    title: 'Run technical interview prep sprint',
-    description:
-      `Drill the standard IB technicals: 3-statement, DCF, accretion/dilution, LBO. ` +
-      `If you don't already have a modelling course done, complete WSP or BIWS this month — ` +
-      `${countMatches(reached, m => hadFeatureEver(m, 'has_modelling_course'))} of ${reached.length} matches had one.`,
-    deadline: penultimateAppsDeadline(student, _now),
-    estimated_effort: 'high',
-  });
-
-  // 3) Closing signal gaps that are still feasible in <6 months
-  if (!computed.has_dean_list) {
-    const had = countMatches(reached, m => hadFeatureEver(m, 'has_dean_list'));
-    if (reached.length > 0 && had / reached.length >= 0.5) {
-      actions.push({
-        priority: 3,
-        action_type: 'lock_grades',
-        title: "Lock HD in core finance subjects this semester",
+  switch (phase) {
+    case 'HAS_FT_OFFER':
+      return {
+        priority: 1,
+        action_type: 'ft_offer_secured',
+        title: "You're set — a full-time IB offer is already in hand",
         description:
-          `${had} of ${reached.length} matches had Dean's List or equivalent by the time they applied. ` +
-          `Push HD in your finance / accounting subjects — your transcript hits the panel before you do.`,
-        deadline: nextSemesterEnd(_now),
+          `You already hold a full-time IB offer, so the competitiveness engine has nothing left to ` +
+          `optimise. Use the runway to lock in modelling fundamentals and build relationships with your ` +
+          `future desk before you start.`,
+        deadline: null,
+        estimated_effort: 'low',
+      };
+
+    case 'PENULT_SECURED': {
+      const reached = reachedTargetMatches(matches, rec);
+      const conversions = countMatches(reached, m =>
+        m.professional.experiences.some(
+          e => e.how_obtained === 'conversion' || e.how_obtained === 'return_offer',
+        ),
+      );
+      const rate = Math.round(PENULTIMATE_TO_FT_RATE.base * 100);
+      return {
+        priority: 1,
+        action_type: 'convert_offer',
+        title: 'Convert your penultimate offer into the full-time return',
+        description:
+          `${conversions} of ${reached.length} matched ${tierLabel}-reaching paths converted a ` +
+          `penultimate/summer offer into their first full-time IB role, and the market penultimate→FT ` +
+          `rate sits around ${rate}%. Treat the internship as a 10-week interview: over-deliver on ` +
+          `staffings, document your contributions, and ask for feedback every fortnight.`,
+        deadline: gradAppsDeadline(student),
         estimated_effort: 'high',
-      });
+      };
+    }
+
+    case 'PENULT_WINDOW': {
+      const firms = internFirmsAtTarget(matches, rec, 6);
+      return {
+        priority: 1,
+        action_type: 'apply_penultimate_now',
+        title: `Apply now to ${tierLabel} penultimate programs`,
+        description:
+          `Penultimate applications are open (or open within months) — the single highest-leverage ` +
+          `window in the AU timeline. Submit to ` +
+          `${fmtList(firms) || `${tierLabel} programs in ${student.target_geography}`}, the firms your ` +
+          `matched ${tierLabel}-reaching paths most often interned at.`,
+        deadline: penultimateAppsDeadline(student),
+        estimated_effort: 'high',
+      };
+    }
+
+    case 'BUILDING': {
+      if (band === 'strong') {
+        const firms = currentFirmsAtTarget(matches, rec, 3);
+        return {
+          priority: 1,
+          action_type: 'protect_lead',
+          title: 'Protect your lead — you already screen as strongly competitive',
+          description:
+            `Your profile already sits in ${tierLabel} territory. Hold your WAM, deepen one ` +
+            `differentiator (a committee lead, a live SMIF pitch, or a modelling credential), and start ` +
+            `networking early with analysts at ${fmtList(firms) || `Sydney ${tierLabel} desks`}. Don't ` +
+            `add breadth for its own sake — convert the lead you already have.`,
+          deadline: penultimateAppsDeadline(student),
+          estimated_effort: 'medium',
+        };
+      }
+      if (!computed.has_ib_experience) {
+        const firms = mostCommonFirstFirm(matches, ['boutique', 'big4', 'private_equity'], 5);
+        return {
+          priority: 1,
+          action_type: 'first_experience',
+          title: 'Land your first relevant experience this cycle',
+          description:
+            `Cold-email the most common starting points in your matched paths: ` +
+            `${fmtList(firms) || 'boutique IB shops, Big 4 TS practices, and PE firms'}. Your first ` +
+            `experience doesn't need prestige — it needs relevance. Insight programs (Optiver, MS, GS) ` +
+            `are a low-friction entry.`,
+          deadline: isoDate(addMonths(now, 3)),
+          estimated_effort: 'medium',
+        };
+      }
+      const firms = internFirmsAtTarget(matches, rec, 5);
+      return {
+        priority: 1,
+        action_type: 'secure_penultimate',
+        title: `Secure your penultimate summer at a ${tierLabel}`,
+        description:
+          `Aim your penultimate applications at ` +
+          `${fmtList(firms) || `${tierLabel} programs`} — where your matched ${tierLabel}-reaching ` +
+          `paths interned. Apps open July ${student.expected_graduation_year - 1}; everything you build ` +
+          `between now and then should point at that window.`,
+        deadline: penultimateAppsDeadline(student),
+        estimated_effort: 'high',
+      };
+    }
+
+    case 'LATE':
+    case 'PASSED': {
+      if (band === 'reach' || band === 'developing') {
+        const laterals = lateralMovers(matches);
+        const examples = laterals
+          .slice(0, 3)
+          .map(m => m.professional.path_summary)
+          .filter((s): s is string => Boolean(s));
+        const lateralNote = laterals.length
+          ? `Matched lateral movers who broke in after a non-IB start: ${fmtList(examples, '; ') || `${laterals.length} in your cohort`}.`
+          : `The lateral route (Big 4 TS / consulting → IB via referral) stays open even after the graduate cycle.`;
+        return {
+          priority: 1,
+          action_type: 'pivot_lateral',
+          title: `Anchor on ${tierLabel} and open the lateral route`,
+          description:
+            `The penultimate window has passed, so anchor realistic targets at ${tierLabel} (a tier ` +
+            `where you screen as reachable) rather than forcing a bulge bracket now. ${lateralNote} ` +
+            `The alternative is extending your degree a year to re-enter the penultimate cycle — a real ` +
+            `trade-off worth weighing against a straight graduate/lateral push.`,
+          deadline: gradAppsDeadline(student),
+          estimated_effort: 'high',
+        };
+      }
+      const firms = internFirmsAtTarget(matches, rec, 6);
+      return {
+        priority: 1,
+        action_type: 'apply_grad_now',
+        title: `Push graduate and off-cycle ${tierLabel} applications now`,
+        description:
+          `You screen as ${band}, but the penultimate window has passed. Go hard on graduate and ` +
+          `off-cycle roles at ${fmtList(firms) || `${tierLabel} firms`} — your strength travels into ` +
+          `the wider on-ramp even outside the summer cycle.`,
+        deadline: gradAppsDeadline(student),
+        estimated_effort: 'high',
+      };
     }
   }
-  if (actions.length < 3) {
-    const topFirms = topCurrentFirms(reached, 3);
-    actions.push({
-      priority: 3,
-      action_type: 'targeted_networking',
-      title: 'Targeted networking before applications open',
-      description: topFirms.length
-        ? `Reach out to analysts at ${fmtList(topFirms)} via LinkedIn — your matched paths cluster in these firms.`
-        : 'Map analysts in your target firms via LinkedIn and request 15-min coffees this month.',
-      deadline: penultimateAppsDeadline(student, _now),
-      estimated_effort: 'medium',
-    });
-  }
-
-  return actions.slice(0, 3);
 }
 
 // ============================================================
-// S3 — Penultimate Secured
+// GAP actions (priority 2) — counterfactual index impact
 // ============================================================
 
-function generateS3Actions(
-  student: StudentProfile,
-  _computed: ComputedFields,
-  matches: MatchResult[],
-  _now: Date,
-): Action[] {
-  const actions: Action[] = [];
-  const targetTier = student.target_firm_tier;
-  const reached = matches.filter(m => {
-    const pl = TIER_LEVEL[m.professional.current_firm_tier as keyof typeof TIER_LEVEL] ?? 0;
-    const tl = targetTier === 'any' ? 0 : TIER_LEVEL[targetTier as keyof typeof TIER_LEVEL] ?? 0;
-    return pl >= tl;
-  });
+/** gap_key → the ComputedFields override that models closing it. Gaps absent
+ * here (e.g. `wam_below_target`) have no clean counterfactual, so we omit
+ * `index_impact` for them. */
+const GAP_OVERRIDES: Record<string, Partial<ComputedFields>> = {
+  has_smif: { has_smif: true },
+  has_society_committee: { has_society_committee: true },
+  has_modelling_course: { has_modelling_course: true },
+  has_big4_advisory_experience: { has_big4_advisory_experience: true },
+  has_pe_experience: { has_pe_experience: true },
+  has_dean_list: { has_dean_list: true },
+  cfa_l1: { cfa_level: 1 },
+  is_co_op_program: { is_co_op_program: true },
+  has_boutique_experience: { has_ib_experience: true, highest_firm_tier_reached: TIER_LEVEL.boutique },
+  has_mid_market_experience: { has_ib_experience: true, highest_firm_tier_reached: TIER_LEVEL.mid_market },
+  has_elite_boutique_experience: { has_ib_experience: true, highest_firm_tier_reached: TIER_LEVEL.elite_boutique },
+};
 
-  const conversions = countMatches(reached, m =>
-    m.professional.experiences.some(
-      e => e.how_obtained === 'conversion' || e.how_obtained === 'return_offer',
-    ),
-  );
+/** Higher actionability = less effort to close. */
+const EFFORT_FOR_ACTIONABILITY: Record<Gap['actionability'], Action['estimated_effort']> = {
+  high: 'low',
+  medium: 'medium',
+  low: 'high',
+};
 
-  actions.push({
-    priority: 1,
-    action_type: 'convert_penultimate',
-    title: 'Convert your penultimate offer into the FT return',
-    description:
-      `${conversions} of ${reached.length} matches converted their penultimate / summer offer into ` +
-      `their first FT IB role (return offers + conversions). Treat the internship as a 10-week interview: ` +
-      `over-deliver on staffings, document your contributions, and request feedback every 2 weeks.`,
-    deadline: gradAppsDeadline(student),
-    estimated_effort: 'high',
-  });
-
-  // 2) Hedge: lateral apps in case the conversion fails
-  const tierLabel = tierLabelForTarget(targetTier);
-  const altFirms = firmsAtTiers(reached, firmTiersForTarget(targetTier)).slice(0, 5);
-  actions.push({
-    priority: 2,
-    action_type: 'grad_pipeline_hedge',
-    title: `Hedge with grad applications across ${tierLabel}`,
-    description:
-      `Grad apps open in March of your final year. Even if you expect to convert, file at ` +
-      `${fmtList(altFirms)} — return offer + lateral grad pipeline together meaningfully de-risk a single-firm conversion bet.`,
-    deadline: gradAppsDeadline(student),
-    estimated_effort: 'medium',
-  });
-
-  // 3) Network across coverage groups (within or beyond your firm)
-  actions.push({
-    priority: 3,
-    action_type: 'coverage_breadth',
-    title: 'Get exposure to multiple coverage groups during the internship',
-    description:
-      `Even if you're staffed primarily in one team, ask to shadow a deal in another group. ` +
-      `Coverage diversity reads stronger on the FT panel and gives you a backup story if the ` +
-      `primary group has no FT spots.`,
-      deadline: null,
-      estimated_effort: 'low',
-  });
-
-  return actions.slice(0, 3);
-}
-
-// ============================================================
-// S4 — FT offer secured (out of scope for action gen)
-// ============================================================
-
-function generateS4Actions(): Action[] {
-  return [
-    {
-      priority: 1,
-      action_type: 'noop_s4',
-      title: "You're set — focus on starting strong",
-      description:
-        `You have a confirmed full-time IB offer. Action generation is out of scope at this stage. ` +
-        `Use the remaining time to lock in modelling fundamentals and build relationships with future colleagues.`,
-      deadline: null,
-      estimated_effort: 'low',
-    },
-  ];
-}
-
-// ============================================================
-// S5 — Lateral mover
-// ============================================================
-
-function generateS5Actions(
+function gapAction(
   student: StudentProfile,
   computed: ComputedFields,
-  matches: MatchResult[],
-  now: Date,
-): Action[] {
-  const actions: Action[] = [];
-  const currentExternal = student.current_external_role ?? 'corporate';
+  gap: Gap,
+  tierLabel: string,
+  deadline: string,
+): Action {
+  const override = GAP_OVERRIDES[gap.gap_key];
+  const pct = Math.round(gap.match_pct * 100);
 
-  // Lateral pivot path summary — drawn from the matched lateral cohort
-  const pivotExamples: string[] = [];
-  for (const m of matches.slice(0, 3)) {
-    if (m.professional.path_summary) {
-      pivotExamples.push(`${m.professional.id}: ${m.professional.path_summary}`);
-    }
+  let index_impact: number | undefined;
+  let roi = '';
+  if (override) {
+    index_impact = actionImpact(student, computed, override);
+    const sign = index_impact >= 0 ? '+' : '';
+    const unit = Math.abs(index_impact) === 1 ? 'point' : 'points';
+    roi = ` Closing it moves your competitiveness index by about ${sign}${index_impact} ${unit}.`;
   }
 
-  actions.push({
-    priority: 1,
-    action_type: 'lateral_pivot_path',
-    title: `Recommended pivot path from ${currentExternal}`,
-    description:
-      `${matches.length} matched lateral movers from ${currentExternal}-style backgrounds reached IB. ` +
-      `Specific transitions: ${fmtList(pivotExamples, '; ') || '—'}.`,
-    deadline: null,
-    estimated_effort: 'high',
-  });
-
-  // 2) Lateral credentials gap
-  if (!computed.has_modelling_course || computed.cfa_level < 1) {
-    const modelled = countMatches(matches, m => hadFeatureEver(m, 'has_modelling_course'));
-    const cfaSomething = countMatches(matches, m =>
-      m.professional.signals.some(s => s === 'cfa_l1' || s === 'cfa_l2' || s === 'cfa_l3'),
-    );
-    actions.push({
-      priority: 1,
-      action_type: 'lateral_credentials',
-      title: 'Build technical credentials for the pivot',
-      description:
-        `${modelled} of ${matches.length} matched lateral movers had completed a modelling course. ` +
-        `${cfaSomething} of ${matches.length} had at least CFA Level 1. Both are baseline IB-readiness signals for laterals.`,
-      deadline: isoDate(addMonths(now, 6)),
-      estimated_effort: 'high',
-    });
-  }
-
-  // 3) Networking via existing deal contacts
-  actions.push({
+  return {
     priority: 2,
-    action_type: 'lateral_networking',
-    title: 'Leverage existing deal-side contacts for IB referrals',
+    action_type: `close_${gap.gap_key}`,
+    title: `Close a common gap: ${gap.display_name}`,
     description:
-      `Lateral hires almost always come via referral. Map your Big 4 / consulting / law deal contacts ` +
-      `who have already moved to IB and request introductions. Recruiter-led laterals exist but referral-led ` +
-      `is the dominant pattern.`,
-    deadline: null,
-    estimated_effort: 'medium',
-  });
-
-  return actions.slice(0, 3);
+      `${pct}% of your matched ${tierLabel}-reaching paths had ${gap.display_name}, and you don't ` +
+      `yet.${roi}`,
+    deadline,
+    estimated_effort: EFFORT_FOR_ACTIONABILITY[gap.actionability],
+    ...(index_impact !== undefined ? { index_impact } : {}),
+  };
 }
 
 // ============================================================
-// Public dispatch
+// Public entry point
 // ============================================================
 
+/**
+ * Deterministic "what to do next". Driven by the recruiting-timeline phase,
+ * the competitiveness band + recommended target, and the ranked gaps —
+ * never the S0–S5 stage. Always ≤ 3 actions, most important first.
+ */
 export function generateActions(
-  stage: Stage,
   student: StudentProfile,
   computed: ComputedFields,
+  scorecard: Scorecard,
+  gaps: Gap[],
   matches: MatchResult[],
   now: Date = new Date(),
 ): Action[] {
-  switch (stage) {
-    case 'S0': return generateS0Actions(student, computed, matches, now);
-    case 'S1': return generateS1Actions(student, computed, matches, now);
-    case 'S2': return generateS2Actions(student, computed, matches, now);
-    case 'S3': return generateS3Actions(student, computed, matches, now);
-    case 'S4': return generateS4Actions();
-    case 'S5': return generateS5Actions(student, computed, matches, now);
+  const phase = timelinePhase(computed);
+  const actions: Action[] = [];
+
+  // 1) The one thing that matters most, given phase × competitiveness.
+  actions.push(primaryAction(student, computed, scorecard, matches, phase, scorecard.band, now));
+
+  // Someone with a confirmed FT offer needs nothing else from us.
+  if (phase === 'HAS_FT_OFFER') return actions.slice(0, 3);
+
+  const rec = scorecard.recommendedTarget;
+  const tierLabel = tierLabelForTarget(rec);
+  const windowMonths = monthsToRelevantWindow(phase, computed);
+  const windowDeadline =
+    phase === 'BUILDING' || phase === 'PENULT_WINDOW'
+      ? penultimateAppsDeadline(student)
+      : gradAppsDeadline(student);
+
+  // 2) Gap-closing actions (already ranked by impact), kept only when still
+  //    feasible before the relevant upcoming window. Priced with the
+  //    counterfactual index delta.
+  for (const gap of gaps) {
+    if (actions.length >= 3) break;
+    if (gap.time_to_address_months > windowMonths) continue;
+    actions.push(gapAction(student, computed, gap, tierLabel, windowDeadline));
   }
+
+  // 3) Networking, if a slot remains — named at the recommended tier.
+  if (actions.length < 3) {
+    const firms = currentFirmsAtTarget(matches, rec, 3);
+    actions.push({
+      priority: 3,
+      action_type: 'targeted_networking',
+      title: `Network into ${tierLabel} coverage groups`,
+      description: firms.length
+        ? `Map and coffee-chat analysts at ${fmtList(firms)} — the firms your matched ` +
+          `${tierLabel}-reaching paths most often work at. Referrals move the needle more than any ` +
+          `cold application.`
+        : `Map ${tierLabel} analysts in ${student.target_geography} on LinkedIn and request ` +
+          `15-minute coffee chats before applications open.`,
+      deadline: windowDeadline,
+      estimated_effort: 'medium',
+    });
+  }
+
+  return actions.slice(0, 3);
 }
 
-// Re-export a couple of helpers for tests / index.ts
+// Re-export a couple of helpers for tests / index.ts.
 export { topCurrentFirms, firmsAtTiers, mostCommonFirstFirm, addMonths, isoDate, orgsFor };
