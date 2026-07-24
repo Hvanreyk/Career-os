@@ -55,9 +55,15 @@ export async function resolveRecommendations(
   return Promise.all(
     recs.map(async (rec) => {
       const def = getResourceDefinition(rec.slug);
-      // Published-only RLS: null means no live overview page to link yet.
-      const structure = await getCourseStructure(rec.slug);
-      const live = Boolean(structure);
+      // Published-only RLS: null means no live overview page to link yet. A
+      // transient lookup failure must not sink the whole recommendation list —
+      // treat it as "not live" and fall back to the hub for this item.
+      let live = false;
+      try {
+        live = Boolean(await getCourseStructure(rec.slug));
+      } catch {
+        live = false;
+      }
       return {
         slug: rec.slug,
         title: def?.title ?? rec.slug,

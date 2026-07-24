@@ -9,21 +9,33 @@ import { Download, Loader2 } from 'lucide-react';
 export default function DownloadCompassReport({ reportId }: { reportId: string }) {
   const [status, setStatus] = useState<'idle' | 'preparing' | 'ready' | 'error'>('idle');
 
-  const download = () => {
-    window.location.href = `/api/reports/${reportId}/export?format=pdf`;
+  // Fetch the PDF as a blob so an export error (409/500) lands in the catch/
+  // retry state instead of navigating the page to raw JSON.
+  const download = async () => {
+    const res = await fetch(`/api/reports/${reportId}/export?format=pdf`);
+    if (!res.ok) throw new Error('PDF export failed');
+    const url = URL.createObjectURL(await res.blob());
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'Career-Compass-Report.pdf';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
   const prepare = async () => {
-    if (status === 'ready') { download(); return; }
     setStatus('preparing');
     try {
-      const res = await fetch(`/api/reports/${reportId}/deep-dive`, { method: 'POST' });
-      const data = (await res.json().catch(() => ({}))) as { status?: string; error?: string };
-      if (!res.ok || data.status !== 'completed') {
-        throw new Error(data.error ?? 'Deep-dive generation failed');
+      if (status !== 'ready') {
+        const res = await fetch(`/api/reports/${reportId}/deep-dive`, { method: 'POST' });
+        const data = (await res.json().catch(() => ({}))) as { status?: string; error?: string };
+        if (!res.ok || data.status !== 'completed') {
+          throw new Error(data.error ?? 'Deep-dive generation failed');
+        }
       }
+      await download();
       setStatus('ready');
-      download();
     } catch {
       setStatus('error');
     }
