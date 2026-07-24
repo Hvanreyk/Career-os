@@ -146,6 +146,10 @@ function CompetitivenessSection({
         ? 'developing'
         : 'reach';
   const projectedBand = COMP_BAND[projectedBandKey];
+  const runningIndex = actions.slice(0, 5).reduce<number[]>(
+    (acc, action) => [...acc, Math.max(0, Math.min(100, acc[acc.length - 1] + (action.index_impact ?? 0)))],
+    [comp.index],
+  );
 
   return (
     <div className="space-y-8">
@@ -226,14 +230,67 @@ function CompetitivenessSection({
                 <div key={i} className="grid grid-cols-[1fr_54px_44%] items-center gap-4 border-b border-slate-800 py-4 last:border-b-0">
                   <span className="text-lg text-slate-200 leading-8">{f.label}</span>
                   <span className={`text-xl font-bold ${pos ? 'text-emerald-400' : 'text-red-400'}`}>{pos ? '+' : ''}{f.points}</span>
-                  <div className="h-7 rounded-md overflow-hidden bg-transparent flex items-center">
-                    <div className={`h-full rounded-md ${pos ? 'bg-linear-to-r from-emerald-700 to-emerald-400' : 'bg-linear-to-r from-red-400 to-red-900'}`} style={{ width: `${(Math.abs(f.points) / maxMag) * 100}%` }} />
+                  <div className={`h-7 rounded-md overflow-hidden bg-transparent flex items-center ${pos ? 'justify-start' : 'justify-end'}`}>
+                    <div className={`h-full rounded-md ${pos ? 'bg-linear-to-r from-emerald-700 to-emerald-400' : 'bg-linear-to-l from-red-900 to-red-400'}`} style={{ width: `${(Math.abs(f.points) / maxMag) * 100}%` }} />
                   </div>
                 </div>
               );
             })}
           </div>
           <div className="mt-5 flex justify-between font-mono text-sm text-slate-500"><span>← holds you back</span><span>lifts you →</span></div>
+        </SectionCard>
+      )}
+
+      {actions.length > 0 && (
+        <SectionCard title="Your highest-leverage moves" eyebrow="Ranked by actual point-impact — not a generic checklist." delay={0.3}>
+          <div className="space-y-4">
+            {actions.slice(0, 5).map((action, i) => {
+              const impact = action.index_impact;
+              const prevIndex = runningIndex[i];
+              const nextIndex = runningIndex[i + 1];
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.35 + i * 0.07 }}
+                  className="flex gap-5 p-6 rounded-2xl border border-slate-700/70 bg-slate-900/80"
+                >
+                  <div className={`flex-shrink-0 w-20 h-20 rounded-2xl flex flex-col items-center justify-center border ${
+                    impact != null && impact >= 0 ? 'border-emerald-400/30 bg-emerald-400/5 text-emerald-400' : 'border-slate-700 bg-slate-800/40 text-slate-400'
+                  }`}>
+                    {impact != null ? (
+                      <>
+                        <span className="text-xl font-bold">{impact >= 0 ? '+' : ''}{impact}</span>
+                        <span className="text-[11px] uppercase tracking-widest text-slate-500 mt-0.5">pts</span>
+                      </>
+                    ) : (
+                      <span className="text-xl font-bold">{PRIORITY_LABEL[action.priority]}</span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-lg font-semibold text-white">{action.title}</span>
+                    <p className="mt-1 text-sm text-slate-400 leading-relaxed">{action.description}</p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className={`rounded-full border px-3 py-1 text-xs ${EFFORT_COLOUR[action.estimated_effort]} border-current/25`}>
+                        Effort: {action.estimated_effort.charAt(0).toUpperCase() + action.estimated_effort.slice(1)}
+                      </span>
+                      {action.deadline && (
+                        <span className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-400">
+                          by {new Date(action.deadline).toLocaleDateString('en-AU', { month: 'short', year: 'numeric' })}
+                        </span>
+                      )}
+                    </div>
+                    {impact != null && (
+                      <p className="mt-3 text-xs text-slate-500">
+                        {targetLabel} index <strong className="text-slate-300">{prevIndex}</strong> → <strong className="text-slate-300">{nextIndex}</strong>
+                      </p>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
         </SectionCard>
       )}
 
@@ -475,56 +532,9 @@ export default function ReportClient({
           </SectionCard>
         )}
 
-        {/* ── What To Do Next ── */}
-        <SectionCard title="Your highest-leverage moves" eyebrow="Ranked by actual point-impact — not a generic checklist." delay={0.35}>
+        {/* ── Why these moves matter ── */}
+        <SectionCard title="Why these moves matter" eyebrow="The reasoning behind your roadmap." delay={0.35}>
           <Prose text={llm.sections.what_to_do_next} />
-
-          {report.actions.length > 0 && (
-            <div className="mt-5 space-y-3">
-              {report.actions.slice(0, 5).map((action, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.45 + i * 0.07 }}
-                  className="flex gap-5 p-6 rounded-2xl border border-slate-700/70 bg-slate-900/80"
-                >
-                  <div className={`flex-shrink-0 w-20 h-20 rounded-2xl flex flex-col items-center justify-center text-xl font-bold ${
-                    action.priority === 1 ? 'bg-gold-400/15 text-gold-400 border border-gold-400/25' :
-                    action.priority === 2 ? 'bg-slate-700/50 text-slate-300 border border-white/10' :
-                    'bg-slate-800/50 text-slate-500 border border-white/6'
-                  }`}>
-                    {PRIORITY_LABEL[action.priority]}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="text-sm font-semibold text-white">{action.title}</span>
-                      <span className="flex items-center gap-2 flex-shrink-0">
-                        {(() => {
-                          const impact = (action as { index_impact?: number }).index_impact;
-                          if (impact == null) return null;
-                          return (
-                            <span className={`text-xs font-mono ${impact >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                              {impact >= 0 ? '+' : ''}{impact} pts
-                            </span>
-                          );
-                        })()}
-                        <span className={`text-xs ${EFFORT_COLOUR[action.estimated_effort]}`}>
-                          {action.estimated_effort} effort
-                        </span>
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-400 leading-relaxed">{action.description}</p>
-                    {action.deadline && (
-                      <p className="text-xs text-slate-600 mt-1.5">
-                        By {new Date(action.deadline).toLocaleDateString('en-AU', { month: 'short', year: 'numeric' })}
-                      </p>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
         </SectionCard>
 
         {/* ── Next recruiting window ── */}
