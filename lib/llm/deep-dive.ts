@@ -14,7 +14,7 @@ import type {
 // specific gap. Same OpenAI setup and "explain, never invent" contract as the
 // on-screen report generator (./index.ts); larger token budget for 2–3 pages.
 
-const MODEL = process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
+const MODEL = process.env.OPENAI_MODEL ?? 'gpt-5.6-luna';
 const MAX_RETRIES = 2;
 const TIMEOUT_MS = 60_000;
 
