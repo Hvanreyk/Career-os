@@ -282,7 +282,7 @@ export default function ReportClient({
           style={{ background: 'radial-gradient(circle, rgba(29,78,216,0.4) 0%, transparent 70%)', filter: 'blur(100px)' }} />
       </div>
 
-      <div className="relative z-10 max-w-3xl mx-auto px-4 py-12 space-y-6">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 py-12 space-y-6">
 
         {/* ── Header ── */}
         <motion.div
