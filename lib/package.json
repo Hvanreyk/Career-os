@@ -11,6 +11,7 @@
     "./scoring/types": "./scoring/types.ts",
     "./llm": "./llm/index.ts",
     "./llm/types": "./llm/types.ts",
+    "./llm/deep-dive": "./llm/deep-dive.ts",
     "./llm/roadmap": "./llm/roadmap.ts",
     "./llm/critique": "./llm/critique.ts",
     "./llm/prompt-safety": "./llm/prompt-safety.ts",
@@ -31,6 +32,7 @@
     "./db/xlsx": "./db/xlsx.ts",
     "./courses": "./courses/index.ts",
     "./courses/content": "./courses/content.ts",
+    "./courses/recommend": "./courses/recommend.ts",
     "./courses/diagnostic": "./courses/diagnostic.ts",
     "./courses/readiness": "./courses/readiness.ts",
     "./courses/timeline": "./courses/timeline.ts"

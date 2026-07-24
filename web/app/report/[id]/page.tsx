@@ -42,5 +42,5 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
     return <ReportPending id={row.id} status={row.status} errorMessage={row.error_message} />;
   }
 
-  return <ReportClient report={row.scoring_output} llm={row.llm_report} createdAt={row.created_at} />;
+  return <ReportClient reportId={row.id} report={row.scoring_output} llm={row.llm_report} createdAt={row.created_at} />;
 }
