@@ -46,11 +46,14 @@ export async function POST(
   const scoringOutput = report.scoring_output as ScoringOutput;
   const llmReport = report.llm_report as LLMReport;
 
-  await serviceClient
+  const { error: markError } = await serviceClient
     .from('reports')
     .update({ deep_dive_status: 'processing', deep_dive_error: null })
     .eq('id', id)
     .eq('user_id', user.id);
+  // Non-fatal: the marker is best-effort (generation proceeds either way), but
+  // a failure here is worth surfacing in logs rather than silently discarding.
+  if (markError) console.error('Failed to mark deep-dive processing:', markError);
 
   try {
     const recommendedResources = await resolveRecommendations(scoringOutput);
@@ -75,11 +78,12 @@ export async function POST(
     const message = err instanceof Error ? err.message : 'Deep-dive generation failed';
     console.error('deep-dive error:', message);
 
-    await serviceClient
+    const { error: errorWriteError } = await serviceClient
       .from('reports')
       .update({ deep_dive_status: 'error', deep_dive_error: message })
       .eq('id', id)
       .eq('user_id', user.id);
+    if (errorWriteError) console.error('Failed to record deep-dive error state:', errorWriteError);
 
     return NextResponse.json({ error: 'Deep-dive generation failed', status: 'error' }, { status: 502 });
   }
