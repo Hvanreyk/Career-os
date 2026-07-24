@@ -51,6 +51,13 @@ const EFFORT_COLOUR: Record<string, string> = {
 
 const PRIORITY_LABEL: Record<number, string> = { 1: '#1', 2: '#2', 3: '#3' };
 
+// action.deadline is a YYYY-MM-DD date-only value; parsing it with `new Date()`
+// reads it as UTC midnight, which renders as the prior month/year west of UTC.
+function formatLocalDate(isoDate: string) {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
+}
+
 
 function SectionCard({
   title,
@@ -135,7 +142,8 @@ function CompetitivenessSection({
 }) {
   const band = COMP_BAND[comp.band] ?? COMP_BAND.developing;
   const maxMag = Math.max(1, ...comp.contributions.map((c) => Math.abs(c.points)));
-  const projectedImpact = actions.reduce((total, action) => total + (action.index_impact ?? 0), 0);
+  const topActions = actions.slice(0, 8);
+  const projectedImpact = topActions.reduce((total, action) => total + (action.index_impact ?? 0), 0);
   const finalIndex = Math.max(0, Math.min(100, comp.index + projectedImpact));
   const targetLabel = tierLabel(comp.primary_tier);
   const projectedBandKey = finalIndex >= 80
@@ -146,7 +154,7 @@ function CompetitivenessSection({
         ? 'developing'
         : 'reach';
   const projectedBand = COMP_BAND[projectedBandKey];
-  const runningIndex = actions.slice(0, 5).reduce<number[]>(
+  const runningIndex = topActions.reduce<number[]>(
     (acc, action) => [...acc, Math.max(0, Math.min(100, acc[acc.length - 1] + (action.index_impact ?? 0)))],
     [comp.index],
   );
@@ -244,7 +252,7 @@ function CompetitivenessSection({
       {actions.length > 0 && (
         <SectionCard title="Your highest-leverage moves" eyebrow="Ranked by actual point-impact — not a generic checklist." delay={0.3}>
           <div className="space-y-4">
-            {actions.slice(0, 5).map((action, i) => {
+            {topActions.map((action, i) => {
               const impact = action.index_impact;
               const prevIndex = runningIndex[i];
               const nextIndex = runningIndex[i + 1];
@@ -277,7 +285,7 @@ function CompetitivenessSection({
                       </span>
                       {action.deadline && (
                         <span className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-400">
-                          by {new Date(action.deadline).toLocaleDateString('en-AU', { month: 'short', year: 'numeric' })}
+                          by {formatLocalDate(action.deadline)}
                         </span>
                       )}
                     </div>
