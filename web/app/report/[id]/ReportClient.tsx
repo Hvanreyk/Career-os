@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import type { ScoringOutput, FitBand } from '@trajectoryos/core/scoring/types';
 import type { LLMReport } from '@trajectoryos/core/llm/types';
 import Link from 'next/link';
+import DownloadCompassReport from './DownloadCompassReport';
 
 // ─── Helpers ──────────────────────────────────────────────────
 
@@ -317,10 +318,12 @@ function CompetitivenessSection({
 // ─── Main component ───────────────────────────────────────────
 
 export default function ReportClient({
+  reportId,
   report,
   llm,
   createdAt,
 }: {
+  reportId: string;
   report: ScoringOutput;
   llm: LLMReport;
   createdAt: string;
@@ -561,6 +564,16 @@ export default function ReportClient({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
+        </motion.div>
+
+        {/* ── Download the full deep-dive ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="glass border border-gold-400/20 rounded-2xl p-6 flex justify-center"
+        >
+          <DownloadCompassReport reportId={reportId} />
         </motion.div>
 
         {/* ── Footer CTA ── */}

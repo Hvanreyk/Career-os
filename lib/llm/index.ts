@@ -5,9 +5,10 @@ import type { LLMReport, LLMReportSections } from './types';
 import { buildSystemPrompt, buildUserMessage } from './prompt';
 
 // Model is configurable so we can move up/down the cost/quality curve without a
-// code change. `gpt-4o-mini` is a real, JSON-capable, low-cost default — the
-// previous hard-coded 'gpt-5.4-mini' is not a real model id and 404s at runtime.
-const MODEL = process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
+// code change. Set OPENAI_MODEL to override the default below. Note: an
+// unrecognised model id 404s at runtime, so keep this in sync with a real,
+// JSON-capable OpenAI model id.
+const MODEL = process.env.OPENAI_MODEL ?? 'gpt-5.6-luna';
 const MAX_RETRIES = 2;
 const TIMEOUT_MS = 30_000;
 
