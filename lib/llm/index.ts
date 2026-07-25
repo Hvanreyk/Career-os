@@ -8,7 +8,7 @@ import { buildSystemPrompt, buildUserMessage } from './prompt';
 // code change. Set OPENAI_MODEL to override the default below. Note: an
 // unrecognised model id 404s at runtime, so keep this in sync with a real,
 // JSON-capable OpenAI model id.
-const MODEL = process.env.OPENAI_MODEL ?? 'gpt-5.6-luna';
+const MODEL = process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
 const MAX_RETRIES = 2;
 const TIMEOUT_MS = 30_000;
 
