@@ -64,7 +64,7 @@ export function Navbar() {
               <span className="text-navy-950 font-bold text-sm font-serif">T</span>
             </div>
             <span className="font-serif font-semibold text-lg tracking-wide text-white">
-              TrajectoryOS
+              MappedLabs
             </span>
           </Link>
 

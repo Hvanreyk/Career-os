@@ -67,7 +67,7 @@ export default function PricingPage() {
               Simple, <span className="text-gold-gradient">Transparent Plans</span>
             </h1>
             <p className="text-slate-400 text-xl">
-              TrajectoryOS is launching soon. Join the waitlist to get early access and founding
+              MappedLabs is launching soon. Join the waitlist to get early access and founding
               member pricing.
             </p>
           </AnimatedSection>

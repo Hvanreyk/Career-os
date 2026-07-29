@@ -48,7 +48,7 @@ export function HomeFeatures() {
             <span className="text-gold-gradient">Investment Banking</span>
           </h2>
           <p className="text-slate-400 max-w-xl mx-auto text-lg">
-            Everything in TrajectoryOS is designed around one goal: helping you land a role in
+            Everything in MappedLabs is designed around one goal: helping you land a role in
             high finance.
           </p>
         </AnimatedSection>

@@ -114,7 +114,7 @@ export default function ReportClient({
           className="text-center mb-8"
         >
           <Link href="/" className="inline-flex items-center gap-2 mb-6 text-slate-500 hover:text-gold-400 transition-colors text-sm">
-            ← Back to TrajectoryOS
+            ← Back to MappedLabs
           </Link>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-gold-400/25 bg-gold-400/6 mb-4">
             <span className="w-1.5 h-1.5 rounded-full bg-gold-400" />
@@ -332,7 +332,7 @@ export default function ReportClient({
           className="text-center pt-4 pb-8 space-y-3"
         >
           <p className="text-slate-500 text-xs">
-            Report generated with TrajectoryOS scoring engine · {new Date(createdAt).toLocaleDateString('en-AU')}
+            Report generated with MappedLabs scoring engine · {new Date(createdAt).toLocaleDateString('en-AU')}
           </p>
           <Link
             href="/tools/career-compass"

@@ -1,0 +1,107 @@
+/* V1 "Mapped Paper" — print-tech cartography × analytical publication. */
+
+.mp {
+  --mp-paper: #dde2d5;
+  --mp-paper-2: #d3d9c9;
+  --mp-ink: #16241c;
+  --mp-ink-2: #46524a; /* 5.6:1 on paper — safe for secondary text */
+  --mp-rule: #a8b19c;
+  --mp-accent: #c8452a; /* marks and large type only — 4.0:1, not body */
+  --mp-accent-text: #9e3117; /* 5.4:1 — the accent when it must carry small text */
+
+  background-color: var(--mp-paper);
+  color: var(--mp-ink);
+}
+
+/* Paper tooth. A fibre speckle, not a gradient wash. */
+.mp-paper-tooth {
+  background-image:
+    radial-gradient(circle at 30% 40%, rgba(22, 36, 28, 0.05) 0.6px, transparent 0.6px),
+    radial-gradient(circle at 70% 80%, rgba(22, 36, 28, 0.035) 0.5px, transparent 0.5px);
+  background-size: 4px 4px, 7px 7px;
+}
+
+.mp ::selection {
+  background: var(--mp-accent);
+  color: var(--mp-paper);
+}
+
+/* Ruler: the measured edge a survey sheet is trimmed against. */
+.mp-ruler {
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--mp-rule) 0 1px,
+    transparent 1px 12px
+  );
+}
+.mp-ruler-v {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--mp-rule) 0 1px,
+    transparent 1px 12px
+  );
+}
+
+/* Registration mark — printer's alignment target, drawn not decorative. */
+.mp-reg {
+  position: relative;
+  width: 18px;
+  height: 18px;
+}
+.mp-reg::before,
+.mp-reg::after {
+  content: '';
+  position: absolute;
+  background: var(--mp-rule);
+}
+.mp-reg::before { left: 8px; top: 0; width: 1px; height: 18px; }
+.mp-reg::after  { top: 8px; left: 0; height: 1px; width: 18px; }
+
+/* Primary action: a stamped block, square, no pill. */
+.mp-cta {
+  background: var(--mp-accent);
+  color: #fdfbf6;
+  transition: background-color 0.18s ease, transform 0.18s ease;
+}
+.mp-cta:hover { background: #ab371f; }
+.mp-cta:active { transform: translateY(1px); }
+.mp-cta:focus-visible {
+  outline: 2px solid var(--mp-ink);
+  outline-offset: 3px;
+}
+
+.mp-cta-2 {
+  border: 1px solid var(--mp-ink);
+  transition: background-color 0.18s ease;
+}
+.mp-cta-2:hover { background: rgba(22, 36, 28, 0.07); }
+.mp-cta-2:focus-visible {
+  outline: 2px solid var(--mp-ink);
+  outline-offset: 3px;
+}
+
+.mp-link:focus-visible {
+  outline: 2px solid var(--mp-ink);
+  outline-offset: 2px;
+}
+
+/* Contour bed behind the sample sheet — elevation, drawn in CSS not imagery. */
+.mp-contour {
+  background-image: repeating-radial-gradient(
+    ellipse 120% 80% at 30% 50%,
+    transparent 0 13px,
+    rgba(22, 36, 28, 0.09) 13px 14px
+  );
+}
+
+/* The one authored moment: route traces draw themselves in, once. */
+@media (prefers-reduced-motion: no-preference) {
+  .mp-trace {
+    stroke-dasharray: var(--len);
+    stroke-dashoffset: var(--len);
+    animation: mp-draw 1.5s cubic-bezier(0.33, 1, 0.68, 1) forwards;
+  }
+}
+@keyframes mp-draw {
+  to { stroke-dashoffset: 0; }
+}

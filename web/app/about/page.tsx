@@ -15,13 +15,13 @@ const pillars = [
   },
   {
     icon: Lightbulb,
-    title: 'Why We Built TrajectoryOS',
+    title: 'Why We Built MappedLabs',
     body: 'We watched talented students miss out on investment banking roles — not because they lacked ability, but because they lacked structure. They applied too late, prepared for the wrong things, or had no way to benchmark themselves against people who made it. We built the tool we wish we had.',
   },
   {
     icon: Users,
     title: 'Built by Students, For Students',
-    body: 'TrajectoryOS was built by two young entrepreneurs who navigated the same recruiting gauntlet. We understand the anxiety of unsure timelines, the frustration of vague advice, and the pressure of competing against candidates who seem to know things you don\'t. That lived experience shapes everything we build.',
+    body: 'MappedLabs was built by two young entrepreneurs who navigated the same recruiting gauntlet. We understand the anxiety of unsure timelines, the frustration of vague advice, and the pressure of competing against candidates who seem to know things you don\'t. That lived experience shapes everything we build.',
   },
   {
     icon: Eye,
@@ -47,9 +47,9 @@ export default function AboutPage() {
               <span className="text-gold-gradient">Designed for Edge.</span>
             </h1>
             <p className="text-slate-400 text-xl leading-relaxed max-w-2xl mx-auto">
-              TrajectoryOS was founded by two young entrepreneurs who saw how difficult it can be
+              MappedLabs was founded by two young entrepreneurs who saw how difficult it can be
               for students to break into investment banking without the right guidance, structure,
-              or network. We built TrajectoryOS to give ambitious students a clearer system for
+              or network. We built MappedLabs to give ambitious students a clearer system for
               preparing, improving, and positioning themselves for high-finance careers.
             </p>
           </AnimatedSection>

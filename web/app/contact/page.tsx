@@ -26,7 +26,7 @@ export default function ContactPage() {
               Let&apos;s <span className="text-gold-gradient">Talk</span>
             </h1>
             <p className="text-slate-400 text-xl max-w-xl mx-auto">
-              Have a question, partnership idea, or want to learn more about TrajectoryOS? Get in
+              Have a question, partnership idea, or want to learn more about MappedLabs? Get in
               touch with our team.
             </p>
           </AnimatedSection>

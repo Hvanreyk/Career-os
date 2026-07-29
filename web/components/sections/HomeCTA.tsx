@@ -26,7 +26,7 @@ export function HomeCTA() {
             <span className="text-gold-gradient">trajectory today.</span>
           </h2>
           <p className="text-slate-400 text-lg mb-10 max-w-xl mx-auto">
-            Join ambitious finance students using TrajectoryOS to structure their IB preparation
+            Join ambitious finance students using MappedLabs to structure their IB preparation
             and move with clarity.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">

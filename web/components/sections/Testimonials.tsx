@@ -11,7 +11,7 @@ const testimonials = [
   },
   {
     quote:
-      "I had no idea what stage I was at or what to prioritise. TrajectoryOS gave me a real roadmap — not generic advice. The matched professional paths were genuinely insightful.",
+      "I had no idea what stage I was at or what to prioritise. MappedLabs gave me a real roadmap — not generic advice. The matched professional paths were genuinely insightful.",
     name: 'Priya S.',
     detail: 'Y2 · University of Sydney · Commerce/Law',
   },

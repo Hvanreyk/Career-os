@@ -1,0 +1,83 @@
+/* V5 "The Career Atlas" — classical knowledge × contemporary analytical editorial. */
+
+.at {
+  --at-paper: #f6f2ea;
+  --at-paper-2: #efe9dd;
+  --at-ink: #1b2b4b;
+  --at-char: #3c4757; /* 9.0:1 on paper */
+  --at-rule: #d2c9b8;
+  --at-ox: #8c2f2f; /* 9.4:1 on paper */
+
+  background-color: var(--at-paper);
+  color: var(--at-ink);
+}
+
+.at ::selection {
+  background: var(--at-ox);
+  color: var(--at-paper);
+}
+
+/* Laid-paper tooth. */
+.at-laid {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(27, 43, 75, 0.028) 0 1px,
+    transparent 1px 4px
+  );
+}
+
+/* Orbit lines running behind the text column — engraved, not decorative glow. */
+.at-orbits {
+  background-image:
+    repeating-radial-gradient(circle at 12% 42%, transparent 0 46px, rgba(27, 43, 75, 0.08) 46px 47px),
+    repeating-radial-gradient(circle at 78% 20%, transparent 0 62px, rgba(27, 43, 75, 0.05) 62px 63px);
+}
+
+/* Primary action: a set block with a printed edge. */
+.at-cta {
+  background: var(--at-ink);
+  color: var(--at-paper);
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.at-cta:hover { background: var(--at-ox); }
+.at-cta:active { transform: translateY(1px); }
+.at-cta:focus-visible {
+  outline: 2px solid var(--at-ox);
+  outline-offset: 3px;
+}
+
+.at-cta-2 {
+  border: 1px solid var(--at-ink);
+  transition: background-color 0.2s ease;
+}
+.at-cta-2:hover { background: rgba(27, 43, 75, 0.06); }
+.at-cta-2:focus-visible {
+  outline: 2px solid var(--at-ox);
+  outline-offset: 3px;
+}
+
+.at-link:focus-visible {
+  outline: 2px solid var(--at-ox);
+  outline-offset: 2px;
+}
+
+/* Chapter opener: a rule pair, as set in an academic press. */
+.at-chapter {
+  border-top: 2px solid var(--at-ink);
+  border-bottom: 1px solid var(--at-rule);
+}
+
+/* Engraved plate treatment — warm the monochrome toward ink blue. */
+.at-plate img {
+  mix-blend-mode: multiply;
+}
+
+/* Drop cap for the chapter lead. */
+.at-lead::first-letter {
+  float: left;
+  font-size: 3.4em;
+  line-height: 0.82;
+  padding: 0.05em 0.1em 0 0;
+  color: var(--at-ox);
+  font-weight: 400;
+}

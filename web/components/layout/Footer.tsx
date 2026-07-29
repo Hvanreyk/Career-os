@@ -58,7 +58,7 @@ export function Footer() {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gold-400 to-gold-500 flex items-center justify-center">
                 <span className="text-navy-950 font-bold text-sm font-serif">T</span>
               </div>
-              <span className="font-serif font-semibold text-lg text-white">TrajectoryOS</span>
+              <span className="font-serif font-semibold text-lg text-white">MappedLabs</span>
             </div>
             <p className="text-slate-400 text-sm leading-relaxed max-w-xs mb-6">
               Helping ambitious finance students navigate their path into investment banking with
@@ -105,7 +105,7 @@ export function Footer() {
         <div className="section-divider mt-12 mb-8" />
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <div>© {new Date().getFullYear()} TrajectoryOS. All rights reserved.</div>
+          <div>© {new Date().getFullYear()} MappedLabs. All rights reserved.</div>
           <div>Built for ambitious finance students. Sydney, Australia.</div>
         </div>
       </div>

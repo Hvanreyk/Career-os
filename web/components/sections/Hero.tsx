@@ -58,7 +58,7 @@ export function Hero() {
             transition={{ duration: 0.7, delay: 0.3 }}
             className="text-slate-400 text-lg leading-relaxed max-w-xl mx-auto lg:mx-0 mb-10"
           >
-            TrajectoryOS helps ambitious finance students break into investment banking with
+            MappedLabs helps ambitious finance students break into investment banking with
             sharper preparation, smarter tools, and a clearer career strategy.
           </motion.p>
 

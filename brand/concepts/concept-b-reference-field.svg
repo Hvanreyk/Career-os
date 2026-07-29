@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 120" width="320" height="120" role="img" aria-labelledby="cb-title cb-desc">
+  <title id="cb-title">MappedLabs logo concept B — Reference Field</title>
+  <desc id="cb-desc">An M held inside intersecting graticule reference lines with edge tick marks, like a plate registration mark.</desc>
+
+  <!-- Concept B · REFERENCE FIELD
+       Borrows the registration mark and graticule from survey plates and print
+       production: the mark is a coordinate frame, and the M sits inside it as
+       the thing being located. Reads institutional and exact — but the frame
+       is what carries the idea, which makes it fragile below about 24px. -->
+
+  <rect width="320" height="120" fill="#F4F2ED"/>
+
+  <g transform="translate(28 28)">
+    <!-- Intersecting reference lines, extending past the field as on a plate. -->
+    <g stroke="#14181A" stroke-width="1" opacity="0.4">
+      <path d="M32 -8 V72"/>
+      <path d="M-8 32 H72"/>
+    </g>
+    <g stroke="#14181A" stroke-width="1.5" opacity="0.75">
+      <path d="M0 0 h10 M0 0 v10"/>
+      <path d="M64 0 h-10 M64 0 v10"/>
+      <path d="M0 64 h10 M0 64 v-10"/>
+      <path d="M64 64 h-10 M64 64 v-10"/>
+    </g>
+
+    <!-- The located mark. -->
+    <path d="M12 52 L12 14 L32 38 L52 14 L52 52"
+          fill="none" stroke="#14181A" stroke-width="8"
+          stroke-linecap="butt" stroke-linejoin="round"/>
+    <circle cx="32" cy="38" r="3.5" fill="#C8452A"/>
+  </g>
+
+  <g transform="translate(116 0)">
+    <text x="0" y="66" font-family="Archivo, 'Helvetica Neue', Arial, sans-serif"
+          font-size="34" font-weight="600" letter-spacing="-0.9" fill="#14181A">MappedLabs</text>
+    <text x="1" y="86" font-family="ui-monospace, 'SF Mono', Menlo, monospace"
+          font-size="9" letter-spacing="2.4" fill="#14181A" opacity="0.55">CAREER INTELLIGENCE</text>
+  </g>
+</svg>

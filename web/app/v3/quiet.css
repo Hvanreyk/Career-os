@@ -1,0 +1,68 @@
+/* V3 "Quiet Institution" — editorial minimalism × architectural confidence.
+   Almost no boxes and no borders: hierarchy is carried by scale and space. */
+
+.qi {
+  --qi-fog: #f2f1ee;
+  --qi-ink: #16181a;
+  --qi-mute: #5e6266; /* 5.6:1 on fog */
+  --qi-hair: #d3d1cc;
+  --qi-cobalt: #1f4b99; /* 7.3:1 on fog */
+
+  background-color: var(--qi-fog);
+  color: var(--qi-ink);
+}
+
+.qi ::selection {
+  background: var(--qi-cobalt);
+  color: var(--qi-fog);
+}
+
+/* The only filled element on the page — so it cannot be missed. */
+.qi-cta {
+  background: var(--qi-ink);
+  color: var(--qi-fog);
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.qi-cta:hover { background: var(--qi-cobalt); }
+.qi-cta:active { transform: translateY(1px); }
+.qi-cta:focus-visible {
+  outline: 2px solid var(--qi-cobalt);
+  outline-offset: 4px;
+}
+
+/* Secondary: a rule under text, never a box. */
+.qi-quiet {
+  border-bottom: 1px solid var(--qi-ink);
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.qi-quiet:hover { color: var(--qi-cobalt); border-color: var(--qi-cobalt); }
+.qi-quiet:focus-visible {
+  outline: 2px solid var(--qi-cobalt);
+  outline-offset: 3px;
+}
+
+/* Hero image treatment: hold the top quiet, let the lower half carry weight. */
+/* The veil must stay opaque for the FULL height of the type block (eyebrow
+   through CTA, roughly the top 62% of the hero), not just the headline —
+   otherwise the support copy and secondary link fall below AA over the image. */
+.qi-hero-veil {
+  background: linear-gradient(
+    to bottom,
+    var(--qi-fog) 0%,
+    rgba(242, 241, 238, 0.96) 40%,
+    rgba(242, 241, 238, 0.78) 52%,
+    rgba(242, 241, 238, 0.22) 64%,
+    rgba(242, 241, 238, 0.04) 78%,
+    rgba(242, 241, 238, 0) 94%
+  );
+}
+
+/* Bottom caption sits on exposed imagery — give it its own scrim rather than
+   relying on the veil, which has fully cleared by then. */
+.qi-hero-caption {
+  background: linear-gradient(to top, rgba(242, 241, 238, 0.92), rgba(242, 241, 238, 0));
+}
+
+.qi-figure img {
+  filter: grayscale(1) contrast(0.88) brightness(1.04);
+}

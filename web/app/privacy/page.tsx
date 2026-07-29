@@ -10,11 +10,11 @@ const sections = [
   },
   {
     title: 'How We Use Information',
-    body: 'We use your information to provide, personalise, and improve the TrajectoryOS platform — including generating your career stage classification, profile match, and action plan. We do not sell your personal information to third parties. We may use anonymised, aggregated data to improve our matching algorithms and product features.',
+    body: 'We use your information to provide, personalise, and improve the MappedLabs platform — including generating your career stage classification, profile match, and action plan. We do not sell your personal information to third parties. We may use anonymised, aggregated data to improve our matching algorithms and product features.',
   },
   {
     title: 'Cookies and Analytics',
-    body: 'TrajectoryOS uses cookies to maintain your session and remember your preferences. We use analytics tools to understand how users interact with our platform. You can control cookie preferences through your browser settings, though disabling certain cookies may affect platform functionality.',
+    body: 'MappedLabs uses cookies to maintain your session and remember your preferences. We use analytics tools to understand how users interact with our platform. You can control cookie preferences through your browser settings, though disabling certain cookies may affect platform functionality.',
   },
   {
     title: 'Data Security',
@@ -22,7 +22,7 @@ const sections = [
   },
   {
     title: 'Third-Party Services',
-    body: 'TrajectoryOS integrates with third-party services including Supabase (database and authentication) and payment processors. These services have their own privacy policies and data practices. We only share the data necessary for these services to function.',
+    body: 'MappedLabs integrates with third-party services including Supabase (database and authentication) and payment processors. These services have their own privacy policies and data practices. We only share the data necessary for these services to function.',
   },
   {
     title: 'Contact Us',
