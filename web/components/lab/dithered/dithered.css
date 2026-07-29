@@ -75,6 +75,10 @@
 .di-cta-2 {
   border: 1px solid var(--di-rule-bright);
   color: var(--di-bone);
+  /* Ghost buttons sit over the hero plate. Without a backing they inherit
+     whatever the image happens to be doing underneath, which is not a contrast
+     guarantee — this one is cheap and keeps the outlined character. */
+  background: rgba(10, 10, 11, 0.62);
   transition: border-color 0.18s linear, background-color 0.18s linear;
 }
 .di-cta-2:hover {
@@ -100,6 +104,45 @@
 .di-row:hover {
   background: var(--di-raised);
   padding-left: 0.5rem;
+}
+
+/* ── Hero scrim ───────────────────────────────────────────── */
+/* The scrim has to hold whichever edge the type occupies, and that edge changes
+   with the layout. A single horizontal gradient tuned for a wide viewport is
+   still 95% opaque 98px into a 375px screen, which smothers the plate on a
+   phone — so mobile gets a vertical scrim instead.
+   It holds the TOP, where the type sits, and clears toward the bottom. That
+   direction is also the right one for the plates themselves: each is darkest
+   overhead and brightest at floor level, so the scrim does its heaviest work
+   where the image is already near-black, and releases where it has something
+   worth showing. */
+/* The type block runs to roughly 75% of the hero on a 375px screen, so the
+   scrim stays near-opaque to there and only then falls away — the reveal is a
+   band, not a fade the copy has to compete with. */
+.di-hero-scrim {
+  background: linear-gradient(
+    to bottom,
+    var(--di-black) 0%,
+    rgba(10, 10, 11, 0.96) 45%,
+    rgba(10, 10, 11, 0.9) 70%,
+    rgba(10, 10, 11, 0.62) 80%,
+    rgba(10, 10, 11, 0.26) 90%,
+    rgba(10, 10, 11, 0.06) 100%
+  );
+}
+
+@media (min-width: 640px) {
+  /* Type moves to the left column — hold that edge and clear by the midpoint. */
+  .di-hero-scrim {
+    background: linear-gradient(
+      97deg,
+      var(--di-black) 0%,
+      rgba(10, 10, 11, 0.95) 26%,
+      rgba(10, 10, 11, 0.72) 42%,
+      rgba(10, 10, 11, 0.2) 62%,
+      rgba(10, 10, 11, 0) 80%
+    );
+  }
 }
 
 /* ── Hero plate ───────────────────────────────────────────── */

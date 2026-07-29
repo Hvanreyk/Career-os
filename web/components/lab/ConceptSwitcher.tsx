@@ -54,7 +54,7 @@ export function ConceptSwitcher({ current }: { current: string }) {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Show concept switcher"
-        className="fixed bottom-5 left-1/2 z-[999] -translate-x-1/2 h-8 w-8 rounded-full bg-[#17171a] text-white/70 text-[11px] font-medium shadow-[0_4px_16px_rgba(0,0,0,0.45)] ring-1 ring-white/15 transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className="fixed bottom-5 left-1/2 z-[999] -translate-x-1/2 h-11 w-11 rounded-full bg-[#17171a] text-white/70 text-[12px] font-medium shadow-[0_4px_16px_rgba(0,0,0,0.45)] ring-1 ring-white/15 transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
       >
         {index + 1}
       </button>
@@ -69,7 +69,7 @@ export function ConceptSwitcher({ current }: { current: string }) {
     >
       <Link
         href="/design-lab"
-        className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-semibold tracking-wide text-white/60 transition hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-full px-3 text-[12px] font-semibold tracking-wide text-white/60 transition hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
       >
         <svg viewBox="0 0 16 16" className="h-3 w-3" aria-hidden="true">
           <path
@@ -81,7 +81,8 @@ export function ConceptSwitcher({ current }: { current: string }) {
             strokeLinejoin="round"
           />
         </svg>
-        Lab
+        <span className="hidden sm:inline">Lab</span>
+        <span className="sr-only sm:hidden">Design lab</span>
       </Link>
 
       <span className="h-4 w-px bg-white/15" aria-hidden="true" />
@@ -94,7 +95,7 @@ export function ConceptSwitcher({ current }: { current: string }) {
             href={`/${concept.id}`}
             aria-current={isActive ? 'page' : undefined}
             title={`${concept.id.toUpperCase()} — ${concept.name}`}
-            className={`rounded-full px-2.5 py-1.5 text-[11px] font-semibold tabular-nums transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
+            className={`flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-[13px] font-semibold tabular-nums transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
               isActive
                 ? 'bg-white text-[#17171a]'
                 : 'text-white/55 hover:bg-white/10 hover:text-white'
@@ -105,15 +106,19 @@ export function ConceptSwitcher({ current }: { current: string }) {
         );
       })}
 
-      <span className="h-4 w-px bg-white/15" aria-hidden="true" />
+      <span className="hidden h-4 w-px bg-white/15 sm:block" aria-hidden="true" />
 
-      <span className="px-2 py-1.5 text-[11px] font-medium text-white/70">{active.name}</span>
+      {/* The plate name is the first thing to go when width is scarce — the
+          numbered targets have to stay tappable at 375px. */}
+      <span className="hidden px-2 text-[12px] font-medium text-white/70 sm:inline">
+        {active.name}
+      </span>
 
       <button
         type="button"
         onClick={() => setOpen(false)}
         aria-label="Hide concept switcher"
-        className="rounded-full px-2 py-1.5 text-white/40 transition hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-white/40 transition hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
       >
         <svg viewBox="0 0 16 16" className="h-3 w-3" aria-hidden="true">
           <path

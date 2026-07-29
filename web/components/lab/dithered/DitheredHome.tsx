@@ -100,24 +100,21 @@ export function DitheredHome({ concept }: { concept: Concept }) {
           />
         </PlateMotion>
 
-        {/* Hold the left for type; clear by the midpoint so the plate reads. */}
+        {/* Direction-aware: vertical on phones, horizontal once type moves left. */}
+        <div className="di-hero-scrim absolute inset-0" aria-hidden="true" />
+        {/* Shorter on phones — at 375px this fade is the only thing between the
+            plate and the one band of it that is actually lit. */}
         <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(97deg, var(--di-black) 0%, rgba(10,10,11,0.95) 26%, rgba(10,10,11,0.72) 42%, rgba(10,10,11,0.2) 62%, rgba(10,10,11,0) 80%)',
-          }}
-          aria-hidden="true"
-        />
-        <div
-          className="absolute inset-x-0 bottom-0 h-40"
+          className="absolute inset-x-0 bottom-0 h-16 sm:h-40"
           style={{ background: 'linear-gradient(to top, var(--di-black), transparent)' }}
           aria-hidden="true"
         />
         <div className="di-scan pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true" />
 
         <div className="relative mx-auto flex min-h-[calc(100svh-3.25rem)] max-w-[1600px] flex-col px-5 sm:px-8">
-          <div className="flex flex-1 items-center py-16">
+          {/* Top-aligned on phones so the plate keeps the foot of the frame,
+              which is the part of every plate with light in it. */}
+          <div className="flex flex-1 items-start pb-8 pt-10 sm:items-center sm:py-16">
             <div className="max-w-[40rem]">
               <Tag className="!text-[var(--di-red)]">{brand.eyebrow}</Tag>
               <h1 className="mt-6 max-w-[14ch] text-[clamp(2.6rem,7vw,5.5rem)] font-extrabold uppercase leading-[0.92] tracking-[-0.042em] [word-spacing:0.12em]">
@@ -138,7 +135,13 @@ export function DitheredHome({ concept }: { concept: Concept }) {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[var(--di-rule)] py-4">
+          {/* This strip sits at the foot of the plate, which is the one part of
+              every image with real light in it — so it carries its own ground
+              rather than trusting whatever is behind it. */}
+          <div
+            className="-mx-5 flex flex-wrap items-center justify-between gap-4 border-t border-[var(--di-rule)] px-5 py-4 sm:-mx-8 sm:px-8"
+            style={{ backgroundColor: 'rgba(10,10,11,0.9)' }}
+          >
             <Tag>{concept.caption}</Tag>
             <Tag className="hidden md:inline">ROUTE AU·IB — 01</Tag>
             <Tag>34°55′S 138°36′E</Tag>
@@ -162,7 +165,7 @@ export function DitheredHome({ concept }: { concept: Concept }) {
                 <div className="di-row grid grid-cols-[3rem_minmax(0,1fr)] items-baseline gap-x-5 gap-y-1 py-6 md:grid-cols-[3.5rem_minmax(0,0.8fr)_minmax(0,1.2fr)]">
                   <Tag className="!text-[var(--di-red)]">{String(i + 1).padStart(2, '0')}</Tag>
                   <h3 className="text-[19px] font-bold uppercase tracking-[-0.015em]">{item.q}</h3>
-                  <p className="col-start-2 max-w-[56ch] font-[family-name:var(--di-mono)] text-[15px] leading-[1.62] text-[var(--di-graphite)] md:col-start-3">
+                  <p className="col-start-2 max-w-[56ch] font-[family-name:var(--di-mono)] text-[16px] leading-[1.62] text-[var(--di-graphite)] md:col-start-3">
                     {item.a}
                   </p>
                 </div>
@@ -199,7 +202,7 @@ export function DitheredHome({ concept }: { concept: Concept }) {
                     <dt className="mt-2 text-[16px] font-bold uppercase tracking-[-0.01em]">
                       {r.label}
                     </dt>
-                    <dd className="mt-2 font-[family-name:var(--di-mono)] text-[14px] leading-[1.58] text-[var(--di-graphite)]">
+                    <dd className="mt-2 font-[family-name:var(--di-mono)] text-[16px] leading-[1.6] text-[var(--di-graphite)]">
                       {r.note}
                     </dd>
                   </div>
@@ -229,7 +232,7 @@ export function DitheredHome({ concept }: { concept: Concept }) {
                   <h3 className="text-[21px] font-bold uppercase tracking-[-0.025em]">
                     {step.title}
                   </h3>
-                  <p className="max-w-[62ch] font-[family-name:var(--di-mono)] text-[15px] leading-[1.68] text-[var(--di-graphite)]">
+                  <p className="max-w-[62ch] font-[family-name:var(--di-mono)] text-[16px] leading-[1.68] text-[var(--di-graphite)]">
                     {step.body}
                   </p>
                 </div>
@@ -283,7 +286,7 @@ export function DitheredHome({ concept }: { concept: Concept }) {
                 <span className="font-[family-name:var(--di-display)] text-[clamp(2rem,5vw,3rem)] font-extrabold tracking-[-0.04em] text-[var(--di-red)]">
                   {sampleProfile.probability.value}
                 </span>
-                <p className="mt-3 max-w-[46ch] font-[family-name:var(--di-mono)] text-[15px] leading-[1.65] text-[var(--di-graphite)]">
+                <p className="mt-3 max-w-[46ch] font-[family-name:var(--di-mono)] text-[16px] leading-[1.65] text-[var(--di-graphite)]">
                   {sampleProfile.probability.note}
                 </p>
               </div>
@@ -338,7 +341,7 @@ export function DitheredHome({ concept }: { concept: Concept }) {
                 </div>
               ))}
             </dl>
-            <p className="mt-4 border-l-2 border-[var(--di-red)] pl-4 font-[family-name:var(--di-mono)] text-[14px] leading-[1.6] text-[var(--di-bone)]">
+            <p className="mt-4 border-l-2 border-[var(--di-red)] pl-4 font-[family-name:var(--di-mono)] text-[16px] leading-[1.6] text-[var(--di-bone)]">
               Recommended aim: anchor applications at{' '}
               <strong className="font-bold">{sampleProfile.recommendedAim.anchor}</strong> and keep{' '}
               <strong className="font-bold">{sampleProfile.recommendedAim.stretch}</strong> live as a
@@ -361,9 +364,11 @@ export function DitheredHome({ concept }: { concept: Concept }) {
                 return (
                   <li
                     key={d.factor}
-                    className="grid grid-cols-[minmax(0,1fr)_3.5rem_minmax(0,1.1fr)] items-center gap-x-4 border-b border-[var(--di-rule)] py-3.5"
+                    /* The bar column is hidden below sm — don't let it keep
+                       reserving track width where it isn't drawn. */
+                    className="grid grid-cols-[minmax(0,1fr)_3.5rem] items-center gap-x-4 border-b border-[var(--di-rule)] py-3.5 sm:grid-cols-[minmax(0,1fr)_3.5rem_minmax(0,1.1fr)]"
                   >
-                    <span className="font-[family-name:var(--di-mono)] text-[15px] leading-snug">
+                    <span className="font-[family-name:var(--di-mono)] text-[16px] leading-snug">
                       {d.factor}
                     </span>
                     <span
@@ -413,7 +418,7 @@ export function DitheredHome({ concept }: { concept: Concept }) {
                     <h4 className="text-[17px] font-bold uppercase tracking-[-0.015em]">
                       {a.action}
                     </h4>
-                    <p className="mt-2 max-w-[68ch] font-[family-name:var(--di-mono)] text-[14px] leading-[1.62] text-[var(--di-graphite)]">
+                    <p className="mt-2 max-w-[68ch] font-[family-name:var(--di-mono)] text-[16px] leading-[1.62] text-[var(--di-graphite)]">
                       {a.detail}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
@@ -428,7 +433,9 @@ export function DitheredHome({ concept }: { concept: Concept }) {
                 </li>
               ))}
             </ol>
-            <p className="mt-5 max-w-[70ch] font-[family-name:var(--di-mono)] text-[13px] leading-[1.65] text-[var(--di-graphite)]">
+            {/* The honesty note carries real weight — it stays at body size
+                rather than shrinking into fine print. */}
+            <p className="mt-5 max-w-[70ch] font-[family-name:var(--di-mono)] text-[16px] leading-[1.65] text-[var(--di-graphite)]">
               {sampleProfile.disclaimer}
             </p>
           </Reveal>
@@ -451,7 +458,7 @@ export function DitheredHome({ concept }: { concept: Concept }) {
                       <h3 className="text-[16px] font-bold uppercase tracking-[-0.01em]">
                         {c.title}
                       </h3>
-                      <p className="mt-1.5 max-w-[58ch] font-[family-name:var(--di-mono)] text-[14px] leading-[1.58] text-[var(--di-graphite)]">
+                      <p className="mt-1.5 max-w-[58ch] font-[family-name:var(--di-mono)] text-[16px] leading-[1.6] text-[var(--di-graphite)]">
                         {c.body}
                       </p>
                     </div>
@@ -466,7 +473,7 @@ export function DitheredHome({ concept }: { concept: Concept }) {
                 <p className="mt-4 text-[clamp(1.5rem,3vw,2rem)] font-extrabold uppercase leading-[1.04] tracking-[-0.035em]">
                   Benchmark first. Everything follows.
                 </p>
-                <p className="mt-4 font-[family-name:var(--di-mono)] text-[15px] leading-[1.62] text-[var(--di-graphite)]">
+                <p className="mt-4 font-[family-name:var(--di-mono)] text-[16px] leading-[1.62] text-[var(--di-graphite)]">
                   Intake returns a per-tier index and a ranked sequence, not a score to feel good
                   about.
                 </p>
