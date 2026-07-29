@@ -106,7 +106,11 @@ export function Reveal({
 
     // No observer support: show on the next tick rather than synchronously,
     // which would cascade a second render pass during the effect.
-    if (!('IntersectionObserver' in window)) {
+    // Held in a variable because `'IntersectionObserver' in window` narrows
+    // `window` to `never` on the false branch — the type system believes the
+    // property always exists, but this is a runtime feature detection.
+    const hasObserver = 'IntersectionObserver' in window;
+    if (!hasObserver) {
       const t = window.setTimeout(() => setShown(true), 0);
       return () => window.clearTimeout(t);
     }
