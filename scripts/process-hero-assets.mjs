@@ -26,30 +26,34 @@ const OUT = path.join(root, 'web/public/hero');
  * content that bloats WebP badly, so all three take a lower WebP quality.
  */
 const PLAN = [
-  { file: 'd1-mapped-paper.png', slug: 'v1-mapped-paper', mobileGravity: 'centre', avif: 40, webp: 50 },
-  { file: 'd2-signal-landscape.png', slug: 'v2-signal-landscape', mobileGravity: 'east', avif: 58, webp: 76 },
-  { file: 'd3-quiet-institution.png', slug: 'v3-quiet-institution', mobileGravity: 'centre', avif: 58, webp: 76 },
-  { file: 'd4-dithered.png', slug: 'v4-dithered', mobileGravity: 'east', avif: 46, webp: 58 },
-  { file: 'd5-atlas.png', slug: 'v5-atlas', mobileGravity: 'east', avif: 42, webp: 50 },
+  { file: 'h1-window.png', slug: 'h1-window', mobileGravity: 'east', avif: 48, webp: 60 },
+  { file: 'h2-desk.png', slug: 'h2-desk', mobileGravity: 'east', avif: 48, webp: 60 },
+  { file: 'h3-atrium.png', slug: 'h3-atrium', mobileGravity: 'east', avif: 48, webp: 60 },
+  { file: 'h4-network.png', slug: 'h4-network', mobileGravity: 'east', avif: 46, webp: 58 },
+  { file: 'h5-theatre.png', slug: 'h5-theatre', mobileGravity: 'east', avif: 48, webp: 60 },
 ];
 
-const DESKTOP = { w: 2048, h: 1280 };
+const DESKTOP = { w: 2400, h: 1600 };
 const MOBILE = { w: 1200, h: 1500 };
 
-async function emit(input, outBase, { w, h }, gravity, opts) {
+async function emit(input, outBase, { w, h }, gravity, opts, isMobile = false) {
   const base = sharp(input).resize(w, h, {
     fit: 'cover',
     position: gravity,
     kernel: 'lanczos3',
   });
 
-  await base.clone().avif({ quality: opts.avif, effort: 7 }).toFile(`${outBase}.avif`);
+  // The mobile crop is a tighter 4:5 window on the same dither, so it carries
+  // more high-frequency area per pixel and needs a lower quality to fit budget.
+  const avifQ = isMobile ? opts.avif - 10 : opts.avif;
+  const webpQ = isMobile ? opts.webp - 10 : opts.webp;
+  await base.clone().avif({ quality: avifQ, effort: 7 }).toFile(`${outBase}.avif`);
   await base
     .clone()
     .webp(
       opts.lossless
         ? { lossless: true, nearLossless: true, quality: 60, effort: 6 }
-        : { quality: opts.webp, effort: 6 },
+        : { quality: webpQ, effort: 6 },
     )
     .toFile(`${outBase}.webp`);
 }
@@ -67,7 +71,7 @@ async function main() {
     }
 
     await emit(input, path.join(OUT, `${slug}-desktop`), DESKTOP, 'centre', opts);
-    await emit(input, path.join(OUT, `${slug}-mobile`), MOBILE, mobileGravity, opts);
+    await emit(input, path.join(OUT, `${slug}-mobile`), MOBILE, mobileGravity, opts, true);
     console.log(`✓ ${slug}`);
   }
 

@@ -35,13 +35,13 @@ export function HeroImage({ slug, alt, className = '', position = 'center', prio
         width={1200}
         height={1500}
       />
-      <source srcSet={`/hero/${slug}-desktop.avif`} type="image/avif" width={2048} height={1280} />
-      <source srcSet={`/hero/${slug}-desktop.webp`} type="image/webp" width={2048} height={1280} />
+      <source srcSet={`/hero/${slug}-desktop.avif`} type="image/avif" width={2400} height={1600} />
+      <source srcSet={`/hero/${slug}-desktop.webp`} type="image/webp" width={2400} height={1600} />
       <img
         src={`/hero/${slug}-desktop.webp`}
         alt={alt}
-        width={2048}
-        height={1280}
+        width={2400}
+        height={1600}
         decoding="async"
         loading={priority ? 'eager' : 'lazy'}
         fetchPriority={priority ? 'high' : 'auto'}

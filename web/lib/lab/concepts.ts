@@ -1,108 +1,101 @@
 /**
- * Registry of the MappedLabs landing-page concepts served at /v1–/v5.
+ * Hero variants for the selected direction, Dithered Intelligence.
  *
- * /design-lab builds its comparison from this, and ConceptSwitcher uses it to
- * move between concepts. Adding a concept means adding a route plus an entry.
+ * The direction is settled — /v1–/v5 now all render the SAME page
+ * (components/lab/dithered/DitheredHome.tsx) and differ only in the hero plate,
+ * so the remaining decision is purely which image to ship. /design-lab compares
+ * them; ConceptSwitcher moves between them.
+ *
+ * Earlier this registry held five different design directions; those pages are
+ * recoverable from commit a2b02c7 if a direction ever needs revisiting.
  */
 
 export interface Concept {
   /** Route slug — the URL is `/${id}`. */
   id: string;
-  /** Direction name, as briefed. */
+  /** Short name for the switcher. */
   name: string;
-  /** The aesthetic in one line. */
-  aesthetic: string;
-  /** The visual premise — what this direction argues the page should be. */
+  /** Base slug for the hero asset in /public/hero. */
+  slug: string;
+  /** What the plate depicts, and why it might be the right one. */
   premise: string;
-  /** Typefaces committed to. */
-  type: string;
-  /** Palette chips, ground first. */
-  swatches: string[];
-  ground: string;
-  ink: string;
-  accent: string;
-  /** Where the direction is strongest. */
+  /** Alt text — describes the image, not the brand. */
+  alt: string;
+  /** Marginalia caption rendered over the plate. */
+  caption: string;
+  /** object-position for the desktop crop. */
+  position: string;
+  /** The argument for shipping this one. */
   strength: string;
-  /** The honest risk of shipping it. */
+  /** The honest risk. */
   risk: string;
 }
 
 export const concepts: Concept[] = [
   {
     id: 'v1',
-    name: 'Mapped Paper',
-    aesthetic: 'Print-tech cartography × analytical publication',
+    name: 'Window',
+    slug: 'h1-window',
     premise:
-      'The page is a survey document about one student. Contour terrain, route notation and field annotations carry the argument that a career can be plotted and measured.',
-    type: 'Archivo · Newsreader · JetBrains Mono',
-    swatches: ['#DDE2D5', '#16241C', '#C8452A', '#8B9384'],
-    ground: '#DDE2D5',
-    ink: '#16241C',
-    accent: '#C8452A',
-    strength:
-      'The only direction where the brand name, the product metaphor and the visual system are the same idea. Warmest and most ownable.',
-    risk: 'Paper and contour texture can read as craft rather than rigour if the data is not specific.',
+      'A figure at a window above a dense city grid at night. The vantage point is the idea — you cannot plan a route through a system you cannot see from above.',
+    alt: 'One-bit dithered plate: a lone figure seen from behind at a tall window, looking out over a dense grid of city blocks far below at night.',
+    caption: 'PLATE 01 · 1-BIT · OBSERVED',
+    position: '72% 40%',
+    strength: 'The most immediately legible of the five, and the only one that reads as aspiration without tipping into corporate cliché.',
+    risk: 'Figure-at-window is a familiar composition; it works hard but does not surprise.',
   },
   {
     id: 'v2',
-    name: 'Signal Landscape',
-    aesthetic: 'Cinematic data texture × institutional intelligence',
+    name: 'Desk',
+    slug: 'h2-desk',
     premise:
-      'Entering the page should feel like entering an intelligence system. Data becomes terrain; narrow columns and precise readouts replace card grids entirely.',
-    type: 'Archivo · JetBrains Mono',
-    swatches: ['#0A1416', '#E8E4DC', '#E0A040', '#1D3238'],
-    ground: '#0A1416',
-    ink: '#E8E4DC',
-    accent: '#E0A040',
-    strength:
-      'Highest perceived seriousness and scale. The atmospheric transitions give the page real pacing.',
-    risk: 'Dark institutional surfaces are the most crowded look in fintech; it must earn the darkness.',
+      'Overhead: hands among printed charts and annotated pages. The closest of the five to what the product actually is — analysis on paper, mid-thought.',
+    alt: 'One-bit dithered plate: an overhead view of hands resting among printed charts, plotted graphs and annotated sheets on a plain desk.',
+    caption: 'PLATE 02 · 1-BIT · OVERHEAD',
+    position: '60% 55%',
+    strength: 'Most honest to the product. No aspirational staging — just the work, which suits the direction’s refusal to flatter.',
+    risk: 'Quietest of the five; carries less weight as a monumental anchor at large sizes.',
   },
   {
     id: 'v3',
-    name: 'Quiet Institution',
-    aesthetic: 'Editorial minimalism × architectural confidence',
+    name: 'Atrium',
+    slug: 'h3-atrium',
     premise:
-      'Authority through restraint. Enormous whitespace, one monumental monochrome image, almost no borders or chrome, and typography doing all the work.',
-    type: 'Newsreader · Archivo',
-    swatches: ['#F2F1EE', '#16181A', '#1F4B99', '#8A8D91'],
-    ground: '#F2F1EE',
-    ink: '#16181A',
-    accent: '#1F4B99',
-    strength:
-      'Reads as the most credible to a sceptical parent. Ages the best and is the cheapest to maintain.',
-    risk: 'Restraint can tip into blandness; without a strong image it has nothing to hold onto.',
+      'A small figure crossing an enormous brutalist atrium. Scale as the argument: the institution is vast, structured, and navigable if you can read it.',
+    alt: 'One-bit dithered plate: a single small figure walking through an enormous empty brutalist concrete atrium with a cantilevered staircase receding into darkness.',
+    caption: 'PLATE 03 · 1-BIT · STRUCTURE',
+    position: '64% 62%',
+    strength: 'The strongest architectural presence, and the best match for the direction’s hard geometry and heavy rules.',
+    risk: 'Can read as intimidating or alienating to the exact student the product is meant to help.',
   },
   {
     id: 'v4',
-    name: 'Dithered Intelligence',
-    aesthetic: 'Brutalist editorial × bitmap research terminal',
+    name: 'Network',
+    slug: 'h4-network',
     premise:
-      'Deliberate visual tension. Hard dividers, cropped type, 1-bit imagery and compressed information bands — a research instrument that refuses to be friendly.',
-    type: 'Archivo · JetBrains Mono',
-    swatches: ['#0B0B0C', '#EDEAE3', '#E5482B', '#3A3A3D'],
-    ground: '#0B0B0C',
-    ink: '#EDEAE3',
-    accent: '#E5482B',
-    strength:
-      'By far the most distinctive and the most memorable. Signals that this was made by people with a point of view.',
-    risk: 'The rawness that appeals to the student may read as unserious to the parent paying for it.',
+      'No figure at all — a dense field of branching route lines and junction nodes. The map itself, rendered as terrain rather than illustrated.',
+    alt: 'One-bit dithered plate: a dense field of branching plotted route lines and junction nodes receding into depth, like a vast wall schematic.',
+    caption: 'PLATE 04 · 1-BIT · TRACE',
+    position: '62% 50%',
+    strength: 'Ties directly to the brand mark and the word "mapped". Ages best and never dates through clothing or setting.',
+    risk: 'Abstraction with no human presence can read as cold — the one thing the direction can least afford.',
   },
   {
     id: 'v5',
-    name: 'The Career Atlas',
-    aesthetic: 'Classical knowledge × contemporary analytical editorial',
+    name: 'Theatre',
+    slug: 'h5-theatre',
     premise:
-      'Career Compass as a modern field guide. Chapters, marginalia and engraved diagrams frame recruiting as a discipline to be studied rather than a game to be hacked.',
-    type: 'Newsreader · Archivo · JetBrains Mono',
-    swatches: ['#F6F2EA', '#1B2B4B', '#8C2F2F', '#3C4757'],
-    ground: '#F6F2EA',
-    ink: '#1B2B4B',
-    accent: '#8C2F2F',
-    strength:
-      'Best balance of warmth and rigour. The chapter structure handles long explanatory copy better than any other direction.',
-    risk: 'Classical references can drift toward pastiche if the interaction patterns are not kept modern.',
+      'A figure alone in the back row of an empty lecture theatre. The student’s actual world, seen at a moment of solitude rather than achievement.',
+    alt: 'One-bit dithered plate: a single figure seated alone in the back row of a vast empty tiered lecture theatre, rows receding toward a distant lit board.',
+    caption: 'PLATE 05 · 1-BIT · OBSERVED',
+    position: '62% 68%',
+    strength: 'The most specific to the audience. A student recognises this room instantly, which buys trust the others have to earn.',
+    risk: 'Empty-lecture-theatre can read as isolation or as being behind, rather than as focus.',
   },
 ];
 
 export const conceptIds = concepts.map((c) => c.id);
+
+export function getConcept(id: string): Concept | undefined {
+  return concepts.find((c) => c.id === id);
+}
