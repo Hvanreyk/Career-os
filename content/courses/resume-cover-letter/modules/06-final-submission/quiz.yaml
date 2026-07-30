@@ -1,0 +1,26 @@
+status: draft
+questions:
+  - slug: q1
+    prompt: What should be checked in the actual rendered document?
+    options:
+      - { id: a, text: Page breaks, spacing, alignment and hyperlinks }
+      - { id: b, text: Only the AI critique summary }
+      - { id: c, text: Nothing if the text was saved }
+    correct: a
+    explanation: Structured text does not prove the final file renders correctly.
+  - slug: q2
+    prompt: Who owns the final submitted wording?
+    options:
+      - { id: a, text: The applicant }
+      - { id: b, text: The AI provider }
+      - { id: c, text: The template author }
+    correct: a
+    explanation: AI feedback is optional advice; the applicant remains responsible.
+  - slug: q3
+    prompt: What belongs in the final application check?
+    options:
+      - { id: a, text: Correct files, required questions and naming instructions }
+      - { id: b, text: Only the resume title }
+      - { id: c, text: A new invented metric }
+    correct: a
+    explanation: Submission mistakes can undo strong content, so review the complete package.

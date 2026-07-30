@@ -1,0 +1,120 @@
+status: published
+questions:
+  - slug: q1
+    prompt: Which statement correctly pairs each financial statement with its question?
+    options:
+      - id: a
+        text: "Income statement: cash movements; balance sheet: profit; cash flow: net worth"
+      - id: b
+        text: "Income statement: accounting profit this period; balance sheet: what's owned and owed at a date; cash flow: where cash actually moved"
+      - id: c
+        text: All three show the same information in different currencies
+      - id: d
+        text: "Balance sheet: the period's revenue; cash flow: the share price"
+    correct: b
+    explanation: >-
+      P&L measures accrual profit over a period, the balance sheet is a
+      snapshot of assets/liabilities/equity, and the cash flow statement
+      reconciles actual cash movement — three views of one system.
+
+  - slug: q2
+    prompt: Depreciation increases by $10 with a 30% tax rate. Net income and cash change by…
+    options:
+      - id: a
+        text: Net income −$10, cash −$10
+      - id: b
+        text: Net income −$7, cash +$3
+      - id: c
+        text: Net income unchanged, cash unchanged
+      - id: d
+        text: Net income −$3, cash +$7
+    correct: b
+    explanation: >-
+      Pre-tax profit falls $10, tax falls $3, so net income falls $7. On
+      the cash flow statement the $10 non-cash charge is added back:
+      −7 + 10 = +$3 cash — the tax shield in action.
+
+  - slug: q3
+    prompt: "Equity value $1,000m, debt $400m, cash $100m. Enterprise value is:"
+    options:
+      - id: a
+        text: $1,000m
+      - id: b
+        text: $1,500m
+      - id: c
+        text: $1,300m
+      - id: d
+        text: $700m
+    correct: c
+    explanation: >-
+      EV = equity value + net debt = 1,000 + (400 − 100) = $1,300m. Cash
+      offsets debt because it could repay it at completion.
+
+  - slug: q4
+    prompt: Which multiple pairing is INVALID and why?
+    options:
+      - id: a
+        text: EV/EBITDA — invalid because EBITDA ignores tax
+      - id: b
+        text: P/E — invalid because price is per share
+      - id: c
+        text: EV/net income — invalid because net income belongs only to equity holders while EV includes debt claims
+      - id: d
+        text: EV/Revenue — invalid because revenue is too large
+    correct: c
+    explanation: >-
+      Numerator and denominator must serve the same claim-holders. Net
+      income is post-interest (equity only), so it pairs with equity value
+      (P/E), never with enterprise value.
+
+  - slug: q5
+    prompt: In a DCF, which two inputs typically swing the answer the most?
+    options:
+      - id: a
+        text: The discount rate (WACC) and the terminal value assumptions
+      - id: b
+        text: The company's logo and headquarters location
+      - id: c
+        text: Last year's dividend and the CEO's salary
+      - id: d
+        text: The number of forecast decimal places
+    correct: a
+    explanation: >-
+      Terminal value often dominates total value, and small WACC changes
+      compound across every discounted year — which is why DCF outputs are
+      presented as sensitivity ranges, not single numbers.
+
+  - slug: q6
+    prompt: Why can an LBO analysis act as a price "floor" in a sale process?
+    options:
+      - id: a
+        text: It shows the maximum a financial sponsor can pay while still achieving target returns — strategic buyers with synergies can usually pay more
+      - id: b
+        text: Regulation sets LBO prices as legal minimums
+      - id: c
+        text: PE firms always outbid everyone
+      - id: d
+        text: It includes the largest control premium
+    correct: a
+    explanation: >-
+      The LBO math backs into an affordable price from required returns
+      and debt capacity. Sponsors are disciplined buyers, so their
+      affordability often anchors the bottom of the range while synergistic
+      strategics stretch above it.
+
+  - slug: q7
+    prompt: Rising interest rates pressure valuations through which chain?
+    options:
+      - id: a
+        text: Higher rates → higher WACC and costlier debt → lower present values and reduced buyer capacity
+      - id: b
+        text: Higher rates → higher EPS → lower multiples
+      - id: c
+        text: Higher rates → more IPOs → lower valuations
+      - id: d
+        text: Rates do not affect valuation methods
+    correct: a
+    explanation: >-
+      Discount rates rise with the risk-free rate, shrinking DCF values
+      (especially terminal value), while expensive debt cuts leveraged
+      buyers' capacity — compressing multiples across the market.

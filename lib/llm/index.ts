@@ -5,8 +5,9 @@ import type { LLMReport, LLMReportSections } from './types';
 import { buildSystemPrompt, buildUserMessage } from './prompt';
 
 // Model is configurable so we can move up/down the cost/quality curve without a
-// code change. `gpt-4o-mini` is a real, JSON-capable, low-cost default — the
-// previous hard-coded 'gpt-5.4-mini' is not a real model id and 404s at runtime.
+// code change. Set OPENAI_MODEL to override the default below. Note: an
+// unrecognised model id 404s at runtime, so keep this in sync with a real,
+// JSON-capable OpenAI model id.
 const MODEL = process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
 const MAX_RETRIES = 2;
 const TIMEOUT_MS = 30_000;
@@ -40,7 +41,13 @@ export async function generateReport(scoringOutput: ScoringOutput): Promise<LLMR
   try {
     response = await client.chat.completions.create({
       model: MODEL,
-      max_completion_tokens: 2048,
+      // Room for the richer per-action reasoning (why this, why now, why this
+      // order) the report now asks the model to write for each recommendation.
+      max_completion_tokens: 4096,
+      // Low temperature: the underlying scoring (fit_band, gaps, actions) is
+      // deterministic — the prose narrating it shouldn't add its own variance
+      // on top for an identical ScoringOutput.
+      temperature: 0.2,
       // Force valid JSON so we never have to salvage prose into sections.
       response_format: { type: 'json_object' },
       messages: [

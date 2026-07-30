@@ -5,19 +5,10 @@ import { StepShell } from '@/components/onboard/StepShell';
 import { ChoiceButton } from '@/components/onboard/ChoiceButton';
 import { ChoiceList, StepActions, StepGroup } from '@/components/onboard/StepParts';
 import { useOnboard } from '@/lib/onboard/context';
-import type { TargetTier, TargetGeo } from '@/lib/onboard/types';
-
-const TIERS: { value: TargetTier; label: string; description: string }[] = [
-  { value: 'bb', label: 'Bulge Bracket (BB)', description: 'Goldman, JPM, Morgan Stanley, Citi, UBS, Deutsche, Credit Suisse' },
-  { value: 'elite_boutique_and_mm', label: 'Elite Boutique / Mid-Market', description: 'Lazard, Jefferies, Moelis, Jarden, Barrenjoey, Rothschild' },
-  { value: 'boutique', label: 'Boutique', description: 'Smaller advisory and specialist firms' },
-  { value: 'any', label: 'Any Level', description: "I'm open — match me to all options" },
-];
-
-const GEOS: { value: TargetGeo; label: string }[] = [
-  { value: 'sydney', label: 'Sydney' },
-  { value: 'melbourne', label: 'Melbourne' },
-];
+import {
+  TARGET_GEOGRAPHY_OPTIONS as GEOS,
+  TARGET_TIER_OPTIONS as TIERS,
+} from '@trajectoryos/core/career-compass/taxonomy';
 
 export default function GoalPage() {
   const { data, update } = useOnboard();

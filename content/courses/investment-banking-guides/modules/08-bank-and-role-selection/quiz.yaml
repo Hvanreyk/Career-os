@@ -1,0 +1,102 @@
+status: published
+questions:
+  - slug: q1
+    prompt: What's the right first question when choosing which firms to target?
+    options:
+      - id: a
+        text: Which firm is ranked highest globally?
+      - id: b
+        text: Which firms fit my situation — city, sector, profile — and what do I actually know about each?
+      - id: c
+        text: Which firm pays the most?
+      - id: d
+        text: Which firm has the most employees?
+    correct: b
+    explanation: >-
+      There's no universal ranking, only fit researched firm by firm. Local
+      deal flow, sector strengths, team scale and your own profile drive
+      the decision, not a prestige league table.
+
+  - slug: q2
+    prompt: Why can a busy mid-market firm develop an analyst better than a quiet local office of a global brand?
+    options:
+      - id: a
+        text: Analyst skill is built through live-deal repetitions, and a busier desk provides more of them
+      - id: b
+        text: Mid-market firms have shorter hours
+      - id: c
+        text: Global brands don't train juniors
+      - id: d
+        text: It can't — the brand always develops you more
+    correct: a
+    explanation: >-
+      Development comes from doing deals. Local deal flow and staffing model
+      determine your actual experience far more than the letterhead.
+
+  - slug: q3
+    prompt: Which is the most reliable source for what a firm's internship is actually like?
+    options:
+      - id: a
+        text: The recruitment brochure
+      - id: b
+        text: Current or recent interns and analysts at that firm
+      - id: c
+        text: Anonymous online forums
+      - id: d
+        text: League tables
+    correct: b
+    explanation: >-
+      Only people who lived the program can tell you about staffing,
+      exposure, culture and return-offer rates. Everything else markets,
+      performs or aggregates.
+
+  - slug: q4
+    prompt: Why keep your Priority 1 target list short (roughly 4–8 firms)?
+    options:
+      - id: a
+        text: To concentrate finite effort into strong, researched, networked applications rather than many weak ones
+      - id: b
+        text: Because firms penalise applying to too many places
+      - id: c
+        text: Because you can only interview at eight firms
+      - id: d
+        text: To appear more selective to recruiters
+    correct: a
+    explanation: >-
+      Applications compete on quality. Equal effort spread across twenty
+      firms yields twenty mediocre applications; concentration on a
+      realistic top tier yields offers.
+
+  - slug: q5
+    prompt: The "two-question test" before adding a firm to your list is…
+    options:
+      - id: a
+        text: What's its share price, and who is its CEO?
+      - id: b
+        text: Can you name a recent deal from its office, and give a one-sentence reason it wouldn't also apply to a competitor?
+      - id: c
+        text: How many analysts does it hire, and what's the salary?
+      - id: d
+        text: Is it ranked top-five, and does it have a nice office?
+    correct: b
+    explanation: >-
+      A specific recent deal proves you've researched deal flow; a
+      firm-unique reason proves genuine fit. If you can't answer both, you
+      aren't ready to apply — or to be interviewed there.
+
+  - slug: q6
+    prompt: What makes the target tracker most valuable during the busy application window?
+    options:
+      - id: a
+        text: It looks organised to recruiters
+      - id: b
+        text: The research, dates and contacts are already captured, turning a scramble of overlapping deadlines into calm execution
+      - id: c
+        text: It automatically submits applications for you
+      - id: d
+        text: It ranks firms objectively
+    correct: b
+    explanation: >-
+      When multiple windows open in weeks, the prepared candidate already
+      has the research done, dates in front of them and status per firm.
+      The tracker is preparation you cash in under time pressure.

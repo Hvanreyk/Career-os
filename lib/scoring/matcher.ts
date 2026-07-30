@@ -37,5 +37,17 @@ export function findKNearest(
   });
 
   scored.sort((a, b) => a.distance - b.distance);
-  return scored.slice(0, K);
+
+  // Expand K to include everyone tied with the K-th match. Early-stage
+  // students (S0/S1) match many pros whose snapshots look identical
+  // (distance 0); cutting ties at an arbitrary 20 would make downstream
+  // stats (reached_target ratio) sampling noise rather than the true
+  // cohort rate.
+  if (scored.length > K) {
+    const kth = scored[K - 1]!.distance;
+    let end = K;
+    while (end < scored.length && scored[end]!.distance - kth < 1e-9) end++;
+    return scored.slice(0, end);
+  }
+  return scored;
 }

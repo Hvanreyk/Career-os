@@ -20,10 +20,13 @@ export function OnboardProvider({ children }: { children: ReactNode }) {
   // localStorage (not sessionStorage) persists across tabs, which is required
   // because the magic-link email opens in a new tab and sessionStorage is tab-scoped.
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(SESSION_KEY);
-      if (stored) setData(JSON.parse(stored) as OnboardData);
-    } catch {}
+    const timer = window.setTimeout(() => {
+      try {
+        const stored = localStorage.getItem(SESSION_KEY);
+        if (stored) setData(JSON.parse(stored) as OnboardData);
+      } catch {}
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const update = useCallback((partial: Partial<OnboardData>) => {

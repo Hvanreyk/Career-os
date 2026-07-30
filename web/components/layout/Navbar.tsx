@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Wordmark } from '@/components/ui/Wordmark';
+import { createClient } from '@/lib/supabase/client';
 
 /**
  * Application navigation.
@@ -11,14 +12,13 @@ import { Wordmark } from '@/components/ui/Wordmark';
  * A hard-ruled bar, not a floating pill. The active route is marked with a
  * single red-orange underline — one indicator, one accent colour.
  *
- * The tools dropdown opens on click rather than hover: hover-only menus are
- * unreachable by keyboard and unusable on touch, and the previous version
- * exposed its contents no other way.
+ * Auth state decides the right-hand pair: signed out gets Log in + Build My
+ * Career Map, signed in gets Dashboard + Sign out. It is tracked live via
+ * onAuthStateChange so the bar updates without a reload.
  */
 
 const NAV = [
   { label: 'Career Compass', href: '/tools/career-compass' },
-  { label: 'Calculator', href: '/tools/career-calculator' },
   { label: 'Resources', href: '/resources' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'About', href: '/about' },
@@ -31,8 +31,21 @@ function isActive(pathname: string, href: string) {
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
   const pathname = usePathname();
   const toggleRef = useRef<HTMLButtonElement>(null);
+
+  // Track auth so the bar can switch between "Log in" and "Dashboard".
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => setSignedIn(!!user));
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSignedIn(!!session?.user);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Close the sheet whenever the route changes — including back/forward, which
   // an onClick on the links would miss. Adjusted during render rather than in an
@@ -56,20 +69,21 @@ export function Navbar() {
     return () => document.removeEventListener('keydown', onKey);
   }, [open]);
 
+  const items = signedIn ? [{ label: 'Dashboard', href: '/dashboard' }, ...NAV] : NAV;
+
   return (
     <header className="sticky top-0 z-50 border-b border-rule bg-ink">
-      <nav aria-label="Primary" className="mx-auto flex h-14 max-w-[90rem] items-center gap-4 px-5 sm:px-8">
-        <Link
-          href="/"
-          className="flex h-11 shrink-0 items-center pr-2"
-          aria-label="MappedLabs — home"
-        >
+      <nav
+        aria-label="Primary"
+        className="mx-auto flex h-14 max-w-[90rem] items-center gap-4 px-5 sm:px-8"
+      >
+        <Link href="/" className="flex h-11 shrink-0 items-center pr-2" aria-label="MappedLabs — home">
           <Wordmark className="h-5 w-auto" ink="#edeae3" accent="#f0563a" />
         </Link>
 
         {/* Desktop */}
-        <ul className="ml-4 hidden flex-1 items-center gap-1 lg:flex">
-          {NAV.map((item) => {
+        <ul className="ml-2 hidden flex-1 items-center gap-0.5 lg:flex">
+          {items.map((item) => {
             const active = isActive(pathname, item.href);
             return (
               <li key={item.href}>
@@ -82,10 +96,7 @@ export function Navbar() {
                 >
                   {item.label}
                   {active && (
-                    <span
-                      className="absolute inset-x-2 bottom-0 h-0.5 bg-red"
-                      aria-hidden="true"
-                    />
+                    <span className="absolute inset-x-2 bottom-0 h-0.5 bg-red" aria-hidden="true" />
                   )}
                 </Link>
               </li>
@@ -93,14 +104,32 @@ export function Navbar() {
           })}
         </ul>
 
-        {/* Secondary on purpose: the nav is persistent chrome, so page content
-            keeps the single primary action in any given view. */}
-        <Link
-          href="/onboard/goal"
-          className="ml-btn ml-btn-secondary ml-auto hidden min-h-[36px] px-4 text-[12px] lg:inline-flex"
-        >
-          Build My Career Map
-        </Link>
+        {/* Right-hand pair. Secondary styling on purpose: the nav is persistent
+            chrome, so page content keeps the single primary action per view. */}
+        <div className="ml-auto hidden items-center gap-2 lg:flex">
+          {signedIn ? (
+            <form action="/auth/signout" method="post">
+              <button type="submit" className="ml-btn ml-btn-secondary min-h-[36px] px-4 text-[12px]">
+                Sign out
+              </button>
+            </form>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="ml-btn ml-btn-secondary min-h-[36px] px-4 text-[12px]"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/onboard/goal"
+                className="ml-btn ml-btn-primary on-accent min-h-[36px] px-4 text-[12px]"
+              >
+                Build My Career Map
+              </Link>
+            </>
+          )}
+        </div>
 
         {/* Mobile toggle */}
         <button
@@ -124,12 +153,9 @@ export function Navbar() {
 
       {/* Mobile sheet: a full-width register, not a floating card. */}
       {open && (
-        <div
-          id="mobile-nav"
-          className="border-t border-rule bg-surface lg:hidden"
-        >
+        <div id="mobile-nav" className="border-t border-rule bg-surface lg:hidden">
           <ul className="mx-auto max-w-[90rem] px-5 sm:px-8">
-            {NAV.map((item) => {
+            {items.map((item) => {
               const active = isActive(pathname, item.href);
               return (
                 <li key={item.href} className="ml-row">
@@ -150,10 +176,29 @@ export function Navbar() {
               );
             })}
           </ul>
-          <div className="mx-auto max-w-[90rem] px-5 py-4 sm:px-8">
-            <Link href="/onboard/goal" className="ml-btn ml-btn-secondary w-full min-h-[44px] text-[13px]">
-              Build My Career Map
-            </Link>
+          <div className="mx-auto flex max-w-[90rem] flex-col gap-2 px-5 py-4 sm:px-8">
+            {signedIn ? (
+              <form action="/auth/signout" method="post">
+                <button
+                  type="submit"
+                  className="ml-btn ml-btn-secondary w-full min-h-[44px] text-[13px]"
+                >
+                  Sign out
+                </button>
+              </form>
+            ) : (
+              <>
+                <Link href="/login" className="ml-btn ml-btn-secondary w-full min-h-[44px] text-[13px]">
+                  Log in
+                </Link>
+                <Link
+                  href="/onboard/goal"
+                  className="ml-btn ml-btn-primary on-accent w-full min-h-[44px] text-[13px]"
+                >
+                  Build My Career Map
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

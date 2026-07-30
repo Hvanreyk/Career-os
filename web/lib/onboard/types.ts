@@ -1,30 +1,30 @@
-// Form-layer types — slightly simpler than the engine's StudentProfile.
-// Derivation (university_tier, role_relevance, signals from WAM, etc.)
-// happens in /api/generate-report before the profile is passed to score().
+import type {
+  AtarBand,
+  SelectableAcquisitionMethod,
+  SelectableDegreeType,
+  SelectableExperienceType,
+  SelectableFirmTier,
+  SelectableHighSchoolType,
+  SelectableIndustry,
+  SelectableSignalTag,
+  TargetFirmTier,
+  TargetGeography,
+  WamBand as CareerCompassWamBand,
+} from '@trajectoryos/core/career-compass/taxonomy';
 
-export type TargetTier = 'bb' | 'elite_boutique_and_mm' | 'boutique' | 'any';
-export type TargetGeo = 'sydney' | 'melbourne';
-export type DegreeType = 'bachelor' | 'double_degree' | 'honours' | 'masters' | 'mba' | 'phd';
-export type WamBand = 'hd' | 'd' | 'c' | 'p' | 'unknown';
-export type HighSchoolType =
-  | 'gps' | 'cas' | 'aps' | 'selective'
-  | 'public_comprehensive' | 'catholic' | 'independent_other' | 'unknown';
-export type AtarBand = '99_plus' | '98_99' | '95_98' | '90_95' | '85_90' | 'below_85' | 'unknown';
-export type ExpType =
-  | 'summer_internship' | 'winter_internship' | 'penultimate_internship'
-  | 'internship' | 'part_time' | 'full_time' | 'casual' | 'grad_program';
-export type FirmTier =
-  | 'bb' | 'elite_boutique_and_mm' | 'boutique'
-  | 'big4' | 'private_equity' | 'top_tier_law'
-  | 'corporate' | 'startup' | 'government' | 'non_profit' | 'other';
-export type Industry =
-  | 'ib' | 'big4_advisory' | 'big4_audit' | 'corporate'
-  | 'law' | 'private_equity' | 'capital_markets'
-  | 'consulting' | 'government' | 'non_profit' | 'other';
-export type HowObtained =
-  | 'online_application' | 'cold_email' | 'society_referral'
-  | 'ocr' | 'internal_referral' | 'networking_event' | 'alumni_network'
-  | 'co_op_program' | 'scholarship' | 'conversion' | 'unknown';
+// Form-layer aliases. The Career Compass taxonomy module is the only source of
+// identifier truth; this file contains only the shape of the persisted form.
+export type TargetTier = TargetFirmTier;
+export type TargetGeo = TargetGeography;
+export type DegreeType = SelectableDegreeType;
+export type WamBand = CareerCompassWamBand;
+export type HighSchoolType = SelectableHighSchoolType;
+export type ExpType = SelectableExperienceType;
+export type FirmTier = SelectableFirmTier;
+export type Industry = SelectableIndustry;
+export type HowObtained = SelectableAcquisitionMethod;
+export type SignalTag = SelectableSignalTag;
+export type { AtarBand };
 
 export interface ExperienceEntry {
   type: ExpType;
@@ -48,6 +48,7 @@ export interface OnboardData {
   degree_type: DegreeType;
   majors: string[];
   current_year: number;
+  expected_graduation_year: number;
   is_co_op: boolean;
 
   // Step 3 — Grades
@@ -60,8 +61,8 @@ export interface OnboardData {
   is_lateral_candidate: boolean;
   current_external_role: string;
 
-  // Step 5 — Signals (subset — rest auto-derived)
-  signals: string[];
+  // Step 5 — only user-selectable tags; server-derived tags are added later.
+  signals: SignalTag[];
 }
 
 export const EMPTY_ONBOARD: OnboardData = {
@@ -72,6 +73,7 @@ export const EMPTY_ONBOARD: OnboardData = {
   degree_type: 'bachelor',
   majors: [],
   current_year: 2,
+  expected_graduation_year: new Date().getFullYear() + 2,
   is_co_op: false,
   wam_band: 'unknown',
   high_school_type: 'unknown',

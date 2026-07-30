@@ -3,13 +3,25 @@
  * synthetic students that the brief and spec reference by name.
  */
 
-import { loadProfessionalsFromXlsx } from '../../lib/db/xlsx.js';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { parseProfessionalRowsOrThrow } from '../../lib/scoring/professional-adapter.js';
 import type { StudentProfile, Professional } from '../../lib/scoring/types.js';
 
+// Fully synthetic, committed fixture (scripts/generate-synthetic-professionals.ts)
+// shaped like the real professional_scoring_input view. Real professional data
+// is never committed — see that script's docstring for why (career-history
+// fields like high_school can be individually re-identifying). Parsed through
+// the same adapter production uses, so the suite still exercises the real
+// normalization path, just against fabricated people.
 let _pros: Professional[] | null = null;
 
 export function loadPros(): Professional[] {
-  if (!_pros) _pros = loadProfessionalsFromXlsx();
+  if (!_pros) {
+    const path = fileURLToPath(new URL('./professionals.snapshot.json', import.meta.url));
+    const rows = JSON.parse(readFileSync(path, 'utf8')) as unknown[];
+    _pros = parseProfessionalRowsOrThrow(rows, 'normalized');
+  }
   return _pros;
 }
 
@@ -102,6 +114,14 @@ export const LATERAL_BIG4_AUDIT: StudentProfile = {
       converted_to_ft: 'NA',
     },
   ],
+};
+
+/** Y6 student on an extended degree — expected stage = S1 (current_year now allows up to 6). */
+export const Y6_EXTENDED_DEGREE: StudentProfile = {
+  ...Y2_UNSW_COOP_HD_JPM,
+  id: 'student-test-y6-extended',
+  current_year: 6,
+  expected_graduation_year: 2027,
 };
 
 /** Fixed test date so time-sensitive computations are deterministic. */

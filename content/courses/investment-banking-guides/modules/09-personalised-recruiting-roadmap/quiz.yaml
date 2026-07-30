@@ -1,0 +1,104 @@
+status: published
+questions:
+  - slug: q1
+    prompt: Which four inputs does your personalised roadmap draw on?
+    options:
+      - id: a
+        text: Your diagnostic/readiness, course progress and quiz results, bank target list, and timeline position
+      - id: b
+        text: Your ATAR, your postcode, your degree, and your age
+      - id: c
+        text: The firm's league-table rank, its share price, its headcount, and its logo
+      - id: d
+        text: Only your diagnostic score
+    correct: a
+    explanation: >-
+      The roadmap assembles a dated plan from your readiness (where effort
+      pays most), your progress, your actual target firms and windows, and
+      how close your next deadline is.
+
+  - slug: q2
+    prompt: What are the roadmap's four horizons?
+    options:
+      - id: a
+        text: This week, next 30 days, next 90 days, and before applications open
+      - id: b
+        text: Yesterday, today, tomorrow, and next year
+      - id: c
+        text: First year, second year, penultimate year, final year
+      - id: d
+        text: Application, interview, offer, acceptance
+    correct: a
+    explanation: >-
+      Near horizons carry specific, completable actions; far horizons are
+      milestones you steer toward. Items migrate inward as deadlines
+      approach.
+
+  - slug: q3
+    prompt: Why do the horizons defeat both "paralysis" and "drift"?
+    options:
+      - id: a
+        text: They remove all the work from your plate
+      - id: b
+        text: The near horizon gives a small, specific set of actions to start now (beating paralysis), while the far horizon back-solves from your real deadline (beating drift)
+      - id: c
+        text: They guarantee an offer
+      - id: d
+        text: They replace networking and study
+    correct: b
+    explanation: >-
+      "So much to do" dissolves into three actions this week; "ages away"
+      is corrected by seeing how little slack exists before your window
+      actually opens.
+
+  - slug: q4
+    prompt: Since the roadmap's details will inevitably change, what is its real value?
+    options:
+      - id: a
+        text: Predicting exactly how recruiting will unfold
+      - id: b
+        text: Making your next concrete action obvious and your progress visible, so you adjust deliberately instead of drifting
+      - id: c
+        text: Removing the need to prepare
+      - id: d
+        text: Guaranteeing results if followed to the letter
+    correct: b
+    explanation: >-
+      Plans orient rather than predict. The roadmap turns anxiety into a
+      clear next step and a visible trajectory you correct as reality
+      shifts — regenerate it when things change.
+
+  - slug: q5
+    prompt: Which weekly rhythm best supports executing the plan?
+    options:
+      - id: a
+        text: A short weekly review, protected blocks for technicals and networking, a steady networking drumbeat, and resume/market-awareness maintenance
+      - id: b
+        text: One intense all-nighter per month
+      - id: c
+        text: Waiting for motivation to strike
+      - id: d
+        text: Doing everything the week applications open
+    correct: a
+    explanation: >-
+      Conversion comes from a sustainable cadence: review and reprioritise
+      weekly, schedule the hard things, network steadily, and stay
+      application-ready so no window catches you cold.
+
+  - slug: q6
+    prompt: What is the healthiest and most effective stance on effort versus outcome?
+    options:
+      - id: a
+        text: Control the effort and apply early and widely, while holding outcomes loosely because timing and competition aren't fully controllable
+      - id: b
+        text: Guarantee yourself success by completing every task
+      - id: c
+        text: Treat outcomes as pure luck, so effort is pointless
+      - id: d
+        text: Regard anything short of a top-tier offer as total failure
+    correct: a
+    explanation: >-
+      Preparation genuinely shifts the odds but can't guarantee a
+      competitive, partly-random result. Owning the controllables while
+      holding outcomes loosely is the most effective and sustainable
+      stance — and keeps other good careers open.

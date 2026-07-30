@@ -3,19 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { StepShell } from '@/components/onboard/StepShell';
-import { StepActions, StepGroup } from '@/components/onboard/StepParts';
 import { useOnboard } from '@/lib/onboard/context';
-import { searchUniversities } from '@/lib/onboard/universities';
-import type { DegreeType } from '@/lib/onboard/types';
+import { searchUniversities, normalizeUniversityName } from '@/lib/onboard/universities';
+import { X } from 'lucide-react';
+import { DEGREE_TYPE_OPTIONS as DEGREE_TYPES } from '@trajectoryos/core/career-compass/taxonomy';
 
-const YEARS = [1, 2, 3, 4, 5];
-const DEGREE_TYPES: { value: DegreeType; label: string }[] = [
-  { value: 'bachelor', label: 'Bachelor' },
-  { value: 'double_degree', label: 'Double Degree' },
-  { value: 'honours', label: 'Honours' },
-  { value: 'masters', label: 'Masters' },
-  { value: 'mba', label: 'MBA' },
-];
+const YEARS = [1, 2, 3, 4, 5, 6];
+const CURRENT_CALENDAR_YEAR = new Date().getFullYear();
+const GRAD_YEARS = Array.from({ length: 8 }, (_, i) => CURRENT_CALENDAR_YEAR + i);
 
 export default function UniversityPage() {
   const { data, update } = useOnboard();
@@ -26,8 +21,17 @@ export default function UniversityPage() {
 
   const results = searchUniversities(uniQuery).slice(0, 6);
 
+  const commitUniversity = () => {
+    const trimmed = uniQuery.trim();
+    if (!trimmed) return;
+    const normalized = normalizeUniversityName(trimmed);
+    update({ university: normalized });
+    setUniQuery(normalized);
+  };
+
   const canContinue =
-    data.university && data.degree && data.degree_type && data.current_year && data.majors.length > 0;
+    data.university && data.degree && data.degree_type && data.current_year &&
+    data.expected_graduation_year && data.majors.length > 0;
 
   const addMajor = () => {
     const trimmed = majorInput.trim();
@@ -44,180 +48,187 @@ export default function UniversityPage() {
       subtitle="Your university and academic background shapes your match pool."
       backHref="/onboard/goal"
     >
-      <div className="space-y-7">
-        {/* University — combobox over the tracked list */}
+      <div className="space-y-5">
+        {/* University */}
         <div>
-          <label htmlFor="uni" className="block text-[13px] font-semibold text-bone">
-            University
-          </label>
-          <div className="relative mt-2">
+          <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">University</label>
+          <div className="relative">
             <input
-              id="uni"
-              role="combobox"
-              aria-expanded={showDropdown && results.length > 0}
-              aria-controls="uni-results"
-              aria-autocomplete="list"
-              autoComplete="off"
               value={uniQuery}
               onChange={(e) => { setUniQuery(e.target.value); setShowDropdown(true); }}
               onFocus={() => setShowDropdown(true)}
-              onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
-              placeholder="Search your university…"
-              className="ml-field"
+              onBlur={() => setTimeout(() => { setShowDropdown(false); commitUniversity(); }, 150)}
+              placeholder="Search your university..."
+              className="w-full bg-navy-800/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-gold-400/40 transition-colors"
             />
             {showDropdown && results.length > 0 && (
-              <ul
-                id="uni-results"
-                role="listbox"
-                className="absolute inset-x-0 top-full z-20 mt-1 border border-rule-bright bg-surface"
-              >
+              <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-navy-900 border border-white/10 rounded-xl overflow-hidden shadow-xl">
                 {results.map((u) => (
-                  <li key={u.name} className="ml-row">
-                    <button
-                      type="button"
-                      role="option"
-                      aria-selected={data.university === u.name}
-                      onMouseDown={() => {
-                        update({ university: u.name });
-                        setUniQuery(u.name);
-                        setShowDropdown(false);
-                      }}
-                      className="flex min-h-[44px] w-full items-center justify-between gap-3 px-3.5 text-left text-[14px] text-bone transition-colors hover:bg-raised"
-                    >
-                      <span>{u.name}</span>
-                      <span className="ml-label shrink-0">{u.tier}</span>
-                    </button>
-                  </li>
+                  <button
+                    key={u.name}
+                    type="button"
+                    onMouseDown={() => {
+                      update({ university: u.name });
+                      setUniQuery(u.name);
+                      setShowDropdown(false);
+                    }}
+                    className="w-full text-left px-4 py-3 text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
+                  >
+                    <span>{u.name}</span>
+                    <span className="ml-2 text-[10px] text-slate-600 uppercase">{u.tier}</span>
+                  </button>
                 ))}
-              </ul>
+              </div>
             )}
           </div>
         </div>
 
+        {/* Degree name */}
         <div>
-          <label htmlFor="degree" className="block text-[13px] font-semibold text-bone">
-            Degree name
-          </label>
+          <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">Degree name</label>
           <input
-            id="degree"
             value={data.degree}
             onChange={(e) => update({ degree: e.target.value })}
             placeholder="e.g. Bachelor of Commerce"
-            className="ml-field mt-2"
+            className="w-full bg-navy-800/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-gold-400/40 transition-colors"
           />
         </div>
 
-        <StepGroup label="Degree type">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {DEGREE_TYPES.map((d) => {
-              const selected = data.degree_type === d.value;
-              return (
+        {/* Degree type */}
+        <div>
+          <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">Degree type</label>
+          <div className="grid grid-cols-3 gap-2">
+            {DEGREE_TYPES.map((d) => (
+              <div key={d.value} className="group relative">
                 <button
-                  key={d.value}
                   type="button"
-                  aria-pressed={selected}
                   onClick={() => update({ degree_type: d.value })}
-                  className={`min-h-[44px] border px-3 text-[13px] font-medium transition-colors ${
-                    selected
-                      ? 'border-red bg-raised text-bone'
-                      : 'border-rule text-graphite hover:border-rule-bright hover:text-bone'
+                  className={`w-full py-2.5 rounded-xl text-xs font-medium border transition-all ${
+                    data.degree_type === d.value
+                      ? 'border-gold-400/60 bg-gold-400/10 text-gold-300'
+                      : 'border-white/10 text-slate-400 hover:border-white/25 hover:text-white'
                   }`}
                 >
                   {d.label}
                 </button>
-              );
-            })}
+                <div className="pointer-events-none absolute z-30 bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="bg-navy-900 border border-white/10 rounded-lg px-3 py-2 text-[11px] leading-snug text-slate-300 shadow-xl">
+                    {d.example}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        </StepGroup>
+        </div>
 
         {/* Majors */}
         <div>
-          <label htmlFor="major" className="block text-[13px] font-semibold text-bone">
-            Major(s)
+          <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">
+            Major(s) <span className="text-slate-600">(up to 3)</span>
           </label>
-          <p id="major-hint" className="mt-1 text-[13px] text-graphite">
-            Up to 3. {data.majors.length}/3 added.
-          </p>
-          <div className="mt-2 flex gap-2">
+          <div className="flex gap-2 mb-2">
             <input
-              id="major"
-              aria-describedby="major-hint"
               value={majorInput}
               onChange={(e) => setMajorInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addMajor())}
               placeholder="e.g. Finance"
-              className="ml-field flex-1"
+              className="flex-1 bg-navy-800/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-gold-400/40 transition-colors"
             />
             <button
               type="button"
               onClick={addMajor}
-              disabled={!majorInput.trim() || data.majors.length >= 3}
-              className="ml-btn ml-btn-secondary min-h-[44px] px-4 text-[13px]"
+              className="px-4 py-2 glass border border-white/15 text-slate-300 rounded-xl text-sm hover:border-gold-400/40 hover:text-gold-300 transition-all"
             >
               Add
             </button>
           </div>
           {data.majors.length > 0 && (
-            <ul className="mt-3 flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2">
               {data.majors.map((m) => (
-                <li
-                  key={m}
-                  className="inline-flex items-center gap-2 border border-rule-bright bg-raised py-1 pl-3 pr-1 text-[13px] text-bone"
-                >
+                <span key={m} className="inline-flex items-center gap-1.5 px-3 py-1 glass border border-gold-400/20 text-gold-300 text-xs rounded-full">
                   {m}
-                  <button
-                    type="button"
-                    onClick={() => update({ majors: data.majors.filter((x) => x !== m) })}
-                    className="flex h-7 w-7 items-center justify-center text-graphite transition-colors hover:text-red"
-                  >
-                    <span className="sr-only">Remove {m}</span>
-                    <svg viewBox="0 0 14 14" className="h-3 w-3" aria-hidden="true">
-                      <path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.6" fill="none" />
-                    </svg>
+                  <button type="button" onClick={() => update({ majors: data.majors.filter((x) => x !== m) })}>
+                    <X className="w-3 h-3" />
                   </button>
-                </li>
+                </span>
               ))}
-            </ul>
+            </div>
           )}
         </div>
 
-        <StepGroup label="Current year of study">
+        {/* Year */}
+        <div>
+          <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">Current year of study</label>
           <div className="flex gap-2">
-            {YEARS.map((y) => {
-              const selected = data.current_year === y;
-              return (
-                <button
-                  key={y}
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() => update({ current_year: y })}
-                  className={`ml-num min-h-[44px] flex-1 border text-[14px] transition-colors ${
-                    selected
-                      ? 'border-red bg-raised text-bone'
-                      : 'border-rule text-graphite hover:border-rule-bright hover:text-bone'
-                  }`}
-                >
-                  <span className="sr-only">Year </span>Y{y}
-                </button>
-              );
-            })}
+            {YEARS.map((y) => (
+              <button
+                key={y}
+                type="button"
+                onClick={() => update({ current_year: y })}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all ${
+                  data.current_year === y
+                    ? 'border-gold-400/60 bg-gold-400/10 text-gold-300'
+                    : 'border-white/10 text-slate-400 hover:border-white/25 hover:text-white'
+                }`}
+              >
+                Y{y}
+              </button>
+            ))}
           </div>
-        </StepGroup>
-
-        <div className="flex items-center gap-3 border-t border-rule pt-5">
-          <input
-            id="coop"
-            type="checkbox"
-            checked={data.is_co_op}
-            onChange={() => update({ is_co_op: !data.is_co_op })}
-            className="ml-check"
-          />
-          <label htmlFor="coop" className="flex min-h-[44px] cursor-pointer select-none items-center text-[15px] text-bone">
-            This is a Co-op program
-          </label>
         </div>
 
-        <StepActions disabled={!canContinue} onContinue={() => router.push('/onboard/grades')} />
+        {/* Expected graduation year */}
+        <div>
+          <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">
+            Expected graduation year
+          </label>
+          <p className="text-[11px] text-slate-600 mb-2">
+            If you&apos;re extending your degree (e.g. underloading), pick the year you actually
+            expect to finish — not the standard length for your degree type.
+          </p>
+          <div className="grid grid-cols-4 gap-2">
+            {GRAD_YEARS.map((y) => (
+              <button
+                key={y}
+                type="button"
+                onClick={() => update({ expected_graduation_year: y })}
+                className={`py-2.5 rounded-xl text-sm font-medium border transition-all ${
+                  data.expected_graduation_year === y
+                    ? 'border-gold-400/60 bg-gold-400/10 text-gold-300'
+                    : 'border-white/10 text-slate-400 hover:border-white/25 hover:text-white'
+                }`}
+              >
+                {y}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Co-op */}
+        <button
+          type="button"
+          onClick={() => update({ is_co_op: !data.is_co_op })}
+          className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-xl border transition-all ${
+            data.is_co_op
+              ? 'border-gold-400/40 bg-gold-400/8 text-white'
+              : 'border-white/10 text-slate-400 hover:border-white/25'
+          }`}
+        >
+          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+            data.is_co_op ? 'border-gold-400 bg-gold-400' : 'border-slate-600'
+          }`}>
+            {data.is_co_op && <span className="text-navy-950 text-xs font-bold">✓</span>}
+          </div>
+          <span className="text-sm font-medium">This is a Co-op program</span>
+        </button>
+
+        <button
+          disabled={!canContinue}
+          onClick={() => router.push('/onboard/grades')}
+          className="w-full py-4 bg-gold-400 text-navy-950 font-semibold rounded-xl hover:bg-gold-300 transition-all shadow-[0_0_24px_rgba(212,175,55,0.3)] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+        >
+          Continue →
+        </button>
       </div>
     </StepShell>
   );

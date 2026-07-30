@@ -1,0 +1,26 @@
+status: draft
+questions:
+  - slug: q1
+    prompt: When should you add a number to a bullet?
+    options:
+      - { id: a, text: Whenever AI suggests one }
+      - { id: b, text: When it is accurate, meaningful and defensible }
+      - { id: c, text: Every bullet requires a number }
+    correct: b
+    explanation: Metrics are evidence only when they are true and useful.
+  - slug: q2
+    prompt: What is usually missing from “Responsible for financial analysis”?
+    options:
+      - { id: a, text: A specific action and context }
+      - { id: b, text: More adjectives }
+      - { id: c, text: A guaranteed outcome }
+    correct: a
+    explanation: The reader needs to understand what analysis the student actually performed.
+  - slug: q3
+    prompt: What is a useful final truth test for a bullet?
+    options:
+      - { id: a, text: Whether it sounds complex }
+      - { id: b, text: Whether you can accurately explain and defend it aloud }
+      - { id: c, text: Whether it contains the word led }
+    correct: b
+    explanation: You should be able to support every implication in an interview.

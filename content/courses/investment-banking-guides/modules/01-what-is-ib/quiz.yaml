@@ -1,0 +1,135 @@
+# Module 1 quiz — What Investment Banking Actually Is
+# status applies to all questions in this file.
+status: published
+questions:
+  - slug: q1
+    prompt: What are the two core services investment banks sell to clients?
+    options:
+      - id: a
+        text: Deposit accounts and business loans
+      - id: b
+        text: M&A advisory and capital raising (debt and equity)
+      - id: c
+        text: Audit and tax advice
+      - id: d
+        text: Superannuation management and insurance
+    correct: b
+    explanation: >-
+      Investment banks earn fees advising on transactions (chiefly M&A) and
+      raising debt or equity capital for clients. Deposits and loans are
+      commercial banking; audit/tax is accounting; super and insurance are
+      different industries again.
+
+  - slug: q2
+    prompt: How does an investment bank primarily earn revenue on an M&A deal?
+    options:
+      - id: a
+        text: Interest charged on money lent to the buyer
+      - id: b
+        text: A retainer paid monthly regardless of outcome
+      - id: c
+        text: A success fee, usually a percentage of deal value paid on completion
+      - id: d
+        text: Trading profits on the target's shares
+    correct: c
+    explanation: >-
+      Advisory fees are mostly success-based percentages of transaction
+      value. Small retainers exist but the economics are completion-driven —
+      which shapes bankers' incentives and workload.
+
+  - slug: q3
+    prompt: What is the key difference between an investment bank and a commercial bank?
+    options:
+      - id: a
+        text: >-
+          A commercial bank profits from its balance sheet (deposits and
+          loans); an investment bank primarily sells advice and execution
+          for fees
+      - id: b
+        text: Investment banks are regulated; commercial banks are not
+      - id: c
+        text: Commercial banks only serve companies; investment banks serve individuals
+      - id: d
+        text: There is no real difference in Australia
+    correct: a
+    explanation: >-
+      The test is whose money is at risk: a commercial bank earns the spread
+      on its loan book, while an investment bank mostly earns fees on
+      transactions, using its balance sheet only briefly (e.g. underwriting).
+
+  - slug: q4
+    prompt: Which of the following firms is on the buy side?
+    options:
+      - id: a
+        text: A super fund's infrastructure investment team
+      - id: b
+        text: An M&A advisory team at Barrenjoey
+      - id: c
+        text: An ECM syndicate desk at UBS
+      - id: d
+        text: An equity research analyst at Macquarie
+    correct: a
+    explanation: >-
+      Buy side = deploys capital (super funds, PE, asset managers). Advisory,
+      underwriting and research are sell-side services provided to those
+      investors and to companies.
+
+  - slug: q5
+    prompt: >-
+      Which statement about the Australian investment banking market is most
+      accurate?
+    options:
+      - id: a
+        text: The Big 4 banks (CBA, Westpac, NAB, ANZ) dominate M&A advisory
+      - id: b
+        text: >-
+          Global banks, Macquarie Capital and strong local independents
+          (e.g. Barrenjoey, Jarden) lead advisory work
+      - id: c
+        text: Only US-headquartered banks can advise on ASX company deals
+      - id: d
+        text: Investment banking barely exists in Australia
+    correct: b
+    explanation: >-
+      The Big 4 are commercial banks first (with some DCM activity). Advisory
+      league tables are led by global IBs, Macquarie and the independent
+      advisory firms — a distinctive feature of the Australian market.
+
+  - slug: q6
+    prompt: Why do sophisticated companies still pay investment banks large fees?
+    options:
+      - id: a
+        text: Regulation requires an investment bank on every transaction
+      - id: b
+        text: >-
+          Process expertise, market access, valuation/negotiation skill,
+          underwriting certainty and board-level assurance
+      - id: c
+        text: Banks can guarantee a deal will complete
+      - id: d
+        text: Companies cannot legally value their own businesses
+    correct: b
+    explanation: >-
+      No law forces companies to hire banks and no bank can guarantee
+      completion. Clients pay for competitive process management,
+      distribution reach, negotiation leverage, risk transfer in
+      underwriting, and defensible independent advice for the board.
+
+  - slug: q7
+    prompt: >-
+      A student says they want "maximum hands-on deal responsibility as
+      early as possible". Which firm type most typically offers that?
+    options:
+      - id: a
+        text: Bulge bracket — the biggest deals mean the most responsibility
+      - id: b
+        text: Mid-market and boutique firms, where lean teams push more work to juniors
+      - id: c
+        text: A Big 4 commercial bank graduate program
+      - id: d
+        text: It makes no difference where you start
+    correct: b
+    explanation: >-
+      Smaller deal teams can't hide juniors — analysts touch more of each
+      transaction. Bulge brackets offer scale, brand and larger deals, which
+      is a different (not lesser) kind of experience.

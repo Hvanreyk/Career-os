@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/Button';
-import { StateBlock, StatePage } from '@/components/ui/StateBlock';
+import { Loader2 } from 'lucide-react';
 
 // Shown when a report exists but the LLM step hasn't completed. This covers the
 // case where the loading page was interrupted (tab closed / refresh) or the LLM
@@ -18,8 +17,6 @@ export default function ReportPending({
   errorMessage: string | null;
 }) {
   const router = useRouter();
-  // `working` is the whole state machine: true while processing, false once it
-  // has failed. A success navigates away via router.refresh().
   const [working, setWorking] = useState(status !== 'error');
   const started = useRef(false);
 
@@ -39,29 +36,47 @@ export default function ReportPending({
   useEffect(() => {
     if (started.current) return;
     started.current = true;
-    if (status !== 'error') void process();
+    const timer = status !== 'error' ? window.setTimeout(() => void process(), 0) : null;
+    return () => {
+      if (timer !== null) window.clearTimeout(timer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <StatePage>
-      {working ? (
-        <StateBlock kind="loading" title="Finishing your report">
-          We&apos;re writing up your Career Compass analysis. This only takes a few seconds.
-        </StateBlock>
-      ) : (
-        <StateBlock
-          kind="error"
-          title="We couldn't finish your report"
-          action={
-            <Button onClick={() => void process()} disabled={working}>
+    <div className="min-h-screen bg-navy-950 flex items-center justify-center p-6">
+      <div className="glass border border-white/10 rounded-2xl p-8 max-w-md text-center">
+        {working ? (
+          <>
+            <Loader2 className="w-8 h-8 text-gold-400 animate-spin mx-auto mb-5" />
+            <h2 className="font-serif text-xl font-bold text-white mb-2">
+              Finishing your report
+            </h2>
+            <p className="text-slate-400 text-sm">
+              We&apos;re writing up your personalised Career Compass analysis. This only takes a few seconds.
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="w-14 h-14 rounded-full bg-red-400/10 border border-red-400/20 flex items-center justify-center mx-auto mb-5">
+              <span className="text-red-400 text-2xl">!</span>
+            </div>
+            <h2 className="font-serif text-xl font-bold text-white mb-2">
+              We couldn&apos;t finish your report
+            </h2>
+            <p className="text-slate-400 text-sm mb-6">
+              {errorMessage ?? 'Something went wrong while generating your report.'}
+            </p>
+            <button
+              onClick={() => void process()}
+              disabled={working}
+              className="px-6 py-3 bg-gold-400 text-navy-950 font-semibold rounded-xl hover:bg-gold-300 transition-all text-sm disabled:opacity-50"
+            >
               Try again
-            </Button>
-          }
-        >
-          {errorMessage ?? 'Something went wrong while generating your report.'}
-        </StateBlock>
-      )}
-    </StatePage>
+            </button>
+          </>
+        )}
+      </div>
+    </div>
   );
 }

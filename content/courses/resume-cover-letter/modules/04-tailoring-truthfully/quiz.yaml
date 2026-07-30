@@ -1,0 +1,26 @@
+status: draft
+questions:
+  - slug: q1
+    prompt: What should tailoring change?
+    options:
+      - { id: a, text: Which truthful evidence is emphasised }
+      - { id: b, text: The employer you actually worked for }
+      - { id: c, text: Your level of ownership }
+    correct: a
+    explanation: Tailoring selects and orders accurate evidence for the role.
+  - slug: q2
+    prompt: When can you use terminology from a job description?
+    options:
+      - { id: a, text: When it accurately describes your experience }
+      - { id: b, text: Whenever it sounds more technical }
+      - { id: c, text: Only if AI rewrites it }
+    correct: a
+    explanation: Shared language is useful only when it remains truthful.
+  - slug: q3
+    prompt: Which verbs imply meaningfully different ownership?
+    options:
+      - { id: a, text: Supported and led }
+      - { id: b, text: Reviewed and reviewed }
+      - { id: c, text: Used and utilised }
+    correct: a
+    explanation: Do not upgrade support work into leadership.

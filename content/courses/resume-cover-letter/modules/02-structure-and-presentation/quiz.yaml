@@ -1,0 +1,26 @@
+status: draft
+questions:
+  - slug: q1
+    prompt: What can the master-resume workshop assess?
+    options:
+      - { id: a, text: Whether a PDF margin is exactly correct }
+      - { id: b, text: The wording of a saved bullet }
+      - { id: c, text: Whether a font renders on every computer }
+    correct: b
+    explanation: The workshop operates on structured text, not final-document layout.
+  - slug: q2
+    prompt: What should override a general resume template?
+    options:
+      - { id: a, text: Employer application instructions }
+      - { id: b, text: A social-media post }
+      - { id: c, text: The longest available format }
+    correct: a
+    explanation: Always comply with the requirements of the actual application.
+  - slug: q3
+    prompt: Which approach makes errors easier to spot?
+    options:
+      - { id: a, text: Edit evidence and formatting in one rushed pass }
+      - { id: b, text: Review content and final visual presentation deliberately }
+      - { id: c, text: Assume AI checked the layout }
+    correct: b
+    explanation: Content and visual presentation require different checks.

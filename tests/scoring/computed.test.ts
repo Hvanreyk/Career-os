@@ -3,7 +3,7 @@ import { computeFields } from '../../lib/scoring/computed.js';
 import { loadPros, TEST_NOW, Y2_UNSW_COOP_HD_JPM } from './fixtures.js';
 import { TIER_LEVEL } from '../../lib/scoring/types.js';
 
-describe('computeFields — P001 Thomas Sukkar', () => {
+describe('computeFields — P001 (synthetic fixture)', () => {
   const p001 = loadPros().find(p => p.id === 'P001')!;
 
   it('matches the spec test conditions', () => {
@@ -38,5 +38,14 @@ describe('computeFields — Y2 UNSW Co-op HD JPM student', () => {
     // expected_graduation_year=2028 → penultimate apps July 2027 → ~14 months from May 2026
     expect(c.months_until_penultimate_recruiting).toBeGreaterThanOrEqual(13);
     expect(c.months_until_penultimate_recruiting).toBeLessThanOrEqual(15);
+  });
+
+  it('preserves the approved Release A unknown-as-zero duration behaviour', () => {
+    const experience = {
+      ...Y2_UNSW_COOP_HD_JPM.experiences[0]!,
+      duration_months: null,
+    };
+    const computed = computeFields({ experiences: [experience], signals: [] });
+    expect(computed.total_experience_months).toBe(0);
   });
 });

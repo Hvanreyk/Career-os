@@ -6,6 +6,7 @@ import {
   Y3_NO_IB_PRE_RECRUITING,
   Y2_FOUNDATION,
   LATERAL_BIG4_AUDIT,
+  Y6_EXTENDED_DEGREE,
   TEST_NOW,
 } from './fixtures.js';
 
@@ -35,5 +36,9 @@ describe('classifyStage', () => {
 
   it('lateral candidate flag → S5 regardless of other fields', () => {
     expect(classify(LATERAL_BIG4_AUDIT)).toBe('S5');
+  });
+
+  it('Y6 extended-degree student graduating 2027 → S2 (Y3+ and July 2026 recruiting is <6 months from TEST_NOW)', () => {
+    expect(classify(Y6_EXTENDED_DEGREE)).toBe('S2');
   });
 });

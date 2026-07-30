@@ -1,0 +1,102 @@
+status: published
+questions:
+  - slug: q1
+    prompt: Which set best describes the analyst's core work products?
+    options:
+      - id: a
+        text: Client relationship management and fee negotiation
+      - id: b
+        text: Company profiles, pitch pages, financial models and live-deal process materials
+      - id: c
+        text: Trading the bank's capital and setting research ratings
+      - id: d
+        text: Regulatory filings and audit workpapers
+    correct: b
+    explanation: >-
+      Analysts are the production layer: profiles, pitch books, models,
+      trackers and process documents. Relationships and negotiation sit
+      with seniors; trading, research and audit are different jobs.
+
+  - slug: q2
+    prompt: What does it mean to "turn comments"?
+    options:
+      - id: a
+        text: Decline changes you disagree with
+      - id: b
+        text: Implement every markup from seniors, verify nothing else broke, and return a clean version — often over multiple rounds
+      - id: c
+        text: Summarise feedback in an email
+      - id: d
+        text: Rotate who reviews the document
+    correct: b
+    explanation: >-
+      Comments are the quality-control ritual. Turning them completely and
+      carefully — and explicitly flagging anything you didn't change — is
+      how analysts build trust.
+
+  - slug: q3
+    prompt: Why do senior bankers react so strongly to small errors like a wrong date or misaligned number?
+    options:
+      - id: a
+        text: Tradition and hazing
+      - id: b
+        text: Small visible errors are a signal about the reliability of everything they cannot check
+      - id: c
+        text: Clients only ever read the dates
+      - id: d
+        text: They are legally required to
+    correct: b
+    explanation: >-
+      A senior can't re-verify every cell. Visible sloppiness implies
+      invisible sloppiness — in documents that inform real board decisions.
+
+  - slug: q4
+    prompt: You realise at 11pm you can't finish everything requested for the morning. The strongest move is to
+    options:
+      - id: a
+        text: Work silently and deliver whatever is done by 8am
+      - id: b
+        text: Message the associate now with status, what will and won't be ready, and a proposed triage
+      - id: c
+        text: Finish the easiest tasks first so more items look complete
+      - id: d
+        text: Wait until the morning meeting to mention it
+    correct: b
+    explanation: >-
+      Early escalation with a plan lets seniors re-scope, reprioritise or
+      add help while options still exist. Silent hope removes everyone's
+      options — including yours.
+
+  - slug: q5
+    prompt: What primarily determines when an analyst's late nights happen?
+    options:
+      - id: a
+        text: Fixed office rules about leaving times
+      - id: b
+        text: External deal clocks — client meetings, board dates and bid deadlines
+      - id: c
+        text: The analyst's own scheduling preferences
+      - id: d
+        text: Stock market opening hours
+    correct: b
+    explanation: >-
+      Workload follows the transaction's external calendar, which is why it
+      arrives unevenly and why flexibility (and deliberate recovery in
+      quiet windows) matters.
+
+  - slug: q6
+    prompt: Which behaviour most reliably distinguishes top-ranked analysts?
+    options:
+      - id: a
+        text: Staying latest in the office regardless of output
+      - id: b
+        text: Producing numbers and pages seniors can trust without re-checking
+      - id: c
+        text: Volunteering opinions in every client meeting
+      - id: d
+        text: Never asking any questions
+    correct: b
+    explanation: >-
+      Trustworthy accuracy is the analyst's currency — it earns better
+      staffing, more autonomy and stronger reviews. Presence and hours
+      without reliability earn nothing.

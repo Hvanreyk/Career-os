@@ -16,20 +16,33 @@
     "import:dry": "tsx scripts/import-csv.ts --dry-run",
     "import": "tsx scripts/import-csv.ts",
     "import:reject-test": "tsx scripts/import-csv.ts --reject-test",
+    "professionals:import": "tsx scripts/import-professionals.ts",
+    "professionals:import:dry": "tsx scripts/import-professionals.ts --dry-run",
+    "professionals:impact": "tsx scripts/report-professional-scoring-impact.ts",
+    "professionals:parity": "tsx scripts/verify-professional-parity.ts",
+    "professionals:snapshots": "tsx scripts/refresh-professional-snapshots.ts",
+    "professionals:snapshots:dry": "tsx scripts/refresh-professional-snapshots.ts --dry-run",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "seed:courses": "tsx scripts/seed-courses.ts",
+    "seed:courses:dry": "tsx scripts/seed-courses.ts --dry-run"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
     "dotenv": "^16.4.5",
     "openai": "^6.37.0",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
+    "xlsx": "^0.18.5",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^22.5.0",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",
-    "vitest": "^2.1.1"
+    "vitest": "^4.1.10",
+    "yaml": "^2.6.0"
+  },
+  "optionalDependencies": {
+    "lightningcss-darwin-arm64": "1.32.0",
+    "lightningcss-linux-x64-gnu": "1.32.0"
   }
 }

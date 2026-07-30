@@ -19,3 +19,8 @@ build/
 # Kept out of git for repo size — archive them separately if you need the
 # originals, since image generation is not deterministic.
 design/hero-src/
+# Real professional data pulled from Supabase for local calibration — never
+# commit real people's career histories. The committed test fixture is
+# synthetic (tests/scoring/professionals.snapshot.json); see
+# scripts/snapshot-professionals.ts.
+tests/scoring/professionals.snapshot.local.json

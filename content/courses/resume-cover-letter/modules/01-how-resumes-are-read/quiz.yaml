@@ -1,0 +1,26 @@
+status: draft
+questions:
+  - slug: q1
+    prompt: What is the best purpose for a finance resume?
+    options:
+      - { id: a, text: Prove every part of your personality }
+      - { id: b, text: Make relevant, truthful evidence easy to assess }
+      - { id: c, text: Include every activity you have ever completed }
+    correct: b
+    explanation: A resume is a selective evidence document, not a complete autobiography.
+  - slug: q2
+    prompt: Which statement gives the reader stronger evidence?
+    options:
+      - { id: a, text: Excellent communicator }
+      - { id: b, text: Presented a weekly market update to a five-person student fund committee }
+      - { id: c, text: Hard-working team player }
+    correct: b
+    explanation: It describes a concrete, defensible action without relying on a generic claim.
+  - slug: q3
+    prompt: Who is responsible for confirming that a resume claim is true?
+    options:
+      - { id: a, text: The student }
+      - { id: b, text: The AI workshop }
+      - { id: c, text: The recruiter }
+    correct: a
+    explanation: The tool cannot verify achievements, responsibilities or metrics.

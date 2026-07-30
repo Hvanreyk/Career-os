@@ -1,0 +1,120 @@
+status: published
+questions:
+  - slug: q1
+    prompt: Put the sell-side M&A stages in the correct order.
+    options:
+      - id: a
+        text: Binding bids → teaser → data room → preparation
+      - id: b
+        text: Preparation → first-round indicative bids → second-round diligence and binding bids → negotiation/signing → approvals and completion
+      - id: c
+        text: Data room → preparation → signing → first round
+      - id: d
+        text: Announcement → due diligence → teaser → completion
+    correct: b
+    explanation: >-
+      Prep the model and materials, filter buyers with indicative bids,
+      give a shortlist deep access for binding offers, negotiate and sign,
+      then clear conditions to completion.
+
+  - slug: q2
+    prompt: What is the seller's main price lever in an auction process?
+    options:
+      - id: a
+        text: Setting a legally binding minimum price
+      - id: b
+        text: Competitive tension — credible alternative bidders maintained as long as possible
+      - id: c
+        text: Offering the buyer a discount for speed
+      - id: d
+        text: The advisory fee structure
+    correct: b
+    explanation: >-
+      Buyers pay more and retrade less when they believe rivals are close
+      behind. Designing and preserving that tension is much of what the
+      sell-side team does.
+
+  - slug: q3
+    prompt: Which Australian regulators most commonly condition M&A completion?
+    options:
+      - id: a
+        text: ACCC (competition) and FIRB (foreign investment)
+      - id: b
+        text: RBA and APRA for every transaction
+      - id: c
+        text: The ASX listing committee
+      - id: d
+        text: The Fair Work Commission
+    correct: a
+    explanation: >-
+      Competition clearance (ACCC) and foreign-investment approval (FIRB)
+      are the standard conditions between signing and completion for
+      Australian deals of scale.
+
+  - slug: q4
+    prompt: Why do IPOs depend on "market windows"?
+    options:
+      - id: a
+        text: Exchanges only allow listings in certain months
+      - id: b
+        text: The process needs weeks of stable, receptive markets for marketing, bookbuild and aftermarket — volatility shuts it down
+      - id: c
+        text: Auditors are seasonal
+      - id: d
+        text: Prospectuses expire in seven days
+    correct: b
+    explanation: >-
+      An IPO prices weeks after launch and needs investors willing to take
+      new risk. Volatile markets break pricing confidence, so pipelines
+      wait for calm windows.
+
+  - slug: q5
+    prompt: In an underwritten equity raising, what exactly is the client paying the underwriting fee for?
+    options:
+      - id: a
+        text: A guarantee of proceeds — the bank buys any shortfall investors don't take
+      - id: b
+        text: A marketing brochure
+      - id: c
+        text: A higher share price than the market would pay
+      - id: d
+        text: Exemption from disclosure obligations
+    correct: a
+    explanation: >-
+      Underwriting transfers execution risk: certainty of funds for the
+      client, shortfall risk (and a fee) for the bank. It's one of the few
+      places the bank's balance sheet is truly exposed.
+
+  - slug: q6
+    prompt: Which is NOT one of the three classic LBO return levers?
+    options:
+      - id: a
+        text: Debt paydown
+      - id: b
+        text: Earnings growth
+      - id: c
+        text: Multiple expansion at exit
+      - id: d
+        text: Cutting the dividend to zero permanently
+    correct: d
+    explanation: >-
+      Returns come from paying down debt, growing earnings, and exiting at
+      a higher multiple. Dividend policy is a cash-management choice, not a
+      return lever in itself.
+
+  - slug: q7
+    prompt: Why do higher interest rates slow leveraged buyout activity?
+    options:
+      - id: a
+        text: PE firms are banned from borrowing at high rates
+      - id: b
+        text: Interest consumes more of the target's cash flow, cutting debt capacity and the price sponsors can pay
+      - id: c
+        text: Higher rates make equity cheaper
+      - id: d
+        text: They don't — LBOs are rate-insensitive
+    correct: b
+    explanation: >-
+      LBO maths runs on cash flows servicing debt. Costlier debt means less
+      leverage and lower affordable prices — a valuation gap opens versus
+      seller expectations, and volumes fall.

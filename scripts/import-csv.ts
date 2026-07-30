@@ -2,9 +2,9 @@
  * Phase 1 import script.
  *
  * Reads Database_v7_clean.xlsx, validates every row against the Zod
- * schema in lib/scoring/types.ts, and upserts into the professionals
- * table on Supabase. Strict at the boundary — invalid enum value =>
- * row rejected, no silent coercion.
+ * schema in lib/scoring/types.ts, upserts the legacy professionals table, then
+ * invokes the idempotent normalized refresh transaction. The website remains
+ * legacy-authoritative until shadow parity passes.
  *
  * Usage:
  *   tsx scripts/import-csv.ts --dry-run     # validate only, no DB writes
@@ -22,7 +22,6 @@ import { ZodError } from 'zod';
 import {
   ProfessionalRowSchema,
   flattenForDb,
-  SignalTag,
   type ProfessionalRow,
 } from '../lib/scoring/types.js';
 
@@ -272,6 +271,11 @@ async function main() {
     process.exit(rejects.length === (REJECT_TEST ? 1 : 0) ? 0 : 1);
   }
 
+  if (rejects.length > 0) {
+    console.error('\nImport aborted — all rows must validate before any DB writes.');
+    process.exit(1);
+  }
+
   // ----- DB upsert -----
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -287,7 +291,7 @@ async function main() {
   const flatRows = validated.map(flattenForDb);
   console.log(`\nUpserting ${flatRows.length} rows into professionals…`);
 
-  // Upsert in one batch (17 rows is trivial; expand to chunks if dataset grows).
+  // Upsert in one batch (the current professional cohort is intentionally small).
   const { error, count } = await supabase
     .from('professionals')
     .upsert(flatRows, { onConflict: 'id', count: 'exact' });
@@ -299,6 +303,27 @@ async function main() {
 
   console.log(`✓ Upsert ok. Rows affected: ${count ?? 'n/a'}`);
 
+  const professionalIds = validated.map((row) => row.id);
+  const { data: normalizationRunId, error: normalizationError } = await supabase
+    .rpc('refresh_normalized_professionals_from_legacy', {
+      p_professional_ids: professionalIds,
+    });
+  if (normalizationError || !normalizationRunId) {
+    console.error('Normalized refresh RPC failed:', normalizationError);
+    process.exit(1);
+  }
+
+  const { data: normalizationRun, error: runError } = await supabase
+    .from('professional_normalization_runs')
+    .select('status, professional_count, education_count, experience_count, achievement_count, quarantine_count')
+    .eq('run_id', normalizationRunId)
+    .single();
+  if (runError || !normalizationRun || normalizationRun.status !== 'complete') {
+    console.error('Normalized refresh did not complete:', runError ?? normalizationRun?.status);
+    process.exit(1);
+  }
+  console.log('✓ Normalized refresh complete:', normalizationRun);
+
   // Verification queries (Phase 1 acceptance criteria)
   const { count: bbCount, error: bbErr } = await supabase
     .from('professionals')
@@ -308,14 +333,13 @@ async function main() {
     console.error('Verification query failed:', bbErr);
     process.exit(1);
   }
-  console.log(`bb-tier count: ${bbCount} (expected 14)`);
+  const expectedBbCount = validated.filter((row) => row.current_firm_tier === 'bb').length;
+  console.log(`bb-tier count: ${bbCount} (expected ${expectedBbCount})`);
 
   const { count: totalCount } = await supabase
     .from('professionals')
     .select('*', { count: 'exact', head: true });
-  console.log(`total count: ${totalCount} (expected 17)`);
-
-  if (rejects.length > 0) process.exit(1);
+  console.log(`total count: ${totalCount} (expected at least ${validated.length})`);
 }
 
 main().catch(err => {

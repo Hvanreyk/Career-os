@@ -29,7 +29,8 @@ const CANDIDATE_FEATURES: CandidateFeature[] = [
   { key: 'has_pe_experience',              display: 'PE-side internship',                                  actionability: 'low',    time: 12 },
   { key: 'has_dean_list',                  display: "Dean's List or equivalent academic recognition",      actionability: 'medium', time: 6 },
   { key: 'cfa_l1',                         display: 'CFA Level 1',                                         actionability: 'medium', time: 6 },
-  { key: 'has_eb_mm_experience',           display: 'Elite boutique / mid-market experience',              actionability: 'low',    time: 12 },
+  { key: 'has_elite_boutique_experience',  display: 'Elite boutique experience',                           actionability: 'low',    time: 12 },
+  { key: 'has_mid_market_experience',      display: 'Mid-market experience',                               actionability: 'low',    time: 12 },
   { key: 'has_boutique_experience',        display: 'Boutique IB experience',                              actionability: 'medium', time: 4 },
   { key: 'is_co_op_program',               display: 'Co-op program enrolment',                             actionability: 'low',    time: 24 },
 ];

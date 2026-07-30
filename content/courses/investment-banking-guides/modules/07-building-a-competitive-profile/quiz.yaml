@@ -1,0 +1,102 @@
+status: published
+questions:
+  - slug: q1
+    prompt: What single question is the resume screen fundamentally asking?
+    options:
+      - id: a
+        text: Is there evidence of analytical capability, specific motivation for this industry, and durability?
+      - id: b
+        text: Did the candidate attend a target university?
+      - id: c
+        text: How many societies has the candidate joined?
+      - id: d
+        text: Is the resume visually distinctive?
+    correct: a
+    explanation: >-
+      Capability, motivation, durability — every signal (grades,
+      experience, leadership, artefacts) is a proxy for one of the three.
+
+  - slug: q2
+    prompt: Why do screeners discount lines like "Member, Finance Society" and "passionate about markets"?
+    options:
+      - id: a
+        text: Societies and passion are irrelevant to banking
+      - id: b
+        text: They are claims of affiliation or feeling, not evidence of action — and screeners pattern-match for evidenced doing
+      - id: c
+        text: Screeners only read the education section
+      - id: d
+        text: Such lines are against application rules
+    correct: b
+    explanation: >-
+      Proximity and sentiment can't be verified or interviewed against.
+      Roles with outcomes, projects with artefacts and results with dates
+      can — and those carry the application.
+
+  - slug: q3
+    prompt: Which activity produces the strongest single piece of profile evidence for most students?
+    options:
+      - id: a
+        text: A fifth society membership
+      - id: b
+        text: Real transaction exposure via an off-cycle boutique internship, or sustained SMIF/case-competition results
+      - id: c
+        text: A two-day virtual experience program
+      - id: d
+        text: Listing advanced Excel in the skills section
+    correct: b
+    explanation: >-
+      Deal exposure and competitive, verifiable finance achievements are
+      the highest-signal items available to students; virtual programs and
+      skill lists are mild positives at best.
+
+  - slug: q4
+    prompt: A student one year from penultimate year asks what to prioritise. Per the sequencing logic, the best answer is…
+    options:
+      - id: a
+        text: Nothing yet — preparation starts when applications open
+      - id: b
+        text: A substantive committee or SMIF role, a modelling course with a real artefact, systematic networking, and boutique off-cycle attempts
+      - id: c
+        text: Only grades — everything else is noise
+      - id: d
+        text: CFA Levels 1 through 3
+    correct: b
+    explanation: >-
+      The pre-penultimate year is when evidence compounds cheaply: roles
+      deepen, artefacts get built, relationships form — so the week-one
+      application a year later is backed by a real profile.
+
+  - slug: q5
+    prompt: For a non-finance-degree candidate, what question must the profile pre-answer?
+    options:
+      - id: a
+        text: "Why didn't you study commerce originally?"
+      - id: b
+        text: "Why the switch to finance, and what have you visibly done about it?"
+      - id: c
+        text: "Which bank is your favourite?"
+      - id: d
+        text: "What is your ATAR?"
+    correct: b
+    explanation: >-
+      The pivot is credible only with artefacts: finance coursework or
+      courses, a valuation project, an investment club role, ideally real
+      exposure. Claims of passion answer nothing.
+
+  - slug: q6
+    prompt: Why is embellishment (e.g. titling a 4-day virtual program "Investment Banking Experience") a losing strategy?
+    options:
+      - id: a
+        text: It's obvious to screeners who see it constantly, it's checkable, and it collapses under interview questioning
+      - id: b
+        text: It isn't — screeners can't verify anything
+      - id: c
+        text: Only because firms run polygraph tests
+      - id: d
+        text: Virtual programs are secret
+    correct: a
+    explanation: >-
+      Screeners calibrate on hundreds of applications; inflation patterns
+      are familiar and easily probed. One collapsed claim taints every
+      other line — while honest evidence compounds.
