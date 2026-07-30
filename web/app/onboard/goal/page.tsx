@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { StepShell } from '@/components/onboard/StepShell';
 import { ChoiceButton } from '@/components/onboard/ChoiceButton';
+import { ChoiceList, StepActions, StepGroup } from '@/components/onboard/StepParts';
 import { useOnboard } from '@/lib/onboard/context';
 import type { TargetTier, TargetGeo } from '@/lib/onboard/types';
 
@@ -30,27 +31,24 @@ export default function GoalPage() {
       title="Where are you aiming?"
       subtitle="This shapes which professionals we match you against."
     >
-      <div className="space-y-6">
-        <div>
-          <div className="text-xs text-slate-500 uppercase tracking-widest mb-3">Target bank tier</div>
-          <div className="space-y-2">
+      <div className="space-y-8">
+        <StepGroup label="Target bank tier">
+          <ChoiceList>
             {TIERS.map((t) => (
               <ChoiceButton
                 key={t.value}
                 selected={data.target_firm_tier === t.value}
                 onClick={() => update({ target_firm_tier: t.value })}
                 description={t.description}
-                gold={t.value === 'bb'}
               >
                 {t.label}
               </ChoiceButton>
             ))}
-          </div>
-        </div>
+          </ChoiceList>
+        </StepGroup>
 
-        <div>
-          <div className="text-xs text-slate-500 uppercase tracking-widest mb-3">Target city</div>
-          <div className="grid grid-cols-2 gap-2">
+        <StepGroup label="Target city">
+          <div className="grid grid-cols-1 divide-y divide-rule border border-rule sm:grid-cols-2 sm:divide-x sm:divide-y-0">
             {GEOS.map((g) => (
               <ChoiceButton
                 key={g.value}
@@ -61,15 +59,12 @@ export default function GoalPage() {
               </ChoiceButton>
             ))}
           </div>
-        </div>
+        </StepGroup>
 
-        <button
+        <StepActions
           disabled={!canContinue}
-          onClick={() => router.push('/onboard/university')}
-          className="w-full py-4 bg-gold-400 text-navy-950 font-semibold rounded-xl hover:bg-gold-300 transition-all shadow-[0_0_24px_rgba(212,175,55,0.3)] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
-        >
-          Continue →
-        </button>
+          onContinue={() => router.push('/onboard/university')}
+        />
       </div>
     </StepShell>
   );

@@ -1,247 +1,162 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Menu, X, Compass, Calculator } from 'lucide-react';
+import { Wordmark } from '@/components/ui/Wordmark';
 
-const tools = [
-  {
-    label: 'Career Compass',
-    href: '/tools/career-compass',
-    description: 'Map your path into investment banking.',
-    icon: Compass,
-    featured: true,
-  },
-  {
-    label: 'Career Calculator',
-    href: '/tools/career-calculator',
-    description: 'Assess your readiness for finance roles.',
-    icon: Calculator,
-    featured: false,
-  },
-];
+/**
+ * Application navigation.
+ *
+ * A hard-ruled bar, not a floating pill. The active route is marked with a
+ * single red-orange underline — one indicator, one accent colour.
+ *
+ * The tools dropdown opens on click rather than hover: hover-only menus are
+ * unreachable by keyboard and unusable on touch, and the previous version
+ * exposed its contents no other way.
+ */
 
-const navLinks = [
-  { label: 'Home', href: '/' },
-  { label: 'About Us', href: '/about' },
+const NAV = [
+  { label: 'Career Compass', href: '/tools/career-compass' },
+  { label: 'Calculator', href: '/tools/career-calculator' },
   { label: 'Resources', href: '/resources' },
   { label: 'Pricing', href: '/pricing' },
+  { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },
 ];
 
-export function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-  const [toolsOpen, setToolsOpen] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const pathname = usePathname();
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  useEffect(() => {
-    setMobileOpen(false);
-    setToolsOpen(false);
-  }, [pathname]);
-
-  return (
-    <>
-      <nav
-        className={`fixed top-0 w-full z-50 transition-all duration-500 ${
-          scrolled
-            ? 'glass border-b border-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.4)]'
-            : 'bg-transparent'
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gold-400 to-gold-500 flex items-center justify-center shadow-[0_0_16px_rgba(212,175,55,0.3)] group-hover:shadow-[0_0_24px_rgba(212,175,55,0.5)] transition-shadow">
-              <span className="text-navy-950 font-bold text-sm font-serif">T</span>
-            </div>
-            <span className="font-serif font-semibold text-lg tracking-wide text-white">
-              MappedLabs
-            </span>
-          </Link>
-
-          {/* Desktop nav */}
-          <div className="hidden lg:flex items-center gap-1">
-            {navLinks.slice(0, 2).map((link) => (
-              <NavLink key={link.href} href={link.href} active={pathname === link.href}>
-                {link.label}
-              </NavLink>
-            ))}
-
-            {/* Tools dropdown */}
-            <div
-              className="relative"
-              onMouseEnter={() => setToolsOpen(true)}
-              onMouseLeave={() => setToolsOpen(false)}
-            >
-              <button
-                className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  pathname.startsWith('/tools')
-                    ? 'text-gold-400'
-                    : 'text-slate-300 hover:text-white'
-                }`}
-              >
-                Tools
-                <motion.span animate={{ rotate: toolsOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                  <ChevronDown className="w-3.5 h-3.5" />
-                </motion.span>
-              </button>
-
-              <AnimatePresence>
-                {toolsOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.97 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.97 }}
-                    transition={{ duration: 0.18, ease: 'easeOut' }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 glass rounded-xl border border-white/10 shadow-[0_16px_48px_rgba(0,0,0,0.6)] overflow-hidden"
-                  >
-                    <div className="p-2">
-                      {tools.map((tool) => {
-                        const Icon = tool.icon;
-                        return (
-                          <Link
-                            key={tool.href}
-                            href={tool.href}
-                            className={`flex items-start gap-3 p-3 rounded-lg transition-all group ${
-                              tool.featured
-                                ? 'hover:bg-gold-400/8 border border-transparent hover:border-gold-400/20'
-                                : 'hover:bg-white/5'
-                            }`}
-                          >
-                            <div
-                              className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
-                                tool.featured
-                                  ? 'bg-gold-400/10 text-gold-400'
-                                  : 'bg-white/5 text-slate-400'
-                              }`}
-                            >
-                              <Icon className="w-4 h-4" />
-                            </div>
-                            <div>
-                              <div
-                                className={`text-sm font-semibold mb-0.5 ${
-                                  tool.featured ? 'text-gold-300' : 'text-white'
-                                }`}
-                              >
-                                {tool.label}
-                                {tool.featured && (
-                                  <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-gold-400/15 text-gold-400 font-medium uppercase tracking-wider">
-                                    Featured
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-xs text-slate-400">{tool.description}</div>
-                            </div>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {navLinks.slice(2).map((link) => (
-              <NavLink key={link.href} href={link.href} active={pathname === link.href}>
-                {link.label}
-              </NavLink>
-            ))}
-
-            <Link
-              href="/tools/career-compass"
-              className="ml-3 px-5 py-2 bg-gold-400 text-navy-950 font-semibold text-sm rounded-lg hover:bg-gold-300 transition-all shadow-[0_0_20px_rgba(212,175,55,0.25)] hover:shadow-[0_0_28px_rgba(212,175,55,0.4)]"
-            >
-              Get Started
-            </Link>
-          </div>
-
-          {/* Mobile hamburger */}
-          <button
-            className="lg:hidden text-slate-300 hover:text-white transition-colors p-2"
-            onClick={() => setMobileOpen((o) => !o)}
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </div>
-      </nav>
-
-      {/* Mobile menu */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-x-0 top-16 z-40 glass border-b border-white/10 lg:hidden"
-          >
-            <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col gap-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                    pathname === link.href
-                      ? 'text-gold-400 bg-gold-400/8'
-                      : 'text-slate-300 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <div className="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-2">
-                Tools
-              </div>
-              {tools.map((tool) => (
-                <Link
-                  key={tool.href}
-                  href={tool.href}
-                  className="px-4 py-3 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
-                >
-                  {tool.label}
-                </Link>
-              ))}
-              <Link
-                href="/tools/career-compass"
-                className="mt-3 mx-4 py-3 text-center bg-gold-400 text-navy-950 font-semibold text-sm rounded-lg"
-              >
-                Get Started
-              </Link>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
-  );
+function isActive(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function NavLink({
-  href,
-  active,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  children: React.ReactNode;
-}) {
+export function Navbar() {
+  const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const toggleRef = useRef<HTMLButtonElement>(null);
+
+  // Close the sheet whenever the route changes — including back/forward, which
+  // an onClick on the links would miss. Adjusted during render rather than in an
+  // effect so it never renders a frame with a stale open menu.
+  const [openedAt, setOpenedAt] = useState(pathname);
+  if (openedAt !== pathname) {
+    setOpenedAt(pathname);
+    if (open) setOpen(false);
+  }
+
+  // Escape closes the sheet and returns focus to the control that opened it.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        toggleRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open]);
+
   return (
-    <Link
-      href={href}
-      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-        active ? 'text-gold-400' : 'text-slate-300 hover:text-white'
-      }`}
-    >
-      {children}
-    </Link>
+    <header className="sticky top-0 z-50 border-b border-rule bg-ink">
+      <nav aria-label="Primary" className="mx-auto flex h-14 max-w-[90rem] items-center gap-4 px-5 sm:px-8">
+        <Link
+          href="/"
+          className="flex h-11 shrink-0 items-center pr-2"
+          aria-label="MappedLabs — home"
+        >
+          <Wordmark className="h-5 w-auto" ink="#edeae3" accent="#f0563a" />
+        </Link>
+
+        {/* Desktop */}
+        <ul className="ml-4 hidden flex-1 items-center gap-1 lg:flex">
+          {NAV.map((item) => {
+            const active = isActive(pathname, item.href);
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  aria-current={active ? 'page' : undefined}
+                  className={`relative flex h-14 items-center px-3 font-[family-name:var(--font-jetbrains)] text-[12px] uppercase tracking-[0.1em] transition-colors ${
+                    active ? 'text-bone' : 'text-graphite hover:text-bone'
+                  }`}
+                >
+                  {item.label}
+                  {active && (
+                    <span
+                      className="absolute inset-x-2 bottom-0 h-0.5 bg-red"
+                      aria-hidden="true"
+                    />
+                  )}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+
+        {/* Secondary on purpose: the nav is persistent chrome, so page content
+            keeps the single primary action in any given view. */}
+        <Link
+          href="/onboard/goal"
+          className="ml-btn ml-btn-secondary ml-auto hidden min-h-[36px] px-4 text-[12px] lg:inline-flex"
+        >
+          Build My Career Map
+        </Link>
+
+        {/* Mobile toggle */}
+        <button
+          ref={toggleRef}
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-controls="mobile-nav"
+          className="ml-auto flex h-11 w-11 items-center justify-center text-bone lg:hidden"
+        >
+          <span className="sr-only">{open ? 'Close menu' : 'Open menu'}</span>
+          <svg viewBox="0 0 20 20" className="h-5 w-5" aria-hidden="true">
+            {open ? (
+              <path d="M4 4l12 12M16 4L4 16" stroke="currentColor" strokeWidth="1.6" fill="none" />
+            ) : (
+              <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.6" fill="none" />
+            )}
+          </svg>
+        </button>
+      </nav>
+
+      {/* Mobile sheet: a full-width register, not a floating card. */}
+      {open && (
+        <div
+          id="mobile-nav"
+          className="border-t border-rule bg-surface lg:hidden"
+        >
+          <ul className="mx-auto max-w-[90rem] px-5 sm:px-8">
+            {NAV.map((item) => {
+              const active = isActive(pathname, item.href);
+              return (
+                <li key={item.href} className="ml-row">
+                  <Link
+                    href={item.href}
+                    aria-current={active ? 'page' : undefined}
+                    className={`flex min-h-[52px] items-center gap-3 font-[family-name:var(--font-jetbrains)] text-[13px] uppercase tracking-[0.1em] ${
+                      active ? 'text-bone' : 'text-graphite'
+                    }`}
+                  >
+                    <span
+                      className={`h-4 w-0.5 shrink-0 ${active ? 'bg-red' : 'bg-transparent'}`}
+                      aria-hidden="true"
+                    />
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="mx-auto max-w-[90rem] px-5 py-4 sm:px-8">
+            <Link href="/onboard/goal" className="ml-btn ml-btn-secondary w-full min-h-[44px] text-[13px]">
+              Build My Career Map
+            </Link>
+          </div>
+        </div>
+      )}
+    </header>
   );
 }

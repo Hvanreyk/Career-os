@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { StepShell } from '@/components/onboard/StepShell';
 import { ChoiceButton } from '@/components/onboard/ChoiceButton';
+import { ChoiceList, StepActions, StepGroup } from '@/components/onboard/StepParts';
 import { useOnboard } from '@/lib/onboard/context';
 import type { WamBand, HighSchoolType, AtarBand } from '@/lib/onboard/types';
 
@@ -48,78 +49,71 @@ export default function GradesPage() {
       subtitle="Used for matching only — never shown to anyone else."
       backHref="/onboard/university"
     >
-      <div className="space-y-6">
-        {/* WAM */}
-        <div>
-          <div className="text-xs text-slate-500 uppercase tracking-widest mb-3">
-            WAM (Weighted Average Mark)
-          </div>
-          <div className="space-y-2">
+      <div className="space-y-8">
+        <StepGroup label="WAM (Weighted Average Mark)">
+          <ChoiceList>
             {WAMS.map((w) => (
               <ChoiceButton
                 key={w.value}
                 selected={data.wam_band === w.value}
                 onClick={() => update({ wam_band: w.value })}
                 description={w.description}
-                gold={w.value === 'hd'}
               >
                 {w.label}
               </ChoiceButton>
             ))}
-          </div>
-        </div>
+          </ChoiceList>
+        </StepGroup>
 
-        {/* High school */}
         <div>
-          <div className="text-xs text-slate-500 uppercase tracking-widest mb-1">
+          <label htmlFor="high-school" className="ml-label">
             High school type
-          </div>
-          <div className="text-xs text-slate-600 mb-3">
+          </label>
+          <p id="high-school-hint" className="mt-1.5 text-[13px] leading-snug text-graphite">
             Used internally for distance matching — not shown in your report.
-          </div>
+          </p>
           <select
+            id="high-school"
+            aria-describedby="high-school-hint"
             value={data.high_school_type}
             onChange={(e) => update({ high_school_type: e.target.value as HighSchoolType })}
-            className="w-full bg-navy-800/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-gold-400/40 transition-colors"
+            className="ml-field mt-3"
           >
             {HIGH_SCHOOLS.map((h) => (
-              <option key={h.value} value={h.value} className="bg-navy-900">
+              <option key={h.value} value={h.value}>
                 {h.label}
               </option>
             ))}
           </select>
         </div>
 
-        {/* ATAR */}
-        <div>
-          <div className="text-xs text-slate-500 uppercase tracking-widest mb-3">
-            ATAR band <span className="text-slate-600 normal-case">(optional)</span>
+        <StepGroup label="ATAR band" hint="Optional.">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {ATARS.map((a) => {
+              const selected = data.atar_band === a.value;
+              return (
+                <button
+                  key={a.value}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => update({ atar_band: a.value })}
+                  className={`ml-num min-h-[44px] border px-3 text-[13px] transition-colors ${
+                    selected
+                      ? 'border-red bg-raised text-bone'
+                      : 'border-rule text-graphite hover:border-rule-bright hover:text-bone'
+                  }`}
+                >
+                  {a.label}
+                </button>
+              );
+            })}
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            {ATARS.map((a) => (
-              <button
-                key={a.value}
-                type="button"
-                onClick={() => update({ atar_band: a.value })}
-                className={`py-2.5 px-3 rounded-xl text-xs font-medium border transition-all text-left ${
-                  data.atar_band === a.value
-                    ? 'border-gold-400/60 bg-gold-400/10 text-gold-300'
-                    : 'border-white/10 text-slate-400 hover:border-white/25 hover:text-white'
-                }`}
-              >
-                {a.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        </StepGroup>
 
-        <button
+        <StepActions
           disabled={!canContinue}
-          onClick={() => router.push('/onboard/experience')}
-          className="w-full py-4 bg-gold-400 text-navy-950 font-semibold rounded-xl hover:bg-gold-300 transition-all shadow-[0_0_24px_rgba(212,175,55,0.3)] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
-        >
-          Continue →
-        </button>
+          onContinue={() => router.push('/onboard/experience')}
+        />
       </div>
     </StepShell>
   );

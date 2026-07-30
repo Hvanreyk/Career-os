@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { StepShell } from '@/components/onboard/StepShell';
+import { StepActions, StepGroup } from '@/components/onboard/StepParts';
 import { useOnboard } from '@/lib/onboard/context';
 
 const SIGNAL_GROUPS = [
@@ -79,45 +80,42 @@ export default function SignalsPage() {
       subtitle="Select everything that applies. These strengthen your profile match."
       backHref="/onboard/experience"
     >
-      <div className="space-y-6">
+      <div className="space-y-8">
         {SIGNAL_GROUPS.map((group) => (
-          <div key={group.label}>
-            <div className="text-xs text-slate-500 uppercase tracking-widest mb-2.5">
-              {group.label}
-            </div>
-            <div className="space-y-1.5">
+          <StepGroup key={group.label} label={group.label}>
+            <div className="grid grid-cols-1 border-t border-rule sm:grid-cols-2 sm:gap-x-6">
               {group.options.map((opt) => {
                 const selected = data.signals.includes(opt.value);
+                const id = `sig-${opt.value}`;
                 return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => toggle(opt.value)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
-                      selected
-                        ? 'border-gold-400/40 bg-gold-400/8 text-white'
-                        : 'border-white/8 text-slate-400 hover:border-white/20 hover:text-white'
-                    }`}
-                  >
-                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-                      selected ? 'border-gold-400 bg-gold-400' : 'border-slate-600'
-                    }`}>
-                      {selected && <span className="text-navy-950 text-[9px] font-bold">✓</span>}
-                    </div>
-                    <span className="text-sm">{opt.label}</span>
-                  </button>
+                  <div key={opt.value} className="ml-row flex items-center gap-3 py-1">
+                    <input
+                      id={id}
+                      type="checkbox"
+                      checked={selected}
+                      onChange={() => toggle(opt.value)}
+                      className="ml-check"
+                    />
+                    <label
+                      htmlFor={id}
+                      className={`flex min-h-[44px] flex-1 cursor-pointer select-none items-center text-[15px] leading-snug ${
+                        selected ? 'text-bone' : 'text-graphite'
+                      }`}
+                    >
+                      {opt.label}
+                    </label>
+                  </div>
                 );
               })}
             </div>
-          </div>
+          </StepGroup>
         ))}
 
-        <button
-          onClick={() => router.push('/onboard/review')}
-          className="w-full py-4 bg-gold-400 text-navy-950 font-semibold rounded-xl hover:bg-gold-300 transition-all shadow-[0_0_24px_rgba(212,175,55,0.3)]"
-        >
-          Review my profile →
-        </button>
+        <StepActions
+          onContinue={() => router.push('/onboard/review')}
+          label="Review my profile"
+          note={`${data.signals.length} selected.`}
+        />
       </div>
     </StepShell>
   );

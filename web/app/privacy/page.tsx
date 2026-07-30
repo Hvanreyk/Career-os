@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { AnimatedSection } from '@/components/ui/AnimatedSection';
+import { LegalPage } from '@/components/ui/LegalPage';
 
 export const metadata: Metadata = { title: 'Privacy Policy' };
 
@@ -30,37 +30,9 @@ const sections = [
   },
 ];
 
-export default function PrivacyPage() {
-  return (
-    <div className="relative max-w-3xl mx-auto px-6 pt-36 pb-32">
-      <AnimatedSection>
-        <div className="mb-12">
-          <div className="text-xs font-semibold uppercase tracking-widest text-gold-400 mb-4">
-            Legal
-          </div>
-          <h1 className="font-serif text-4xl sm:text-5xl font-bold text-white mb-4">
-            Privacy Policy
-          </h1>
-          <p className="text-slate-500 text-sm">
-            Last updated: {new Date().toLocaleDateString('en-AU', { year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
-          <div className="mt-4 p-4 glass rounded-xl border border-gold-400/15 text-sm text-gold-300">
-            ⚠️ This is placeholder legal content for development purposes only. This policy should be reviewed and replaced by a qualified legal professional before public launch.
-          </div>
-        </div>
+const NOTICE =
+  'This is placeholder legal content for development purposes only. This policy should be reviewed and replaced by a qualified legal professional before public launch.';
 
-        <div className="space-y-10">
-          {sections.map((s, i) => (
-            <div key={s.title}>
-              <h2 className="font-serif text-xl font-bold text-white mb-3">
-                {i + 1}. {s.title}
-              </h2>
-              <p className="text-slate-400 leading-relaxed">{s.body}</p>
-              <div className="section-divider mt-10" />
-            </div>
-          ))}
-        </div>
-      </AnimatedSection>
-    </div>
-  );
+export default function PrivacyPage() {
+  return <LegalPage title="Privacy Policy" notice={NOTICE} sections={sections} />;
 }

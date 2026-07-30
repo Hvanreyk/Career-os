@@ -1,17 +1,27 @@
 import type { Metadata } from 'next';
-import { Inter, Playfair_Display } from 'next/font/google';
+import { Archivo, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { SiteChrome } from '@/components/layout/SiteChrome';
 
-const inter = Inter({
-  variable: '--font-inter',
+/**
+ * Archivo carries headings and body; JetBrains Mono carries labels, IDs and
+ * figures. Both are loaded once here so the landing page and the application
+ * share exactly one typographic system.
+ *
+ * --di-display / --di-mono are the names the landing page already compiles
+ * against. They are aliased rather than renamed so that page is untouched.
+ */
+const archivo = Archivo({
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-archivo',
   display: 'swap',
 });
 
-const playfair = Playfair_Display({
-  variable: '--font-playfair',
+const jetbrains = JetBrains_Mono({
   subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-jetbrains',
   display: 'swap',
 });
 
@@ -40,8 +50,23 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable} h-full`}>
-      <body className="min-h-full flex flex-col bg-navy-950 text-slate-200 antialiased">
+    <html
+      lang="en"
+      className={`${archivo.variable} ${jetbrains.variable} h-full`}
+      style={
+        {
+          '--di-display': `var(--font-archivo)`,
+          '--di-mono': `var(--font-jetbrains)`,
+        } as React.CSSProperties
+      }
+    >
+      <body className="min-h-full flex flex-col bg-ink text-bone antialiased">
+        <a
+          href="#main"
+          className="ml-btn ml-btn-primary sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:px-4 focus:py-2 focus:text-[13px]"
+        >
+          Skip to content
+        </a>
         <SiteChrome>{children}</SiteChrome>
       </body>
     </html>

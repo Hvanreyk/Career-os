@@ -1,9 +1,7 @@
 import Link from 'next/link';
-import { HeroImage } from '@/components/lab/HeroImage';
-import { ConceptSwitcher } from '@/components/lab/ConceptSwitcher';
-import { Wordmark } from '@/components/lab/Wordmark';
+import { HeroImage } from '@/components/home/HeroImage';
+import { Wordmark } from '@/components/ui/Wordmark';
 import { PlateMotion, Reveal, ScrollProgress } from './interactions';
-import type { Concept } from '@/lib/lab/concepts';
 import {
   brand,
   capabilities,
@@ -15,14 +13,21 @@ import {
   problem,
   sampleProfile,
   secondaryCtas,
-} from '@/lib/lab/content';
-import './dithered.css';
+} from '@/lib/home/content';
+import './landing.css';
+
+/** The approved hero plate. */
+const plate = {
+  id: 'v1',
+  name: 'Window',
+  slug: 'h1-window',
+  caption: 'PLATE 01 · 1-BIT · OBSERVED',
+  position: '72% 40%',
+  alt: 'One-bit dithered plate: a lone figure seen from behind at a tall window, looking out over a dense grid of city blocks far below at night.',
+} as const;
 
 /**
- * DITHERED INTELLIGENCE — the selected direction.
- *
- * One page, five hero plates. /v1–/v5 each render this with a different
- * `concept`, so the only remaining decision is which image ships.
+ * DITHERED INTELLIGENCE — the approved landing page.
  *
  * Depth: the page runs on three ground values (black → surface → raised) rather
  * than one flat black, alternating band by band. That, plus a full-height hero
@@ -72,7 +77,7 @@ function SectionHead({ n, title, kicker }: { n: string; title: string; kicker?: 
   );
 }
 
-export function DitheredHome({ concept }: { concept: Concept }) {
+export function Landing() {
   return (
     <div className="di min-h-screen overflow-x-hidden">
       {/* ── Terminal bar ─────────────────────────────────────────── */}
@@ -82,7 +87,7 @@ export function DitheredHome({ concept }: { concept: Concept }) {
           <div className="flex items-center gap-5">
             <Tag className="hidden sm:inline">SYS · CAREER MAP</Tag>
             <Tag>
-              PLATE {concept.id.toUpperCase()} · {concept.name.toUpperCase()}
+              PLATE {plate.id.toUpperCase()} · {plate.name.toUpperCase()}
             </Tag>
           </div>
         </div>
@@ -93,10 +98,10 @@ export function DitheredHome({ concept }: { concept: Concept }) {
       <section className="relative min-h-[calc(100svh-3.25rem)] overflow-hidden border-b border-[var(--di-rule)]">
         <PlateMotion>
           <HeroImage
-            slug={concept.slug}
-            alt={concept.alt}
+            slug={plate.slug}
+            alt={plate.alt}
             className="h-full w-full object-cover"
-            position={concept.position}
+            position={plate.position}
           />
         </PlateMotion>
 
@@ -142,7 +147,7 @@ export function DitheredHome({ concept }: { concept: Concept }) {
             className="-mx-5 flex flex-wrap items-center justify-between gap-4 border-t border-[var(--di-rule)] px-5 py-4 sm:-mx-8 sm:px-8"
             style={{ backgroundColor: 'rgba(10,10,11,0.9)' }}
           >
-            <Tag>{concept.caption}</Tag>
+            <Tag>{plate.caption}</Tag>
             <Tag className="hidden md:inline">ROUTE AU·IB — 01</Tag>
             <Tag>34°55′S 138°36′E</Tag>
           </div>
@@ -511,7 +516,7 @@ export function DitheredHome({ concept }: { concept: Concept }) {
       <footer className="border-t border-[var(--di-rule)] pb-24 pt-8">
         <div className="mx-auto mb-7 flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-5 sm:px-8">
           <Tag>
-            {brand.name} · PLATE {concept.id.toUpperCase()} · {concept.name.toUpperCase()}
+            {brand.name} · PLATE {plate.id.toUpperCase()} · {plate.name.toUpperCase()}
           </Tag>
           <Tag>DITHERED INTELLIGENCE</Tag>
         </div>
@@ -538,8 +543,6 @@ export function DitheredHome({ concept }: { concept: Concept }) {
         </div>
         <span className="sr-only">MappedLabs</span>
       </footer>
-
-      <ConceptSwitcher current={concept.id} />
     </div>
   );
 }

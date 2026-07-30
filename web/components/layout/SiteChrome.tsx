@@ -3,35 +3,42 @@
 import { usePathname } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { CursorGlow } from '@/components/background/CursorGlow';
-import { conceptIds } from '@/lib/lab/concepts';
 
 /**
- * Design-lab routes (/design-lab, /v1…/v5) are standalone: each concept commits
- * to its own visual world, so the site's Navbar/Footer/CursorGlow would fight it.
+ * The landing page and the onboarding flow carry their own chrome — the landing
+ * page has its terminal bar and marquee footer, and onboarding is a focused
+ * task that a full nav would only offer exits from. Everything else gets the
+ * standard application shell.
  *
- * usePathname resolves during SSR too (there are no rewrites in next.config), so
- * a direct URL hit renders the correct shell in the initial HTML — no flash of
- * chrome, and no hydration mismatch.
+ * usePathname resolves during SSR (there are no rewrites in next.config), so a
+ * direct URL hit renders the right shell in the initial HTML: no flash of
+ * chrome, no hydration mismatch.
  */
-const LAB_ROUTES = ['/design-lab', ...conceptIds.map((id) => `/${id}`)];
+const BARE_ROUTES = ['/', '/onboard', '/report/loading'];
 
-function isLabRoute(pathname: string): boolean {
-  return LAB_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
+function isBare(pathname: string): boolean {
+  return BARE_ROUTES.some((route) =>
+    route === '/' ? pathname === '/' : pathname === route || pathname.startsWith(`${route}/`),
+  );
 }
 
 export function SiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  if (isLabRoute(pathname)) {
-    return <main className="flex-1">{children}</main>;
+  if (isBare(pathname)) {
+    return (
+      <main id="main" className="flex-1">
+        {children}
+      </main>
+    );
   }
 
   return (
     <>
-      <CursorGlow />
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main id="main" className="flex-1">
+        {children}
+      </main>
       <Footer />
     </>
   );
