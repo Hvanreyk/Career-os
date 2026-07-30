@@ -3,8 +3,10 @@
 import { FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { BookOpen, HelpCircle, Loader2, Plus, Save } from 'lucide-react';
 import { submitAdminContent } from '@/lib/admin/client';
+import { Button } from '@/components/ui/Button';
+import { Field } from '@/components/ui/Field';
+import { StatusLabel } from '@/components/ui/Status';
 
 interface LessonSummary {
   id: string;
@@ -27,9 +29,6 @@ interface ModuleData {
   lessons: LessonSummary[];
   quizCount: number;
 }
-
-const inputClass =
-  'w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-gold-400/50';
 
 export function AdminModuleEditor({
   courseId,
@@ -104,58 +103,151 @@ export function AdminModuleEditor({
     }
   }
 
+  const publishing = module.status !== 'published' && form.status === 'published';
+
   return (
-    <div className="glass rounded-2xl border border-white/8 p-6 space-y-5">
-      <form onSubmit={(event) => void save(event)} className="space-y-4">
-        <div className="flex items-start justify-between gap-4">
+    <div className="ml-panel">
+      <form onSubmit={(event) => void save(event)}>
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-rule px-4 py-3 sm:px-5">
           <div>
-            <p className="text-xs text-gold-400 uppercase tracking-wider">{module.slug}</p>
-            <p className="text-xs text-slate-600 mt-1">
+            <p className="ml-label text-bone">{module.slug}</p>
+            <p className="ml-num mt-1 text-[12px] text-graphite">
               {module.editorial_source} source · revision {module.editorial_revision}
             </p>
           </div>
-          <button type="submit" disabled={busy} className="px-3 py-2 rounded-lg border border-white/10 text-slate-300 hover:text-white flex items-center gap-2 text-sm disabled:opacity-50">
-            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save
-          </button>
+          <Button type="submit" variant="secondary" disabled={busy} loading={busy}>
+            Save module
+          </Button>
         </div>
-        <input className={inputClass} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-        <textarea className={`${inputClass} min-h-20`} value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} placeholder="Module summary" />
-        <div className="grid sm:grid-cols-3 gap-3">
-          <select className={inputClass} value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as ModuleData['status'] })}>
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-          </select>
-          <input type="date" className={inputClass} value={form.last_reviewed_at ?? ''} onChange={(e) => setForm({ ...form, last_reviewed_at: e.target.value || null })} />
-          <input type="number" min={0} className={inputClass} value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} />
+
+        <div className="space-y-4 p-4 sm:p-5">
+          <Field label="Module title">
+            {(props) => (
+              <input
+                {...props}
+                className="ml-field"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+              />
+            )}
+          </Field>
+          <Field label="Summary">
+            {(props) => (
+              <textarea
+                {...props}
+                className="ml-field min-h-20"
+                value={form.summary}
+                onChange={(e) => setForm({ ...form, summary: e.target.value })}
+                placeholder="Module summary"
+              />
+            )}
+          </Field>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label="Status">
+              {(props) => (
+                <select
+                  {...props}
+                  className="ml-field"
+                  value={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value as ModuleData['status'] })}
+                >
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                </select>
+              )}
+            </Field>
+            <Field label="Last reviewed">
+              {(props) => (
+                <input
+                  {...props}
+                  type="date"
+                  className="ml-field ml-num [color-scheme:dark]"
+                  value={form.last_reviewed_at ?? ''}
+                  onChange={(e) => setForm({ ...form, last_reviewed_at: e.target.value || null })}
+                />
+              )}
+            </Field>
+            <Field label="Display order">
+              {(props) => (
+                <input
+                  {...props}
+                  type="number"
+                  min={0}
+                  className="ml-field ml-num"
+                  value={form.sort_order}
+                  onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })}
+                />
+              )}
+            </Field>
+          </div>
+          {publishing && (
+            <p className="border-l-2 border-warn bg-raised px-3 py-2.5 text-[14px] leading-snug text-bone">
+              <span className="ml-label text-warn">
+                <span aria-hidden="true">▲ </span>Warning
+              </span>
+              <span className="mt-1 block">
+                Saving will publish this module. Only published lessons under a published course
+                become public.
+              </span>
+            </p>
+          )}
         </div>
       </form>
 
-      <div className="border-t border-white/8 pt-5">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-gold-400" /> Lessons
-          </h3>
-          <Link href={`/admin/resources/${courseSlug}/modules/${module.id}/quiz`} className="text-xs text-slate-400 hover:text-gold-400 flex items-center gap-1.5">
-            <HelpCircle className="w-3.5 h-3.5" /> Quiz ({module.quizCount})
+      <div className="border-t border-rule p-4 sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-[13px] font-bold uppercase tracking-[0.06em] text-bone">Lessons</h3>
+          <Link
+            href={`/admin/resources/${courseSlug}/modules/${module.id}/quiz`}
+            className="ml-btn ml-btn-text min-h-[44px] text-[13px]"
+          >
+            Quiz ({module.quizCount})
           </Link>
         </div>
-        <div className="space-y-2 mb-4">
+
+        <div className="mt-1">
           {module.lessons.map((lesson) => (
-            <Link key={lesson.id} href={`/admin/resources/${courseSlug}/lessons/${lesson.id}`} className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg bg-white/[0.025] border border-white/6 hover:border-gold-400/25">
-              <span className="text-sm text-slate-300">{lesson.title}</span>
-              <span className={lesson.status === 'published' ? 'text-xs text-emerald-400' : 'text-xs text-amber-400'}>{lesson.status}</span>
+            <Link
+              key={lesson.id}
+              href={`/admin/resources/${courseSlug}/lessons/${lesson.id}`}
+              className="ml-row ml-row-hover flex min-h-[44px] items-center justify-between gap-3 py-2.5"
+            >
+              <span className="text-[15px] text-bone">{lesson.title}</span>
+              <StatusLabel tone={lesson.status === 'published' ? 'ok' : 'warn'}>
+                {lesson.status}
+              </StatusLabel>
             </Link>
           ))}
         </div>
-        <form onSubmit={(event) => void createLesson(event)} className="grid sm:grid-cols-[1fr_1fr_auto] gap-2">
-          <input className={inputClass} value={lessonTitle} onChange={(e) => setLessonTitle(e.target.value)} placeholder="New lesson title" />
-          <input className={inputClass} value={lessonSlug} onChange={(e) => setLessonSlug(e.target.value)} placeholder="lesson-slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" />
-          <button type="submit" disabled={busy || !lessonTitle || !lessonSlug} className="px-3 py-2 rounded-lg bg-gold-400 text-navy-950 font-semibold text-sm flex items-center gap-1.5 disabled:opacity-50">
-            <Plus className="w-4 h-4" /> Add
-          </button>
+
+        <form onSubmit={(event) => void createLesson(event)} className="mt-4 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+          <input
+            className="ml-field"
+            value={lessonTitle}
+            onChange={(e) => setLessonTitle(e.target.value)}
+            placeholder="New lesson title"
+            aria-label="New lesson title"
+          />
+          <input
+            className="ml-field ml-num"
+            value={lessonSlug}
+            onChange={(e) => setLessonSlug(e.target.value)}
+            placeholder="lesson-slug"
+            aria-label="New lesson slug"
+            pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+          />
+          <Button type="submit" variant="secondary" disabled={busy || !lessonTitle || !lessonSlug}>
+            <span aria-hidden="true">+</span> Add lesson
+          </Button>
         </form>
       </div>
-      {error && <p className="text-red-400 text-sm">{error}</p>}
+
+      {error && (
+        <p role="alert" className="border-t border-rule px-4 py-3 text-[14px] text-red sm:px-5">
+          <span aria-hidden="true">▲ </span>
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -188,17 +280,34 @@ export function NewModuleForm({ courseId }: { courseId: string }) {
   }
 
   return (
-    <form onSubmit={(event) => void create(event)} className="glass rounded-2xl border border-dashed border-white/12 p-5">
-      <h3 className="text-white font-semibold mb-3">Add module</h3>
-      <div className="grid sm:grid-cols-[1fr_1fr_auto] gap-2">
-        <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Module title" />
-        <input className={inputClass} value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="module-slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" />
-        <button type="submit" disabled={busy || !title || !slug} className="px-4 py-2 rounded-lg bg-gold-400 text-navy-950 font-semibold text-sm flex items-center gap-2 disabled:opacity-50">
-          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Add
-        </button>
+    <form onSubmit={(event) => void create(event)} className="border border-dashed border-rule-bright bg-surface p-4 sm:p-5">
+      <h3 className="text-[13px] font-bold uppercase tracking-[0.06em] text-bone">Add module</h3>
+      <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+        <input
+          className="ml-field"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Module title"
+          aria-label="Module title"
+        />
+        <input
+          className="ml-field ml-num"
+          value={slug}
+          onChange={(e) => setSlug(e.target.value)}
+          placeholder="module-slug"
+          aria-label="Module slug"
+          pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+        />
+        <Button type="submit" variant="secondary" disabled={busy || !title || !slug} loading={busy}>
+          <span aria-hidden="true">+</span> Add module
+        </Button>
       </div>
-      {error && <p className="text-red-400 text-sm mt-3">{error}</p>}
+      {error && (
+        <p role="alert" className="mt-3 text-[14px] text-red">
+          <span aria-hidden="true">▲ </span>
+          {error}
+        </p>
+      )}
     </form>
   );
 }
-

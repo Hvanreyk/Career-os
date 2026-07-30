@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { X } from 'lucide-react';
 
 interface Props {
   title: string;
@@ -50,13 +49,23 @@ export function Dialog({ title, subtitle, wide, onClose, children }: Props) {
       ref={ref}
       aria-label={title}
       onClose={onClose}
-      className={`glass mt-16 max-h-[85vh] overflow-y-auto rounded-2xl border border-white/10 bg-navy-950 p-6 w-full ${wide ? 'max-w-3xl' : 'max-w-xl'} backdrop:bg-navy-950/80 backdrop:backdrop-blur-sm`}
+      className={`mt-16 max-h-[85vh] w-full overflow-y-auto border border-rule bg-surface p-5 text-bone sm:p-6 ${wide ? 'max-w-3xl' : 'max-w-xl'} backdrop:bg-ink/85`}
     >
-      <div className="flex items-start justify-between gap-4 mb-1">
-        <h2 className="text-white font-serif text-xl font-bold">{title}</h2>
-        <button onClick={onClose} aria-label="Close" className="text-slate-500 hover:text-white"><X className="w-5 h-5" /></button>
+      <div className="mb-1 flex items-start justify-between gap-4">
+        <h2 className="text-[20px] font-bold uppercase leading-tight tracking-[-0.02em] text-bone">
+          {title}
+        </h2>
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="-mr-2 -mt-2 flex h-11 w-11 shrink-0 items-center justify-center text-graphite hover:text-bone"
+        >
+          <span aria-hidden="true">✕</span>
+        </button>
       </div>
-      {subtitle && <p className="text-slate-400 text-sm mb-4">{subtitle}</p>}
+      {subtitle && (
+        <p className="mb-5 max-w-[62ch] text-[15px] leading-[1.6] text-graphite">{subtitle}</p>
+      )}
       {children}
     </dialog>
   );

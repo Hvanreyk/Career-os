@@ -3,11 +3,14 @@
 import { useEffect, useState } from 'react';
 import { ResumeDocumentSchema, type AdditionalDetails, type ResumeDocument } from '@trajectoryos/core/resume/document';
 import type { ComposeProfileInput } from '@trajectoryos/core/llm/resume-compose';
-import { AlertTriangle, Loader2, Sparkles } from 'lucide-react';
 import { api } from '../api';
 import { useResumeAiJob } from '../useResumeAiJob';
 import { Dialog } from './Dialog';
 import { DocumentProposal } from './ProposalReview';
+import { Notice } from './Notice';
+import { Button } from '@/components/ui/Button';
+import { Field } from '@/components/ui/Field';
+import { StateBlock } from '@/components/ui/StateBlock';
 import type { WorkspaceRows } from '../ResumeBuilder';
 
 interface Props {
@@ -103,8 +106,6 @@ export function AutoCreateDialog({ hasExistingContent, onClose, onApplied }: Pro
   }
 
   const working = state.phase === 'creating' || state.phase === 'processing';
-  const input = 'w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm';
-  const label = 'block text-xs text-slate-500';
 
   return (
     <Dialog
@@ -124,89 +125,177 @@ export function AutoCreateDialog({ hasExistingContent, onClose, onApplied }: Pro
         />
       ) : state.phase === 'completed' ? (
         <div className="space-y-4">
-          <div className="rounded-xl border border-red-400/20 bg-red-400/10 p-4 text-red-300 text-sm flex gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-            The AI returned a resume we couldn&apos;t validate. Nothing was applied — your details above are still here, so you can try again.
-          </div>
-          <button onClick={() => reset()} className="px-4 py-2 rounded-lg border border-white/10 text-slate-300 text-sm">Try again</button>
+          <Notice tone="error" title="Could not validate">
+            The AI returned a resume we couldn&apos;t validate. Nothing was applied — your details
+            above are still here, so you can try again.
+          </Notice>
+          <Button variant="secondary" onClick={() => reset()}>
+            Try again
+          </Button>
         </div>
       ) : loadError ? (
-        <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-4 text-amber-200 text-sm flex gap-2">
-          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{loadError}
-        </div>
+        <Notice tone="warn" alert>{loadError}</Notice>
       ) : !profile ? (
-        <div className="p-8 text-center text-slate-500 text-sm flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Loading your profile…</div>
+        <StateBlock kind="loading" title="Loading your profile…" />
       ) : (
-        <div className="space-y-5 max-h-[65vh] overflow-y-auto pr-1">
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-            <p className="text-xs uppercase tracking-widest text-gold-400 mb-2">From your onboarding profile</p>
-            <p className="text-slate-300 text-sm">{profile.degree} — {profile.university} (Year {profile.current_year}, graduating {profile.expected_graduation_year})</p>
-            {profile.majors.length > 0 && <p className="text-slate-400 text-xs mt-1">Majors: {profile.majors.join(', ')}</p>}
-            {profile.wam_label && <p className="text-slate-400 text-xs mt-1">{profile.wam_label}</p>}
-            {profile.achievement_labels.length > 0 && <p className="text-slate-400 text-xs mt-1">Achievements: {profile.achievement_labels.join(' · ')}</p>}
+        <div className="max-h-[65vh] space-y-6 overflow-y-auto pr-1">
+          <div className="ml-panel-raised p-4">
+            <p className="ml-label">From your onboarding profile</p>
+            <p className="mt-2 text-[15px] leading-snug text-bone">
+              {profile.degree} — {profile.university} (Year {profile.current_year}, graduating{' '}
+              {profile.expected_graduation_year})
+            </p>
+            {profile.majors.length > 0 && (
+              <p className="mt-1.5 text-[13px] text-graphite">Majors: {profile.majors.join(', ')}</p>
+            )}
+            {profile.wam_label && (
+              <p className="mt-1.5 text-[13px] text-graphite">{profile.wam_label}</p>
+            )}
+            {profile.achievement_labels.length > 0 && (
+              <p className="mt-1.5 text-[13px] text-graphite">
+                Achievements: {profile.achievement_labels.join(' · ')}
+              </p>
+            )}
           </div>
 
-          <div>
-            <p className="text-white text-sm font-semibold mb-2">Contact details</p>
-            <div className="grid sm:grid-cols-2 gap-3">
+          <section>
+            <h3 className="border-b border-rule pb-2 text-[15px] font-bold uppercase tracking-[-0.01em] text-bone">
+              Contact details
+            </h3>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {([['full_name', 'Full name', 120], ['email', 'Email', 254], ['phone', 'Phone', 40], ['linkedin_url', 'LinkedIn URL', 200], ['location', 'Location (e.g. Sydney, NSW)', 120]] as const).map(([key, placeholder, max]) => (
-                <label key={key} className={label}>{placeholder}
-                  <input value={contact[key]} maxLength={max} onChange={(e) => setContact((current) => ({ ...current, [key]: e.target.value }))} className={`mt-1 ${input}`} />
-                </label>
+                <Field key={key} label={placeholder}>
+                  {(props) => (
+                    <input
+                      {...props}
+                      value={contact[key]}
+                      maxLength={max}
+                      onChange={(e) => setContact((current) => ({ ...current, [key]: e.target.value }))}
+                      className="ml-field"
+                    />
+                  )}
+                </Field>
               ))}
             </div>
-          </div>
+          </section>
 
           {experiences.length > 0 && (
-            <div>
-              <p className="text-white text-sm font-semibold mb-2">Your experiences — what did you actually do?</p>
-              <div className="space-y-3">
+            <section>
+              <h3 className="border-b border-rule pb-2 text-[15px] font-bold uppercase tracking-[-0.01em] text-bone">
+                Your experiences — what did you actually do?
+              </h3>
+              <div className="mt-4 space-y-4">
                 {experiences.map((experience, index) => (
-                  <div key={`${experience.firm}-${index}`} className="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-2">
-                    <p className="text-gold-300 text-sm font-medium">{experience.firm}</p>
-                    <div className="grid sm:grid-cols-2 gap-2">
-                      <input value={experience.role_title} maxLength={120} placeholder="Role title (e.g. Summer Analyst)" onChange={(e) => setExperiences((rows) => rows.map((row, i) => i === index ? { ...row, role_title: e.target.value } : row))} className={input} />
-                      <input value={experience.date_range} maxLength={60} placeholder="Dates (e.g. Nov 2024 – Feb 2025)" onChange={(e) => setExperiences((rows) => rows.map((row, i) => i === index ? { ...row, date_range: e.target.value } : row))} className={input} />
+                  <div key={`${experience.firm}-${index}`} className="ml-panel-raised space-y-3 p-4">
+                    <p className="text-[15px] font-bold text-bone">{experience.firm}</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <input
+                        value={experience.role_title}
+                        maxLength={120}
+                        placeholder="Role title (e.g. Summer Analyst)"
+                        aria-label={`Role title at ${experience.firm}`}
+                        onChange={(e) => setExperiences((rows) => rows.map((row, i) => i === index ? { ...row, role_title: e.target.value } : row))}
+                        className="ml-field"
+                      />
+                      <input
+                        value={experience.date_range}
+                        maxLength={60}
+                        placeholder="Dates (e.g. Nov 2024 – Feb 2025)"
+                        aria-label={`Dates at ${experience.firm}`}
+                        onChange={(e) => setExperiences((rows) => rows.map((row, i) => i === index ? { ...row, date_range: e.target.value } : row))}
+                        className="ml-field"
+                      />
                     </div>
-                    <textarea value={experience.responsibilities} rows={3} maxLength={2500} placeholder={'In plain language, one per line:\nBuilt a discounted cash flow model for a retail client\nJoined client calls and took notes'} onChange={(e) => setExperiences((rows) => rows.map((row, i) => i === index ? { ...row, responsibilities: e.target.value } : row))} className={`${input} resize-y`} />
+                    <textarea
+                      value={experience.responsibilities}
+                      rows={3}
+                      maxLength={2500}
+                      placeholder={'In plain language, one per line:\nBuilt a discounted cash flow model for a retail client\nJoined client calls and took notes'}
+                      aria-label={`What you did at ${experience.firm}`}
+                      onChange={(e) => setExperiences((rows) => rows.map((row, i) => i === index ? { ...row, responsibilities: e.target.value } : row))}
+                      className="ml-field resize-y"
+                    />
                   </div>
                 ))}
               </div>
+            </section>
+          )}
+
+          <section className="space-y-4">
+            <h3 className="border-b border-rule pb-2 text-[15px] font-bold uppercase tracking-[-0.01em] text-bone">
+              Everything else
+            </h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Skills" hint="Comma-separated.">
+                {(props) => (
+                  <input
+                    {...props}
+                    value={skills}
+                    placeholder="Excel, PowerPoint, Python, financial modelling"
+                    onChange={(e) => setSkills(e.target.value)}
+                    className="ml-field"
+                  />
+                )}
+              </Field>
+              <Field label="Interests" hint="Comma-separated.">
+                {(props) => (
+                  <input
+                    {...props}
+                    value={interests}
+                    placeholder="AFL, chess, surf lifesaving"
+                    onChange={(e) => setInterests(e.target.value)}
+                    className="ml-field"
+                  />
+                )}
+              </Field>
             </div>
-          )}
 
-          <div className="grid sm:grid-cols-2 gap-3">
-            <label className={label}>Skills (comma-separated)
-              <input value={skills} placeholder="Excel, PowerPoint, Python, financial modelling" onChange={(e) => setSkills(e.target.value)} className={`mt-1 ${input}`} />
-            </label>
-            <label className={label}>Interests (comma-separated)
-              <input value={interests} placeholder="AFL, chess, surf lifesaving" onChange={(e) => setInterests(e.target.value)} className={`mt-1 ${input}`} />
-            </label>
+            <Field label="Education extras" hint="Scholarships, relevant coursework, exchange.">
+              {(props) => (
+                <textarea
+                  {...props}
+                  value={educationExtras}
+                  rows={2}
+                  maxLength={1000}
+                  onChange={(e) => setEducationExtras(e.target.value)}
+                  className="ml-field resize-y"
+                />
+              )}
+            </Field>
+
+            <Field
+              label="Anything else worth including?"
+              hint="Part-time jobs, volunteering, side projects, competitions…"
+            >
+              {(props) => (
+                <textarea
+                  {...props}
+                  value={anythingElse}
+                  rows={3}
+                  maxLength={2000}
+                  onChange={(e) => setAnythingElse(e.target.value)}
+                  className="ml-field resize-y"
+                />
+              )}
+            </Field>
+          </section>
+
+          {state.phase === 'error' && <Notice tone="error" alert>{state.error}</Notice>}
+          {applyError && <Notice tone="error" alert>{applyError}</Notice>}
+
+          <div className="border-t border-rule pt-5">
+            <Button
+              onClick={() => void run(() => api<{ jobId: string }>('/compose', 'POST', { details: buildDetails() }))}
+              loading={working}
+              className="w-full"
+            >
+              {working ? 'Drafting your resume…' : 'Generate my draft resume'}
+            </Button>
+            <p className="mt-3 text-[13px] leading-snug text-graphite">
+              AI only uses what you and onboarding provided — it never invents experience, and
+              flags missing specifics as placeholders.
+            </p>
           </div>
-
-          <label className={label}>Education extras — scholarships, relevant coursework, exchange
-            <textarea value={educationExtras} rows={2} maxLength={1000} onChange={(e) => setEducationExtras(e.target.value)} className={`mt-1 ${input} resize-y`} />
-          </label>
-
-          <label className={label}>Anything else worth including? Part-time jobs, volunteering, side projects, competitions…
-            <textarea value={anythingElse} rows={3} maxLength={2000} onChange={(e) => setAnythingElse(e.target.value)} className={`mt-1 ${input} resize-y`} />
-          </label>
-
-          {state.phase === 'error' && (
-            <div role="alert" className="rounded-xl border border-red-400/20 bg-red-400/10 p-3 text-red-300 text-sm flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0" />{state.error}</div>
-          )}
-          {applyError && (
-            <div role="alert" className="rounded-xl border border-red-400/20 bg-red-400/10 p-3 text-red-300 text-sm flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0" />{applyError}</div>
-          )}
-
-          <button
-            onClick={() => void run(() => api<{ jobId: string }>('/compose', 'POST', { details: buildDetails() }))}
-            disabled={working}
-            className="w-full px-5 py-3 bg-gold-400 text-navy-950 font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {working ? <><Loader2 className="w-4 h-4 animate-spin" />Drafting your resume…</> : <><Sparkles className="w-4 h-4" />Generate my draft resume</>}
-          </button>
-          <p className="text-xs text-slate-500 text-center">AI only uses what you and onboarding provided — it never invents experience, and flags missing specifics as placeholders.</p>
         </div>
       )}
     </Dialog>

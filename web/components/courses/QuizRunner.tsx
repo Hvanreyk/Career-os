@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { ArrowRight, Check, Loader2, RotateCcw, X } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Meter } from '@/components/ui/Status';
 
 interface Question {
   id: string;
@@ -41,6 +41,7 @@ export function QuizRunner({ moduleId, questions, courseHref }: Props) {
     graded?.results.find((r) => r.questionId === questionId) ?? null;
 
   const allAnswered = questions.every((q) => answers[q.id]);
+  const answeredCount = questions.filter((q) => answers[q.id]).length;
 
   async function submit() {
     setSubmitting(true);
@@ -72,110 +73,151 @@ export function QuizRunner({ moduleId, questions, courseHref }: Props) {
     setError(null);
   }
 
+  const passed = graded ? graded.score / graded.total >= 0.7 : false;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* ── Result ─────────────────────────────────────────────── */}
       {graded && (
-        <div
-          className={`glass rounded-2xl border p-6 text-center ${
-            graded.score / graded.total >= 0.7 ? 'border-emerald-400/30' : 'border-gold-400/30'
-          }`}
-        >
-          <div className="font-serif text-4xl font-bold text-white mb-1">
-            {graded.score}/{graded.total}
+        <section className="ml-panel" role="status">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule px-4 py-3 sm:px-5">
+            <span className="ml-label">Result</span>
+            <span className={`ml-label ${passed ? 'text-ok' : 'text-red'}`}>
+              {graded.score === graded.total
+                ? 'Full marks'
+                : passed
+                  ? 'Pass'
+                  : 'Below threshold'}
+            </span>
           </div>
-          <p className="text-slate-400 text-sm">
-            {graded.score === graded.total
-              ? 'Perfect — this module is locked in.'
-              : graded.score / graded.total >= 0.7
-                ? 'Solid. Review the explanations below, then keep moving.'
-                : 'Worth a revisit — reread the lessons flagged below before moving on.'}
-          </p>
-          <div className="flex justify-center gap-3 mt-5">
-            <button
-              type="button"
-              onClick={retry}
-              className="px-4 py-2.5 rounded-xl border border-white/10 text-sm text-slate-300 hover:text-white hover:border-gold-400/40 transition-colors flex items-center gap-2"
-            >
-              <RotateCcw className="w-4 h-4" /> Retry
-            </button>
-            <Link
-              href={courseHref}
-              className="px-4 py-2.5 bg-gold-400 text-navy-950 font-semibold text-sm rounded-xl hover:bg-gold-300 transition-all flex items-center gap-2"
-            >
-              Back to course <ArrowRight className="w-4 h-4" />
-            </Link>
+
+          <div className="px-4 py-6 sm:px-5">
+            <div className="flex items-baseline gap-2">
+              <span className="ml-num text-[44px] font-bold leading-none tracking-[-0.04em] text-bone">
+                {graded.score}
+              </span>
+              <span className="ml-num text-[18px] text-graphite">/ {graded.total}</span>
+            </div>
+            <Meter
+              value={graded.score}
+              max={graded.total}
+              accent={!passed}
+              className="mt-4 max-w-[24rem]"
+              label={`Quiz score: ${graded.score} of ${graded.total}`}
+            />
+            <p className="mt-4 max-w-[62ch] text-[16px] leading-[1.6] text-graphite">
+              {graded.score === graded.total
+                ? 'Perfect — this module is locked in.'
+                : passed
+                  ? 'Solid. Review the explanations below, then keep moving.'
+                  : 'Worth a revisit — reread the lessons flagged below before moving on.'}
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Button href={courseHref}>
+                Back to course <span aria-hidden="true">▸</span>
+              </Button>
+              <Button onClick={retry} variant="secondary">
+                Retry quiz
+              </Button>
+            </div>
           </div>
-        </div>
+        </section>
       )}
 
-      {questions.map((q, i) => {
-        const result = resultFor(q.id);
-        return (
-          <div key={q.id} className="glass rounded-2xl border border-white/8 p-6">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2">
-              Question {i + 1} of {questions.length}
-            </p>
-            <p className="text-white font-medium mb-4">{q.prompt}</p>
-            <div className="space-y-2">
-              {q.options.map((opt) => {
-                const chosen = answers[q.id] === opt.id;
-                let ring = chosen
-                  ? 'border-gold-400/60 bg-gold-400/5'
-                  : 'border-white/10 hover:border-gold-400/40';
-                if (result) {
-                  if (opt.id === result.correctId) ring = 'border-emerald-400/60 bg-emerald-400/5';
-                  else if (chosen) ring = 'border-red-400/60 bg-red-400/5';
-                  else ring = 'border-white/10 opacity-60';
-                }
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    disabled={Boolean(result)}
-                    onClick={() => setAnswers((a) => ({ ...a, [q.id]: opt.id }))}
-                    className={`w-full text-left px-4 py-3 rounded-lg border text-sm text-slate-300 transition-colors flex items-start gap-3 ${ring} ${
-                      result ? 'cursor-default' : 'cursor-pointer'
+      {/* ── Questions ──────────────────────────────────────────── */}
+      <ol className="space-y-6">
+        {questions.map((q, i) => {
+          const result = resultFor(q.id);
+          return (
+            <li key={q.id} className="ml-panel">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule px-4 py-3 sm:px-5">
+                <span className="ml-label">
+                  Q{String(i + 1).padStart(2, '0')} / {String(questions.length).padStart(2, '0')}
+                </span>
+                {result && (
+                  <span className={`ml-label ${result.correct ? 'text-ok' : 'text-red'}`}>
+                    {result.correct ? 'Correct' : 'Incorrect'}
+                  </span>
+                )}
+              </div>
+
+              <div className="px-4 py-5 sm:px-5">
+                <p className="max-w-[64ch] text-[16px] font-semibold leading-[1.55] text-bone">
+                  {q.prompt}
+                </p>
+
+                <div className="mt-4 border border-rule">
+                  {q.options.map((opt) => {
+                    const chosen = answers[q.id] === opt.id;
+                    let state = chosen
+                      ? 'border-l-red bg-raised'
+                      : 'border-l-transparent';
+                    if (result) {
+                      if (opt.id === result.correctId) state = 'border-l-ok bg-raised';
+                      else if (chosen) state = 'border-l-red bg-raised';
+                      else state = 'border-l-transparent opacity-60';
+                    }
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        disabled={Boolean(result)}
+                        aria-pressed={chosen}
+                        onClick={() => setAnswers((a) => ({ ...a, [q.id]: opt.id }))}
+                        className={`ml-row ${result ? '' : 'ml-row-hover'} flex w-full min-h-[52px] items-start gap-3 border-l-2 px-4 py-3 text-left text-[15px] leading-[1.5] text-bone ${state} ${
+                          result ? 'cursor-default' : 'cursor-pointer'
+                        }`}
+                      >
+                        <span className="min-w-0 flex-1">{opt.text}</span>
+                        {/* Words, not just tint — required for the greyscale case. */}
+                        {!result && chosen && <span className="ml-label shrink-0">Chosen</span>}
+                        {result && opt.id === result.correctId && (
+                          <span className="ml-label shrink-0 text-ok">Correct</span>
+                        )}
+                        {result && chosen && opt.id !== result.correctId && (
+                          <span className="ml-label shrink-0 text-red">Your answer</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {result && result.explanation && (
+                  <div
+                    className={`mt-4 max-w-[66ch] border-l-2 pl-4 text-[15px] leading-[1.65] text-graphite ${
+                      result.correct ? 'border-ok' : 'border-red'
                     }`}
                   >
-                    {result && opt.id === result.correctId && (
-                      <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    )}
-                    {result && chosen && opt.id !== result.correctId && (
-                      <X className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                    )}
-                    <span>{opt.text}</span>
-                  </button>
-                );
-              })}
-            </div>
-            {result && result.explanation && (
-              <div
-                className={`mt-4 text-sm rounded-lg p-4 ${
-                  result.correct ? 'bg-emerald-400/10 text-emerald-200' : 'bg-red-400/10 text-red-200'
-                }`}
-              >
-                {result.explanation}
+                    <span className="ml-label mr-2">Why</span>
+                    {result.explanation}
+                  </div>
+                )}
               </div>
+            </li>
+          );
+        })}
+      </ol>
+
+      {/* ── Submit ─────────────────────────────────────────────── */}
+      {!graded && (
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-rule pt-6">
+          <div>
+            <span className="ml-label">
+              <span className="ml-num">{answeredCount}</span> of{' '}
+              <span className="ml-num">{questions.length}</span> answered
+            </span>
+            {!allAnswered && (
+              <p className="mt-1 text-[14px] text-graphite">Answer every question to submit.</p>
+            )}
+            {error && (
+              <p className="mt-1 text-[14px] text-red" role="alert">
+                ▲ {error}
+              </p>
             )}
           </div>
-        );
-      })}
-
-      {!graded && (
-        <div className="flex flex-col items-end gap-2">
-          <button
-            type="button"
-            onClick={submit}
-            disabled={!allAnswered || submitting}
-            className="px-6 py-3 bg-gold-400 text-navy-950 font-semibold text-sm rounded-xl hover:bg-gold-300 transition-all shadow-[0_0_20px_rgba(212,175,55,0.25)] flex items-center gap-2 disabled:opacity-50"
-          >
-            {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+          <Button onClick={submit} disabled={!allAnswered} loading={submitting} size="lg">
             Submit answers
-          </button>
-          {!allAnswered && (
-            <p className="text-xs text-slate-600">Answer every question to submit.</p>
-          )}
-          {error && <p className="text-red-400 text-xs">{error}</p>}
+          </Button>
         </div>
       )}
     </div>

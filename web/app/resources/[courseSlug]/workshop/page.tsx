@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { ChevronLeft } from 'lucide-react';
 import type { ResumeWorkspaceData } from '@trajectoryos/core/resume/types';
 import { TrackProductEvent } from '@/components/analytics/TrackProductEvent';
 import { ResumeBuilder } from '@/components/resume/ResumeBuilder';
+import { PageHeader, PageShell } from '@/components/ui/PageHeader';
 import { requireUser } from '@/lib/auth';
 import { resourceHasCapability } from '@/lib/resources/catalog';
 import { createClient } from '@/lib/supabase/server';
@@ -59,19 +59,25 @@ export default async function ResumeWorkshopPage({ params }: { params: Promise<{
   }
 
   return (
-    <div className="min-h-screen bg-navy-950 px-6 pt-28 pb-24">
+    <div className="min-h-screen bg-ink pt-16">
       <TrackProductEvent eventName="resume_workshop_opened" resourceSlug={courseSlug} />
-      <div className="max-w-7xl mx-auto">
-        <Link href={`/resources/${courseSlug}`} className="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-300 text-sm mb-6">
-          <ChevronLeft className="w-4 h-4" /> {course.title}
+      <PageShell width="wide">
+        <Link
+          href={`/resources/${courseSlug}`}
+          className="ml-label inline-flex min-h-[44px] items-center gap-2 hover:text-bone"
+        >
+          <span aria-hidden="true">◂</span> {course.title}
         </Link>
-        <div className="mb-8">
-          <p className="text-xs font-semibold text-gold-400 uppercase tracking-widest mb-2">Private workspace</p>
-          <h1 className="font-serif text-3xl md:text-4xl font-bold text-white mb-2">Resume Builder</h1>
-          <p className="text-slate-400 text-sm leading-relaxed max-w-3xl">Build one structured master resume — auto-create it from your profile, import an existing PDF or Word resume, refine it with AI critique and tailoring, and export a polished document.</p>
+        <PageHeader
+          label="Private workspace"
+          title="Resume Builder"
+          lede="Build one structured master resume — auto-create it from your profile, import an existing PDF or Word resume, refine it with AI critique and tailoring, and export a polished document."
+          className="mt-2"
+        />
+        <div className="mt-8">
+          <ResumeBuilder initialData={{ resume: resume as ResumeWorkspaceData['resume'], sections, entries, bullets, revisions }} />
         </div>
-        <ResumeBuilder initialData={{ resume: resume as ResumeWorkspaceData['resume'], sections, entries, bullets, revisions }} />
-      </div>
+      </PageShell>
     </div>
   );
 }

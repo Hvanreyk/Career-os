@@ -7,9 +7,9 @@ import type {
   ResumeSectionKind,
   ResumeSectionRow,
 } from '@trajectoryos/core/resume/types';
-import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import { BulletRow } from './BulletRow';
 import { EntryCard } from './EntryCard';
+import { StateBlock } from '@/components/ui/StateBlock';
 
 export const SECTION_KINDS: { value: ResumeSectionKind; label: string }[] = [
   { value: 'education', label: 'Education' },
@@ -38,6 +38,9 @@ interface Props {
   onMoveBullet: (bullet: ResumeBulletRow, siblings: ResumeBulletRow[], delta: number) => void;
 }
 
+const iconBtn =
+  'flex h-11 w-11 shrink-0 items-center justify-center text-graphite hover:text-bone disabled:opacity-25';
+
 /**
  * Renders every resume section with its entries and bullets, with inline
  * editing, reordering, and add forms.
@@ -56,9 +59,10 @@ export function SectionList({
   return (
     <>
       {orderedSections.length === 0 && (
-        <div className="glass rounded-2xl border border-white/8 p-8 text-center text-slate-500 text-sm">
-          Add your first resume section, or use Auto-create / Import to start from your existing details.
-        </div>
+        <StateBlock kind="empty" title="No sections yet">
+          Add your first resume section, or use Auto-create / Import to start from your existing
+          details.
+        </StateBlock>
       )}
       {orderedSections.map((section, sectionIndex) => {
         const sectionEntries = entries
@@ -68,18 +72,35 @@ export function SectionList({
           .filter((bullet) => bullet.section_id === section.id && bullet.entry_id === null)
           .sort((a, b) => a.sort_order - b.sort_order);
         return (
-          <section key={section.id} className="glass rounded-2xl border border-white/8 p-5">
-            <div className="flex gap-2 items-center mb-4">
-              <select value={section.kind} onChange={(e) => onUpdateSection(section.id, { kind: e.target.value as ResumeSectionKind })} aria-label="Section type" className="max-w-32 px-2 py-1 rounded-lg bg-navy-950 border border-white/10 text-slate-400 text-xs">
+          <section key={section.id} className="ml-panel">
+            <div className="flex flex-wrap items-center gap-1 border-b border-rule px-4 py-3">
+              <select
+                value={section.kind}
+                onChange={(e) => onUpdateSection(section.id, { kind: e.target.value as ResumeSectionKind })}
+                aria-label="Section type"
+                className="ml-field min-h-[44px] w-36 py-2 text-[14px]"
+              >
                 {SECTION_KINDS.map((kind) => <option key={kind.value} value={kind.value}>{kind.label}</option>)}
               </select>
-              <input defaultValue={section.heading} onBlur={(e) => e.target.value.trim() && e.target.value !== section.heading && onUpdateSection(section.id, { heading: e.target.value })} maxLength={80} className="flex-1 bg-transparent text-white font-semibold border-b border-transparent focus:border-gold-400/40 outline-none" aria-label="Section heading" />
-              <button onClick={() => onMoveSection(section, -1)} disabled={sectionIndex === 0} aria-label="Move section up" className="text-slate-500 disabled:opacity-20"><ArrowUp className="w-4 h-4" /></button>
-              <button onClick={() => onMoveSection(section, 1)} disabled={sectionIndex === orderedSections.length - 1} aria-label="Move section down" className="text-slate-500 disabled:opacity-20"><ArrowDown className="w-4 h-4" /></button>
-              <button onClick={() => onDeleteSection(section.id)} aria-label={`Delete ${section.heading}`} className="text-slate-600 hover:text-red-400"><Trash2 className="w-4 h-4" /></button>
+              <input
+                defaultValue={section.heading}
+                onBlur={(e) => e.target.value.trim() && e.target.value !== section.heading && onUpdateSection(section.id, { heading: e.target.value })}
+                maxLength={80}
+                className="ml-field min-h-[44px] flex-1 border-transparent bg-transparent text-[16px] font-bold uppercase tracking-[-0.01em]"
+                aria-label="Section heading"
+              />
+              <button onClick={() => onMoveSection(section, -1)} disabled={sectionIndex === 0} aria-label="Move section up" className={iconBtn}>
+                <span aria-hidden="true">▲</span>
+              </button>
+              <button onClick={() => onMoveSection(section, 1)} disabled={sectionIndex === orderedSections.length - 1} aria-label="Move section down" className={iconBtn}>
+                <span aria-hidden="true">▼</span>
+              </button>
+              <button onClick={() => onDeleteSection(section.id)} aria-label={`Delete ${section.heading}`} className={`${iconBtn} hover:text-red`}>
+                <span aria-hidden="true">✕</span>
+              </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 p-4">
               {sectionEntries.map((entry, entryIndex) => (
                 <EntryCard
                   key={entry.id}
@@ -103,71 +124,75 @@ export function SectionList({
                   )}
                 />
               ))}
-            </div>
 
-            <div className="mt-3 flex gap-2">
-              <input
-                value={newEntryOrg[section.id] ?? ''}
-                onChange={(e) => setNewEntryOrg((values) => ({ ...values, [section.id]: e.target.value }))}
-                maxLength={120}
-                placeholder="Add an entry (organisation, e.g. Macquarie Group)"
-                className="flex-1 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm"
-              />
-              <button
-                onClick={() => {
-                  const org = newEntryOrg[section.id]?.trim();
-                  if (!org) return;
-                  void (async () => {
-                    if (await onAddEntry(section.id, org)) {
-                      setNewEntryOrg((values) => ({ ...values, [section.id]: '' }));
-                    }
-                  })();
-                }}
-                disabled={!newEntryOrg[section.id]?.trim() || busy}
-                aria-label={`Add entry to ${section.heading}`}
-                className="px-4 py-2 rounded-lg border border-gold-400/30 text-gold-300 text-sm flex gap-1 items-center"
-              ><Plus className="w-4 h-4" />Entry</button>
-            </div>
-
-            {(looseBullets.length > 0 || sectionEntries.length === 0) && (
-              <div className="mt-3 space-y-2">
-                {looseBullets.map((bullet, bulletIndex) => (
-                  <BulletRow
-                    key={bullet.id}
-                    bullet={bullet}
-                    selected={selectedBulletId === bullet.id}
-                    first={bulletIndex === 0}
-                    last={bulletIndex === looseBullets.length - 1}
-                    onSelect={() => onSelectBullet(bullet)}
-                    onMove={(delta) => onMoveBullet(bullet, looseBullets, delta)}
-                  />
-                ))}
-                <div className="flex gap-2">
-                  <textarea
-                    value={newLooseBullet[section.id] ?? ''}
-                    onChange={(e) => setNewLooseBullet((values) => ({ ...values, [section.id]: e.target.value }))}
-                    maxLength={1000}
-                    rows={2}
-                    placeholder={section.kind === 'skills' ? 'Add a skills line (e.g. Excel, PowerPoint, financial modelling)' : 'Add a section-level bullet'}
-                    className="flex-1 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm resize-none"
-                  />
-                  <button
-                    onClick={() => {
-                      const text = newLooseBullet[section.id]?.trim();
-                      if (!text) return;
-                      void (async () => {
-                        if (await onAddBullet(section.id, null, text)) {
-                          setNewLooseBullet((values) => ({ ...values, [section.id]: '' }));
-                        }
-                      })();
-                    }}
-                    disabled={!newLooseBullet[section.id]?.trim() || busy}
-                    aria-label={`Add bullet to ${section.heading}`}
-                    className="px-3 rounded-lg border border-gold-400/30 text-gold-300"
-                  ><Plus className="w-4 h-4" /></button>
-                </div>
+              <div className="flex gap-2">
+                <input
+                  value={newEntryOrg[section.id] ?? ''}
+                  onChange={(e) => setNewEntryOrg((values) => ({ ...values, [section.id]: e.target.value }))}
+                  maxLength={120}
+                  placeholder="Add an entry (organisation, e.g. Macquarie Group)"
+                  className="ml-field min-h-[44px] flex-1 py-2"
+                />
+                <button
+                  onClick={() => {
+                    const org = newEntryOrg[section.id]?.trim();
+                    if (!org) return;
+                    void (async () => {
+                      if (await onAddEntry(section.id, org)) {
+                        setNewEntryOrg((values) => ({ ...values, [section.id]: '' }));
+                      }
+                    })();
+                  }}
+                  disabled={!newEntryOrg[section.id]?.trim() || busy}
+                  aria-label={`Add entry to ${section.heading}`}
+                  className="ml-btn ml-btn-secondary min-h-[44px] px-4 text-[13px]"
+                >
+                  <span aria-hidden="true">+</span> Entry
+                </button>
               </div>
-            )}
+
+              {(looseBullets.length > 0 || sectionEntries.length === 0) && (
+                <div className="space-y-2">
+                  {looseBullets.map((bullet, bulletIndex) => (
+                    <BulletRow
+                      key={bullet.id}
+                      bullet={bullet}
+                      selected={selectedBulletId === bullet.id}
+                      first={bulletIndex === 0}
+                      last={bulletIndex === looseBullets.length - 1}
+                      onSelect={() => onSelectBullet(bullet)}
+                      onMove={(delta) => onMoveBullet(bullet, looseBullets, delta)}
+                    />
+                  ))}
+                  <div className="flex gap-2">
+                    <textarea
+                      value={newLooseBullet[section.id] ?? ''}
+                      onChange={(e) => setNewLooseBullet((values) => ({ ...values, [section.id]: e.target.value }))}
+                      maxLength={1000}
+                      rows={2}
+                      placeholder={section.kind === 'skills' ? 'Add a skills line (e.g. Excel, PowerPoint, financial modelling)' : 'Add a section-level bullet'}
+                      className="ml-field min-h-[44px] flex-1 resize-none py-2"
+                    />
+                    <button
+                      onClick={() => {
+                        const text = newLooseBullet[section.id]?.trim();
+                        if (!text) return;
+                        void (async () => {
+                          if (await onAddBullet(section.id, null, text)) {
+                            setNewLooseBullet((values) => ({ ...values, [section.id]: '' }));
+                          }
+                        })();
+                      }}
+                      disabled={!newLooseBullet[section.id]?.trim() || busy}
+                      aria-label={`Add bullet to ${section.heading}`}
+                      className="ml-btn ml-btn-secondary min-h-[44px] px-4 text-[13px]"
+                    >
+                      <span aria-hidden="true">+</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </section>
         );
       })}

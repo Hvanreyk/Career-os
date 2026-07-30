@@ -59,8 +59,10 @@ export function Button({
   );
 
   if (href && !disabled && !loading) {
+    // onClick is forwarded here too — a caller passing both href and onClick
+    // (click tracking, for instance) would otherwise lose the handler silently.
     return (
-      <Link href={href} className={classes} {...rest}>
+      <Link href={href} onClick={onClick} className={classes} {...rest}>
         {body}
       </Link>
     );

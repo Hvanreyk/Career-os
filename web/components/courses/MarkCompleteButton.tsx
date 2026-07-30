@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Check, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 
 interface Props {
   lessonId: string;
@@ -43,22 +43,16 @@ export function MarkCompleteButton({ lessonId, alreadyCompleted, nextHref, nextL
   }
 
   return (
-    <div className="flex flex-col items-end gap-2">
-      <button
-        type="button"
-        onClick={markComplete}
-        disabled={saving}
-        className="px-5 py-3 bg-gold-400 text-navy-950 font-semibold text-sm rounded-xl hover:bg-gold-300 transition-all shadow-[0_0_20px_rgba(212,175,55,0.25)] flex items-center gap-2 disabled:opacity-60"
-      >
-        {saving ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : alreadyCompleted ? (
-          <Check className="w-4 h-4" />
-        ) : null}
-        {alreadyCompleted ? nextLabel : `Mark complete & ${nextLabel.toLowerCase()}`}
-        <ArrowRight className="w-4 h-4" />
-      </button>
-      {error && <p className="text-red-400 text-xs">{error}</p>}
+    <div className="flex flex-col items-start gap-2 sm:items-end">
+      <Button onClick={markComplete} loading={saving} size="lg">
+        {alreadyCompleted ? nextLabel : `Mark complete & ${nextLabel.toLowerCase()}`}{' '}
+        <span aria-hidden="true">▸</span>
+      </Button>
+      {error && (
+        <p className="ml-label text-red" role="alert">
+          ▲ {error}
+        </p>
+      )}
     </div>
   );
 }

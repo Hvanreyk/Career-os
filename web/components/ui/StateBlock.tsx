@@ -19,12 +19,19 @@ export function StateBlock({
   children,
   action,
   className = '',
+  label,
 }: {
   kind: Kind;
   title: string;
   children?: React.ReactNode;
   action?: React.ReactNode;
   className?: string;
+  /**
+   * Overrides the eyebrow word. `kind` still drives role/aria and the glyph —
+   * this only renames the state, for cases like "Coming soon" that are an
+   * empty state but would read wrong as "Nothing here".
+   */
+  label?: string;
 }) {
   return (
     <div
@@ -36,7 +43,7 @@ export function StateBlock({
         className={`ml-label ${kind === 'error' ? 'text-red' : ''}`}
       >
         {kind === 'error' ? '▲ ' : kind === 'loading' ? '▸ ' : '· '}
-        {KIND_LABEL[kind]}
+        {label ?? KIND_LABEL[kind]}
       </span>
       <h2 className="mt-3 text-[20px] font-bold uppercase leading-tight tracking-[-0.02em] text-bone">
         {title}

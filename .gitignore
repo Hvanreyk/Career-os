@@ -24,3 +24,6 @@ design/hero-src/
 # synthetic (tests/scoring/professionals.snapshot.json); see
 # scripts/snapshot-professionals.ts.
 tests/scoring/professionals.snapshot.local.json
+
+# Build dirs renamed aside when .next could not be deleted (cloud-sync I/O stalls).
+.next-stale-*/

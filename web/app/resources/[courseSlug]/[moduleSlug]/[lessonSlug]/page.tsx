@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { ChevronLeft, Clock } from 'lucide-react';
 import { requireUser } from '@/lib/auth';
 import {
   getCourseStructure,
@@ -11,7 +10,8 @@ import {
 } from '@/lib/courses/queries';
 import { LessonRenderer } from '@/components/courses/LessonRenderer';
 import { MarkCompleteButton } from '@/components/courses/MarkCompleteButton';
-import { CourseProgressBar } from '@/components/courses/CourseProgressBar';
+import { PageShell } from '@/components/ui/PageHeader';
+import { Meter } from '@/components/ui/Status';
 import { TrackProductEvent } from '@/components/analytics/TrackProductEvent';
 import { resourceHasCapability } from '@/lib/resources/catalog';
 
@@ -62,103 +62,150 @@ export default async function LessonPage({ params }: { params: Promise<Params> }
   const done = allLessons.filter(({ lesson: l }) => completed.has(l.id)).length;
   const progressPercent = allLessons.length ? (done / allLessons.length) * 100 : 0;
 
+  // Presentation-only: the manual's chapter/entry reference for this lesson.
+  const moduleIndex = structure.modules.findIndex((m) => m.slug === moduleSlug);
+  const lessonIndex =
+    structure.modules[moduleIndex]?.lessons.findIndex((l) => l.id === lesson.id) ?? -1;
+  const ref =
+    moduleIndex >= 0 && lessonIndex >= 0
+      ? `${String(moduleIndex + 1).padStart(2, '0')}.${String(lessonIndex + 1).padStart(2, '0')}`
+      : null;
+
   return (
-    <div className="min-h-screen bg-navy-950 px-6 pt-28 pb-24">
+    <PageShell width="narrow">
       <TrackProductEvent
         eventName="lesson_viewed"
         resourceSlug={courseSlug}
         properties={{ moduleSlug, lessonSlug }}
       />
-      <div className="max-w-3xl mx-auto">
-        {/* Breadcrumb + progress */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between gap-4 mb-3">
-            <Link
-              href={`/resources/${courseSlug}`}
-              className="text-sm text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              {course.title}
-            </Link>
-            <span className="text-xs text-slate-600 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5" />
-              {lesson.est_minutes} min
-            </span>
-          </div>
-          <CourseProgressBar percent={progressPercent} />
-        </div>
 
-        {/* Title */}
-        <div className="mb-8">
-          <p className="text-xs font-semibold text-gold-400 uppercase tracking-widest mb-2">
-            {module.title}
-          </p>
-          <h1 className="font-serif text-3xl md:text-4xl font-bold text-white">
-            {lesson.title}
-          </h1>
+      {/* ── Where you are in the manual ────────────────────────── */}
+      <div className="flex flex-wrap items-center justify-between gap-x-4">
+        <Link
+          href={`/resources/${courseSlug}`}
+          className="ml-label inline-flex min-h-[44px] items-center hover:text-bone"
+        >
+          <span aria-hidden="true" className="mr-2">
+            ◂
+          </span>
+          {course.title}
+        </Link>
+        <span className="ml-label">
+          <span className="ml-num text-bone">{Math.round(progressPercent)}%</span> of course read
+        </span>
+      </div>
+      <Meter
+        value={progressPercent}
+        className="mt-1"
+        label={`Course progress: ${Math.round(progressPercent)}% complete`}
+      />
+
+      {/* ── Lesson head ────────────────────────────────────────── */}
+      <header className="mt-10 border-b border-rule pb-6">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          {ref && (
+            <span className="ml-num text-[11px] tracking-[0.14em] text-red" aria-hidden="true">
+              {ref}
+            </span>
+          )}
+          <span className="ml-label">{module.title}</span>
+        </div>
+        <h1 className="ml-title mt-3 text-bone">{lesson.title}</h1>
+        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1">
+          <span className="ml-label">
+            <span className="ml-num">{lesson.est_minutes}</span> min read
+          </span>
+          {completed.has(lesson.id) && <span className="ml-label text-ok">✓ Read</span>}
           {lesson.last_reviewed_at && (
-            <p className="text-xs text-slate-600 mt-3">
-              Last reviewed{' '}
-              {new Date(lesson.last_reviewed_at).toLocaleDateString('en-AU', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            </p>
+            <span className="ml-label">
+              Reviewed{' '}
+              <span className="ml-num">
+                {new Date(lesson.last_reviewed_at).toLocaleDateString('en-AU', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })}
+              </span>
+            </span>
           )}
         </div>
+      </header>
 
-        {/* Content */}
+      {/* ── Body ───────────────────────────────────────────────── */}
+      <article className="mt-10">
         <LessonRenderer blocks={lesson.content} />
+      </article>
 
-        {/* Sources */}
-        {lesson.sources.length > 0 && (
-          <div className="mt-10 pt-6 border-t border-white/8">
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">
-              Sources & further reading
-            </h3>
-            <ul className="space-y-1.5 text-sm">
-              {lesson.sources.map((src, i) => (
-                <li key={i}>
-                  {src.url ? (
-                    <a
-                      href={src.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-gold-400 hover:text-gold-300 transition-colors"
-                    >
-                      {src.label}
-                    </a>
-                  ) : (
-                    <span className="text-slate-400">{src.label}</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
+      {/* ── Sources ────────────────────────────────────────────── */}
+      {lesson.sources.length > 0 && (
+        <section className="mt-14 border-t border-rule pt-6">
+          <h2 className="ml-label text-bone">Sources &amp; further reading</h2>
+          <ul className="mt-3 max-w-[70ch]">
+            {lesson.sources.map((src, i) => (
+              <li
+                key={i}
+                className="ml-row grid grid-cols-[2.5rem_minmax(0,1fr)] items-baseline gap-x-4 py-3"
+              >
+                <span className="ml-num text-[12px] text-graphite" aria-hidden="true">
+                  [{String(i + 1).padStart(2, '0')}]
+                </span>
+                {src.url ? (
+                  <a
+                    href={src.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[15px] leading-[1.55] text-bone underline underline-offset-2 hover:text-red"
+                  >
+                    {src.label}
+                  </a>
+                ) : (
+                  <span className="text-[15px] leading-[1.55] text-graphite">{src.label}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* ── Navigation ─────────────────────────────────────────── */}
+      <nav
+        aria-label="Lesson navigation"
+        className="mt-14 flex flex-col gap-6 border-t border-rule pt-6 sm:flex-row sm:items-end sm:justify-between"
+      >
+        {prev ? (
+          <Link
+            href={`/resources/${courseSlug}/${prev.moduleSlug}/${prev.lesson.slug}`}
+            className="group inline-flex min-h-[44px] min-w-0 flex-col justify-center"
+          >
+            <span className="ml-label">
+              <span aria-hidden="true" className="mr-2">
+                ◂
+              </span>
+              Previous
+            </span>
+            <span className="mt-1 truncate text-[15px] text-graphite group-hover:text-bone">
+              {prev.lesson.title}
+            </span>
+          </Link>
+        ) : (
+          <span />
         )}
 
-        {/* Navigation */}
-        <div className="mt-12 pt-6 border-t border-white/8 flex items-center justify-between gap-4">
-          {prev ? (
-            <Link
-              href={`/resources/${courseSlug}/${prev.moduleSlug}/${prev.lesson.slug}`}
-              className="text-sm text-slate-400 hover:text-white transition-colors flex items-center gap-1.5 min-w-0"
-            >
-              <ChevronLeft className="w-4 h-4 shrink-0" />
-              <span className="truncate">{prev.lesson.title}</span>
-            </Link>
-          ) : (
-            <span />
-          )}
-          <MarkCompleteButton
-            lessonId={lesson.id}
-            alreadyCompleted={completed.has(lesson.id)}
-            nextHref={nextHref}
-            nextLabel={nextLabel}
-          />
+        <div className="shrink-0">
+          {/* States what comes next before the button asks you to go there. */}
+          <span className="ml-label block sm:text-right">
+            Next: {isLastInModule ? 'Module quiz' : (next?.lesson.title ?? 'Module quiz')}
+          </span>
+          <div className="mt-2">
+            <MarkCompleteButton
+              lessonId={lesson.id}
+              alreadyCompleted={completed.has(lesson.id)}
+              nextHref={nextHref}
+              nextLabel={nextLabel}
+            />
+          </div>
         </div>
-      </div>
-    </div>
+      </nav>
+    </PageShell>
   );
 }

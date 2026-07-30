@@ -45,7 +45,7 @@ export default async function NetworkTargetMapPage({ params }: { params: Promise
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       <TargetMapView
         base={`/resources/${courseSlug}/network`}
         coverage={inputs.coverage}
@@ -53,9 +53,9 @@ export default async function NetworkTargetMapPage({ params }: { params: Promise
         university={university}
       />
       {inputs.coverage.totalTargets === 0 && (
-        <p className="text-sm text-slate-500">
+        <p className="max-w-[70ch] border-l-2 border-red pl-4 text-[15px] leading-[1.6] text-graphite">
           No bank targets yet — build your target list in the{' '}
-          <Link href="/resources/investment-banking-guides/tracker" className="text-gold-400 hover:underline">
+          <Link href="/resources/investment-banking-guides/tracker" className="ml-btn-text">
             bank target tracker
           </Link>{' '}
           and it powers this map automatically.

@@ -91,12 +91,15 @@ export default function CareerCompassPage() {
               key={r.id}
               className="ml-row ml-row-hover grid grid-cols-[3.5rem_minmax(0,1fr)] items-baseline gap-x-4 py-4 md:grid-cols-[4.5rem_minmax(0,0.7fr)_minmax(0,1.3fr)] md:gap-x-6"
             >
-              <dt className="ml-label" aria-hidden="true">
+              {/* The readout title is the term; the R-0n code is marginalia,
+                  so it sits in a decorative span rather than standing in as
+                  the dt and leaving two dds with nothing to attach to. */}
+              <span className="ml-label" aria-hidden="true">
                 {r.id}
-              </dt>
-              <dd className="text-[16px] font-bold uppercase tracking-[-0.01em] text-bone">
+              </span>
+              <dt className="text-[16px] font-bold uppercase tracking-[-0.01em] text-bone">
                 {r.title}
-              </dd>
+              </dt>
               <dd className="col-start-2 mt-1.5 max-w-[62ch] text-[16px] leading-[1.62] text-graphite md:col-start-3 md:mt-0">
                 {r.body}
               </dd>

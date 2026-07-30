@@ -23,7 +23,7 @@ const sections = [
   {
     id: '04',
     title: 'Vision',
-    body: 'A world where where you go to school or who you know no longer determines whether you get a shot at high finance — where every student with the drive to compete has the tools to do it intelligently.',
+    body: 'A world where you go to school or who you know no longer determines whether you get a shot at high finance — where every student with the drive to compete has the tools to do it intelligently.',
   },
 ];
 

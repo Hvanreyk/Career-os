@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { StepShell } from '@/components/onboard/StepShell';
+import { ChoiceButton } from '@/components/onboard/ChoiceButton';
+import { ChoiceList, StepActions, StepGroup } from '@/components/onboard/StepParts';
 import { useOnboard } from '@/lib/onboard/context';
 import { searchUniversities, normalizeUniversityName } from '@/lib/onboard/universities';
-import { X } from 'lucide-react';
 import { DEGREE_TYPE_OPTIONS as DEGREE_TYPES } from '@trajectoryos/core/career-compass/taxonomy';
 
 const YEARS = [1, 2, 3, 4, 5, 6];
@@ -17,7 +18,12 @@ export default function UniversityPage() {
   const router = useRouter();
   const [uniQuery, setUniQuery] = useState(data.university);
   const [showDropdown, setShowDropdown] = useState(false);
+  // -1 = nothing highlighted; the field's own text is what would be committed.
+  const [activeIndex, setActiveIndex] = useState(-1);
   const [majorInput, setMajorInput] = useState('');
+  const uniId = useId();
+  const listboxId = `${uniId}-listbox`;
+  const optionId = (i: number) => `${uniId}-opt-${i}`;
 
   const results = searchUniversities(uniQuery).slice(0, 6);
 
@@ -27,6 +33,59 @@ export default function UniversityPage() {
     const normalized = normalizeUniversityName(trimmed);
     update({ university: normalized });
     setUniQuery(normalized);
+  };
+
+  /* The saved value and the visible text are kept in step on every keystroke.
+     Previously the value was only written on select/blur, so typing after
+     picking an option left the *old* university saved behind a field that
+     showed something else. Normalisation still happens on commit. */
+  const changeQuery = (value: string) => {
+    setUniQuery(value);
+    setActiveIndex(-1);
+    setShowDropdown(true);
+    update({ university: value.trim() });
+  };
+
+  const selectUniversity = (name: string) => {
+    setUniQuery(name);
+    update({ university: name });
+    setShowDropdown(false);
+    setActiveIndex(-1);
+  };
+
+  /* Keyboard parity with the pointer: the list was previously only reachable
+     via onMouseDown, so keyboard users could not select an option at all. */
+  const onUniKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (results.length === 0) return;
+      if (!showDropdown) {
+        setShowDropdown(true);
+        setActiveIndex(0);
+        return;
+      }
+      setActiveIndex((i) => (i + 1) % results.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (results.length === 0) return;
+      if (!showDropdown) {
+        setShowDropdown(true);
+        setActiveIndex(results.length - 1);
+        return;
+      }
+      setActiveIndex((i) => (i <= 0 ? results.length - 1 : i - 1));
+    } else if (e.key === 'Enter') {
+      if (showDropdown && activeIndex >= 0 && results[activeIndex]) {
+        e.preventDefault();
+        selectUniversity(results[activeIndex].name);
+      }
+    } else if (e.key === 'Escape') {
+      if (showDropdown) {
+        e.preventDefault();
+        setShowDropdown(false);
+        setActiveIndex(-1);
+      }
+    }
   };
 
   const canContinue =
@@ -48,187 +107,225 @@ export default function UniversityPage() {
       subtitle="Your university and academic background shapes your match pool."
       backHref="/onboard/goal"
     >
-      <div className="space-y-5">
-        {/* University */}
+      <div className="space-y-8">
+        {/* University — a combobox: type to filter, arrows + Enter to pick. */}
         <div>
-          <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">University</label>
-          <div className="relative">
+          <label htmlFor={uniId} className="ml-label">
+            University
+          </label>
+          <div className="relative mt-3">
             <input
+              id={uniId}
+              role="combobox"
+              aria-expanded={showDropdown && results.length > 0}
+              aria-controls={listboxId}
+              aria-autocomplete="list"
+              aria-activedescendant={
+                showDropdown && activeIndex >= 0 ? optionId(activeIndex) : undefined
+              }
+              autoComplete="off"
               value={uniQuery}
-              onChange={(e) => { setUniQuery(e.target.value); setShowDropdown(true); }}
+              onChange={(e) => changeQuery(e.target.value)}
               onFocus={() => setShowDropdown(true)}
-              onBlur={() => setTimeout(() => { setShowDropdown(false); commitUniversity(); }, 150)}
-              placeholder="Search your university..."
-              className="w-full bg-navy-800/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-gold-400/40 transition-colors"
+              onBlur={() => {
+                setShowDropdown(false);
+                setActiveIndex(-1);
+                commitUniversity();
+              }}
+              onKeyDown={onUniKeyDown}
+              placeholder="Search your university…"
+              className="ml-field"
             />
             {showDropdown && results.length > 0 && (
-              <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-navy-900 border border-white/10 rounded-xl overflow-hidden shadow-xl">
-                {results.map((u) => (
-                  <button
-                    key={u.name}
-                    type="button"
-                    onMouseDown={() => {
-                      update({ university: u.name });
-                      setUniQuery(u.name);
-                      setShowDropdown(false);
-                    }}
-                    className="w-full text-left px-4 py-3 text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
-                  >
-                    <span>{u.name}</span>
-                    <span className="ml-2 text-[10px] text-slate-600 uppercase">{u.tier}</span>
-                  </button>
-                ))}
-              </div>
+              <ul
+                id={listboxId}
+                role="listbox"
+                aria-label="University suggestions"
+                className="absolute left-0 right-0 top-full z-20 -mt-px max-h-[17rem] overflow-y-auto border border-rule-bright bg-raised"
+              >
+                {results.map((u, i) => {
+                  const active = i === activeIndex;
+                  return (
+                    <li
+                      key={u.name}
+                      id={optionId(i)}
+                      role="option"
+                      aria-selected={active}
+                      /* mousedown, not click: it fires before blur would tear
+                         the list down. preventDefault keeps focus in the field. */
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        selectUniversity(u.name);
+                      }}
+                      onMouseEnter={() => setActiveIndex(i)}
+                      className={`ml-row flex min-h-[44px] cursor-pointer items-center justify-between gap-3 border-l-2 px-4 py-2.5 text-[15px] ${
+                        active
+                          ? 'border-l-red bg-surface text-bone'
+                          : 'border-l-transparent text-graphite'
+                      }`}
+                    >
+                      <span>{u.name}</span>
+                      <span className="ml-label shrink-0">{u.tier}</span>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </div>
         </div>
 
         {/* Degree name */}
         <div>
-          <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">Degree name</label>
+          <label htmlFor="degree-name" className="ml-label">
+            Degree name
+          </label>
           <input
+            id="degree-name"
             value={data.degree}
             onChange={(e) => update({ degree: e.target.value })}
             placeholder="e.g. Bachelor of Commerce"
-            className="w-full bg-navy-800/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-gold-400/40 transition-colors"
+            className="ml-field mt-3"
           />
         </div>
 
-        {/* Degree type */}
-        <div>
-          <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">Degree type</label>
-          <div className="grid grid-cols-3 gap-2">
+        {/* Degree type — the example sits in the row, not in a hover tooltip */}
+        <StepGroup label="Degree type">
+          <ChoiceList>
             {DEGREE_TYPES.map((d) => (
-              <div key={d.value} className="group relative">
-                <button
-                  type="button"
-                  onClick={() => update({ degree_type: d.value })}
-                  className={`w-full py-2.5 rounded-xl text-xs font-medium border transition-all ${
-                    data.degree_type === d.value
-                      ? 'border-gold-400/60 bg-gold-400/10 text-gold-300'
-                      : 'border-white/10 text-slate-400 hover:border-white/25 hover:text-white'
-                  }`}
-                >
-                  {d.label}
-                </button>
-                <div className="pointer-events-none absolute z-30 bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="bg-navy-900 border border-white/10 rounded-lg px-3 py-2 text-[11px] leading-snug text-slate-300 shadow-xl">
-                    {d.example}
-                  </div>
-                </div>
-              </div>
+              <ChoiceButton
+                key={d.value}
+                selected={data.degree_type === d.value}
+                onClick={() => update({ degree_type: d.value })}
+                description={d.example}
+              >
+                {d.label}
+              </ChoiceButton>
             ))}
-          </div>
-        </div>
+          </ChoiceList>
+        </StepGroup>
 
         {/* Majors */}
         <div>
-          <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">
-            Major(s) <span className="text-slate-600">(up to 3)</span>
+          <label htmlFor="major-input" className="ml-label">
+            Major(s)
           </label>
-          <div className="flex gap-2 mb-2">
+          <p id="major-hint" className="mt-1.5 text-[13px] leading-snug text-graphite">
+            Up to 3. {data.majors.length}/3 added.
+          </p>
+          <div className="mt-3 flex gap-2">
             <input
+              id="major-input"
+              aria-describedby="major-hint"
               value={majorInput}
               onChange={(e) => setMajorInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addMajor())}
               placeholder="e.g. Finance"
-              className="flex-1 bg-navy-800/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-gold-400/40 transition-colors"
+              className="ml-field"
             />
             <button
               type="button"
               onClick={addMajor}
-              className="px-4 py-2 glass border border-white/15 text-slate-300 rounded-xl text-sm hover:border-gold-400/40 hover:text-gold-300 transition-all"
+              className="ml-btn ml-btn-secondary min-h-[44px] shrink-0 px-5 text-[13px]"
             >
               Add
             </button>
           </div>
           {data.majors.length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <ul className="mt-3 flex flex-wrap gap-2">
               {data.majors.map((m) => (
-                <span key={m} className="inline-flex items-center gap-1.5 px-3 py-1 glass border border-gold-400/20 text-gold-300 text-xs rounded-full">
+                <li
+                  key={m}
+                  className="flex min-h-[44px] items-center gap-1 border border-rule-bright pl-3 text-[14px] text-bone"
+                >
                   {m}
-                  <button type="button" onClick={() => update({ majors: data.majors.filter((x) => x !== m) })}>
-                    <X className="w-3 h-3" />
+                  <button
+                    type="button"
+                    onClick={() => update({ majors: data.majors.filter((x) => x !== m) })}
+                    className="flex h-11 w-11 items-center justify-center text-graphite transition-colors hover:text-red"
+                  >
+                    <span aria-hidden="true">✕</span>
+                    <span className="sr-only">Remove {m}</span>
                   </button>
-                </span>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
 
         {/* Year */}
-        <div>
-          <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">Current year of study</label>
-          <div className="flex gap-2">
-            {YEARS.map((y) => (
-              <button
-                key={y}
-                type="button"
-                onClick={() => update({ current_year: y })}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all ${
-                  data.current_year === y
-                    ? 'border-gold-400/60 bg-gold-400/10 text-gold-300'
-                    : 'border-white/10 text-slate-400 hover:border-white/25 hover:text-white'
-                }`}
-              >
-                Y{y}
-              </button>
-            ))}
+        <StepGroup label="Current year of study">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+            {YEARS.map((y) => {
+              const selected = data.current_year === y;
+              return (
+                <button
+                  key={y}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => update({ current_year: y })}
+                  className={`ml-num min-h-[44px] border px-3 text-[13px] transition-colors ${
+                    selected
+                      ? 'border-red bg-raised text-bone'
+                      : 'border-rule text-graphite hover:border-rule-bright hover:text-bone'
+                  }`}
+                >
+                  Y{y}
+                </button>
+              );
+            })}
           </div>
-        </div>
+        </StepGroup>
 
         {/* Expected graduation year */}
-        <div>
-          <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">
-            Expected graduation year
-          </label>
-          <p className="text-[11px] text-slate-600 mb-2">
-            If you&apos;re extending your degree (e.g. underloading), pick the year you actually
-            expect to finish — not the standard length for your degree type.
-          </p>
+        <StepGroup
+          label="Expected graduation year"
+          hint="If you're extending your degree (e.g. underloading), pick the year you actually expect to finish — not the standard length for your degree type."
+        >
           <div className="grid grid-cols-4 gap-2">
-            {GRAD_YEARS.map((y) => (
-              <button
-                key={y}
-                type="button"
-                onClick={() => update({ expected_graduation_year: y })}
-                className={`py-2.5 rounded-xl text-sm font-medium border transition-all ${
-                  data.expected_graduation_year === y
-                    ? 'border-gold-400/60 bg-gold-400/10 text-gold-300'
-                    : 'border-white/10 text-slate-400 hover:border-white/25 hover:text-white'
-                }`}
-              >
-                {y}
-              </button>
-            ))}
+            {GRAD_YEARS.map((y) => {
+              const selected = data.expected_graduation_year === y;
+              return (
+                <button
+                  key={y}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => update({ expected_graduation_year: y })}
+                  className={`ml-num min-h-[44px] border px-2 text-[13px] transition-colors ${
+                    selected
+                      ? 'border-red bg-raised text-bone'
+                      : 'border-rule text-graphite hover:border-rule-bright hover:text-bone'
+                  }`}
+                >
+                  {y}
+                </button>
+              );
+            })}
           </div>
-        </div>
+        </StepGroup>
 
         {/* Co-op */}
-        <button
-          type="button"
-          onClick={() => update({ is_co_op: !data.is_co_op })}
-          className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-xl border transition-all ${
-            data.is_co_op
-              ? 'border-gold-400/40 bg-gold-400/8 text-white'
-              : 'border-white/10 text-slate-400 hover:border-white/25'
-          }`}
-        >
-          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-            data.is_co_op ? 'border-gold-400 bg-gold-400' : 'border-slate-600'
-          }`}>
-            {data.is_co_op && <span className="text-navy-950 text-xs font-bold">✓</span>}
-          </div>
-          <span className="text-sm font-medium">This is a Co-op program</span>
-        </button>
+        <div className="ml-row flex items-center gap-3 border-t border-rule py-1">
+          <input
+            id="co-op"
+            type="checkbox"
+            checked={data.is_co_op}
+            onChange={() => update({ is_co_op: !data.is_co_op })}
+            className="ml-check"
+          />
+          <label
+            htmlFor="co-op"
+            className={`flex min-h-[44px] flex-1 cursor-pointer select-none items-center text-[15px] leading-snug ${
+              data.is_co_op ? 'text-bone' : 'text-graphite'
+            }`}
+          >
+            This is a Co-op program
+          </label>
+        </div>
 
-        <button
+        <StepActions
           disabled={!canContinue}
-          onClick={() => router.push('/onboard/grades')}
-          className="w-full py-4 bg-gold-400 text-navy-950 font-semibold rounded-xl hover:bg-gold-300 transition-all shadow-[0_0_24px_rgba(212,175,55,0.3)] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
-        >
-          Continue →
-        </button>
+          onContinue={() => router.push('/onboard/grades')}
+        />
       </div>
     </StepShell>
   );

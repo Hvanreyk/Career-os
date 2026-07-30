@@ -193,7 +193,7 @@ body {
   letter-spacing: 0;
   font-weight: 600;
 }
-.ml-btn-text:hover:not(:disabled) { color: #ff7156; text-decoration: underline; }
+.ml-btn-text:hover:not(:disabled):not([aria-disabled='true']) { color: #ff7156; text-decoration: underline; }
 
 /* ─── Fields ─────────────────────────────────────────────────
    Every control shares one skin so a select never looks like a
@@ -258,6 +258,8 @@ textarea.ml-field { min-height: 7rem; resize: vertical; }
   height: 0.55rem;
   background: #0a0a0b;
 }
+/* The control is round for radios, so its mark has to be too. */
+.ml-check[type='radio']:checked::after { border-radius: 50%; }
 .ml-check[type='checkbox']:checked::after {
   width: 0.8rem;
   height: 0.44rem;

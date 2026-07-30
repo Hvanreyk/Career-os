@@ -17,6 +17,9 @@ export default function ReportLoadingPage() {
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  // If creation succeeded and only processing failed, the report row already
+  // exists — sending the user back through onboarding would discard it.
+  const [createdId, setCreatedId] = useState<string | null>(null);
   const called = useRef(false);
 
   useEffect(() => {
@@ -65,6 +68,7 @@ export default function ReportLoadingPage() {
         }
 
         const { reportId, existing } = await createRes.json() as { reportId: string; existing?: boolean };
+        setCreatedId(reportId);
         localStorage.removeItem('tos_profile');
 
         // Profile unchanged — the persisted report is reused, no regeneration.
@@ -113,9 +117,28 @@ export default function ReportLoadingPage() {
         <StateBlock
           kind="error"
           title="Something went wrong"
-          action={<Button onClick={() => router.push('/onboard/goal')}>Start over</Button>}
+          action={
+            createdId ? (
+              // The row exists; /report/[id] renders ReportPending, which
+              // retries the write-up rather than rebuilding the profile.
+              <>
+                <Button href={`/report/${createdId}`}>Continue to your report</Button>
+                <Button href="/onboard/goal" variant="secondary">
+                  Start over
+                </Button>
+              </>
+            ) : (
+              <Button href="/onboard/goal">Start over</Button>
+            )
+          }
         >
           {error}
+          {createdId && (
+            <span className="mt-3 block">
+              Your profile was saved and scored — only the written analysis failed, and it can be
+              retried without re-entering anything.
+            </span>
+          )}
         </StateBlock>
       </StatePage>
     );

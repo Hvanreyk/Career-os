@@ -1,38 +1,24 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import type { ScoringOutput, FitBand } from '@trajectoryos/core/scoring/types';
 import type { LLMReport } from '@trajectoryos/core/llm/types';
 import Link from 'next/link';
+import { PageHeader, PageShell } from '@/components/ui/PageHeader';
+import { Panel, PanelHeader, Row, Stat } from '@/components/ui/Panel';
+import { Meter, StatusLabel } from '@/components/ui/Status';
 import DownloadCompassReport from './DownloadCompassReport';
 
 // ─── Helpers ──────────────────────────────────────────────────
 
-const FIT_CONFIG: Record<FitBand, { label: string; colour: string; bg: string; bar: string }> = {
-  strong_fit: {
-    label: 'Strong Fit',
-    colour: 'text-emerald-400',
-    bg: 'border-emerald-400/20 bg-emerald-400/5',
-    bar: '#34d399',
-  },
-  stretch_but_achievable: {
-    label: 'Stretch — Achievable',
-    colour: 'text-gold-400',
-    bg: 'border-gold-400/20 bg-gold-400/5',
-    bar: '#d4af37',
-  },
-  reach: {
-    label: 'Reach',
-    colour: 'text-orange-400',
-    bg: 'border-orange-400/20 bg-orange-400/5',
-    bar: '#fb923c',
-  },
-  long_shot: {
-    label: 'Long Shot',
-    colour: 'text-red-400',
-    bg: 'border-red-400/20 bg-red-400/5',
-    bar: '#f87171',
-  },
+type Tone = 'neutral' | 'accent' | 'ok' | 'warn';
+
+/* Bands are stated as words first. The tint only reinforces the word, which is
+   what keeps the report readable in greyscale and for colour-blind readers. */
+const FIT_CONFIG: Record<FitBand, { label: string; tone: Tone }> = {
+  strong_fit: { label: 'Strong Fit', tone: 'ok' },
+  stretch_but_achievable: { label: 'Stretch — Achievable', tone: 'warn' },
+  reach: { label: 'Reach', tone: 'warn' },
+  long_shot: { label: 'Long Shot', tone: 'neutral' },
 };
 
 const STAGE_LABELS: Record<string, string> = {
@@ -44,12 +30,6 @@ const STAGE_LABELS: Record<string, string> = {
   S5: 'Lateral Candidate',
 };
 
-const EFFORT_COLOUR: Record<string, string> = {
-  low: 'text-emerald-400',
-  medium: 'text-gold-400',
-  high: 'text-orange-400',
-};
-
 const PRIORITY_LABEL: Record<number, string> = { 1: '#1', 2: '#2', 3: '#3' };
 
 // action.deadline is a YYYY-MM-DD date-only value; parsing it with `new Date()`
@@ -59,31 +39,34 @@ function formatLocalDate(isoDate: string) {
   return new Date(year, month - 1, day).toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
 }
 
-
+/**
+ * A titled region of the report.
+ *
+ * Deliberately not a card: the report is a document, so sections are separated
+ * by a rule and a heading rather than boxed one after another.
+ */
 function SectionCard({
   title,
   eyebrow,
+  label,
   children,
-  delay = 0,
 }: {
   title: string;
   eyebrow?: string;
+  label?: string;
   children: React.ReactNode;
-  delay?: number;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] }}
-      className="rounded-[1.7rem] border border-slate-700/70 bg-slate-900/70 shadow-2xl shadow-navy-950/40 overflow-hidden"
-    >
-      <div className="px-6 sm:px-8 py-7 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <h2 className="font-serif text-3xl font-bold text-white tracking-tight">{title}</h2>
-        {eyebrow && <p className="text-sm text-slate-500 sm:text-right sm:max-w-xs leading-relaxed">{eyebrow}</p>}
+    <section className="mt-12">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-bone pb-3">
+        <h2 className="text-[17px] font-bold uppercase tracking-[-0.015em] text-bone">{title}</h2>
+        {label && <span className="ml-label">{label}</span>}
       </div>
-      <div className="px-6 sm:px-8 pb-7">{children}</div>
-    </motion.div>
+      {eyebrow && (
+        <p className="mt-3 max-w-[72ch] text-[15px] leading-[1.6] text-graphite">{eyebrow}</p>
+      )}
+      <div className="mt-4">{children}</div>
+    </section>
   );
 }
 
@@ -101,7 +84,9 @@ function Prose({ text }: { text: string }) {
   return (
     <div className="space-y-4">
       {blocks.map((block, i) => (
-        <p key={i} className="text-slate-300 text-base leading-8">{block}</p>
+        <p key={i} className="max-w-[72ch] text-[16px] leading-[1.7] text-bone/90">
+          {block}
+        </p>
       ))}
     </div>
   );
@@ -109,11 +94,11 @@ function Prose({ text }: { text: string }) {
 
 // ─── Competitiveness (primary report lens) ────────────────────
 
-const COMP_BAND: Record<string, { label: string; colour: string; bg: string; bar: string }> = {
-  strong:      { label: 'Strong',      colour: 'text-emerald-400', bg: 'border-emerald-400/20 bg-emerald-400/5', bar: '#34d399' },
-  competitive: { label: 'Competitive', colour: 'text-gold-400',    bg: 'border-gold-400/20 bg-gold-400/5',       bar: '#d4af37' },
-  developing:  { label: 'Developing',  colour: 'text-orange-400',  bg: 'border-orange-400/20 bg-orange-400/5',   bar: '#fb923c' },
-  reach:       { label: 'Reach',       colour: 'text-red-400',     bg: 'border-red-400/20 bg-red-400/5',         bar: '#f87171' },
+const COMP_BAND: Record<string, { label: string; tone: Tone }> = {
+  strong: { label: 'Strong', tone: 'ok' },
+  competitive: { label: 'Competitive', tone: 'ok' },
+  developing: { label: 'Developing', tone: 'warn' },
+  reach: { label: 'Reach', tone: 'warn' },
 };
 const TIER_LABEL: Record<string, string> = {
   bb: 'Bulge Bracket', elite_boutique: 'Elite Boutique', mid_market: 'Mid-Market', boutique: 'Boutique', any: 'Any Tier',
@@ -161,157 +146,243 @@ function CompetitivenessSection({
   );
 
   return (
-    <div className="space-y-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="relative overflow-hidden rounded-[2rem] border border-slate-800 bg-navy-950/80 p-7 sm:p-9 shadow-2xl shadow-black/30"
-      >
-        <div className="absolute -top-28 -right-24 h-80 w-80 rounded-full bg-gold-400/10 blur-3xl" />
-        <div className="absolute -bottom-28 -left-24 h-80 w-80 rounded-full bg-emerald-400/10 blur-3xl" />
-        <div className="relative">
-          <div className="mb-7 text-gold-400 text-xs font-bold tracking-[0.45em] uppercase">Career Compass</div>
-          <h1 className="font-serif text-4xl sm:text-6xl font-bold leading-[0.95] text-white tracking-tight">
-            You&apos;re {band.label.toLowerCase()} for {targetLabel} — and closer than most.
-          </h1>
-          <div className="mt-7 grid gap-8 lg:grid-cols-[380px_1fr] lg:items-center">
-            <div
-              className="relative mx-auto h-72 w-72 sm:h-80 sm:w-80"
-              role="img"
-              aria-label={`${comp.index} out of 100 for ${targetLabel}`}
-            >
-              <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90">
-                <circle cx="18" cy="18" r="15.9155" fill="none" stroke="rgba(148,163,184,0.14)" strokeWidth="2.4" />
-                <motion.circle cx="18" cy="18" r="15.9155" fill="none" stroke={band.bar} strokeWidth="2.4"
-                  strokeDasharray={`${comp.index}, 100`} strokeLinecap="butt" initial={{ strokeDasharray: '0, 100' }} animate={{ strokeDasharray: `${comp.index}, 100` }} transition={{ duration: 1.1, ease: 'easeOut' }} />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center rounded-full bg-slate-900/30">
-                <span className="font-serif text-7xl text-white leading-none">{comp.index}</span>
-                <span className="mt-2 font-mono text-slate-500">/ 100</span>
-                <span className="mt-5 text-xs uppercase tracking-[0.35em] text-slate-400">{targetLabel} Index</span>
-              </div>
+    <>
+      {/* ── The headline figure ───────────────────────────────── */}
+      <Panel className="mt-10">
+        <PanelHeader
+          label="Competitiveness"
+          title={`${targetLabel} index`}
+          action={<StatusLabel tone={band.tone}>{band.label}</StatusLabel>}
+        />
+        <div className="grid gap-8 p-5 sm:p-6 md:grid-cols-[minmax(0,19rem)_minmax(0,1fr)] md:gap-10">
+          <div>
+            <div className="flex items-baseline gap-2">
+              <span className="ml-num text-[60px] font-bold leading-none tracking-[-0.04em] text-bone">
+                {comp.index}
+              </span>
+              <span className="ml-num text-[15px] text-graphite">/ 100</span>
             </div>
-            <div className="space-y-6">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className={`rounded-full px-6 py-2 text-sm font-bold tracking-wide ${band.bg} ${band.colour}`}>{band.label}</span>
-                <span className="text-slate-400">for <strong className="text-white">{targetLabel}</strong></span>
-              </div>
-              <p className="text-xl leading-9 text-slate-300">
-                {COMP_GUIDANCE[comp.band]}
-              </p>
-              <div className="rounded-2xl border border-slate-700/80 bg-slate-950/35 p-6 flex gap-5">
-                <div className={`font-serif text-5xl ${band.colour}`}>~{pctText(comp.estimated_probability)}</div>
-                <p className="text-slate-400 leading-7">
-                  shot at a <em>front-office IB</em> outcome this cycle — roughly <strong className="text-slate-200">{comp.multiplier_vs_field.toFixed(1)}×</strong> the typical serious candidate. Across the broader ladder, your front-office probability is ~{pctText(comp.any_front_office_probability)}.
-                </p>
-              </div>
+            {/* Accent here and nowhere else on the page: this number is the
+                single figure the whole report is organised around. */}
+            <Meter
+              value={comp.index}
+              accent
+              className="mt-4"
+              label={`${targetLabel} index: ${comp.index} out of 100`}
+            />
+            <div className="mt-6 grid grid-cols-2 gap-5">
+              <Stat
+                label="Shot this cycle"
+                value={`~${pctText(comp.estimated_probability)}`}
+                sub={`Front-office IB at ${targetLabel}`}
+              />
+              <Stat
+                label="Vs. the field"
+                value={`${comp.multiplier_vs_field.toFixed(1)}×`}
+                sub="The typical serious candidate"
+              />
             </div>
           </div>
-        </div>
-      </motion.div>
 
-      <SectionCard title="Where you stand, by tier" eyebrow="One score isn't the whole story — you're stronger the moment you widen the aim." delay={0.15}>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {comp.per_tier.map((t) => {
-            const b = COMP_BAND[t.band] ?? COMP_BAND.developing;
-            return (
-              <div key={t.tier} className="rounded-2xl border border-slate-700 bg-slate-900/70 p-5">
-                <div className="text-slate-400 mb-6">{tierLabel(t.tier)}</div>
-                <div className={`font-serif text-5xl leading-none ${b.colour}`}>{t.index}</div>
-                <div className={`mt-4 text-xs font-bold uppercase tracking-[0.24em] ${b.colour}`}>{b.label}</div>
-                <div className="mt-7 h-1.5 rounded-full bg-slate-800 overflow-hidden"><div className="h-full rounded-full" style={{ width: `${t.index}%`, background: b.bar }} /></div>
-                <div className="mt-5 text-sm text-slate-500">≈ {pctText(t.estimated_probability)} shot</div>
-              </div>
-            );
-          })}
-        </div>
-        <p className="mt-7 border-l-4 border-gold-400 pl-5 text-lg leading-8 text-slate-300">
-          <strong className="text-white">Recommended aim:</strong> anchor applications at <strong className="text-white">{tierLabel(comp.recommended_target)}</strong> and keep <strong className="text-white">{tierLabel(comp.stretch_target)}</strong> live as a stretch.
-        </p>
-      </SectionCard>
-
-      {comp.contributions.length > 0 && (
-        <SectionCard title={`What's driving your ${targetLabel} score`} eyebrow="Every point traces to something real." delay={0.2}>
-          <div className="space-y-0">
-            {comp.contributions.map((f, i) => {
-              const pos = f.points >= 0;
-              return (
-                <div key={i} className="grid grid-cols-[1fr_54px_44%] items-center gap-4 border-b border-slate-800 py-4 last:border-b-0">
-                  <span className="text-lg text-slate-200 leading-8">{f.label}</span>
-                  <span className={`text-xl font-bold ${pos ? 'text-emerald-400' : 'text-red-400'}`}>{pos ? '+' : ''}{f.points}</span>
-                  <div className={`h-7 rounded-md overflow-hidden bg-transparent flex items-center ${pos ? 'justify-start' : 'justify-end'}`}>
-                    <div className={`h-full rounded-md ${pos ? 'bg-linear-to-r from-emerald-700 to-emerald-400' : 'bg-linear-to-l from-red-900 to-red-400'}`} style={{ width: `${(Math.abs(f.points) / maxMag) * 100}%` }} />
-                  </div>
-                </div>
-              );
-            })}
+          <div>
+            <p className="max-w-[62ch] text-[16px] leading-[1.7] text-bone/90">
+              {COMP_GUIDANCE[comp.band]}
+            </p>
+            <p className="mt-4 max-w-[62ch] text-[15px] leading-[1.6] text-graphite">
+              Across the broader ladder, your front-office probability is{' '}
+              <span className="ml-num text-bone">~{pctText(comp.any_front_office_probability)}</span>.
+            </p>
           </div>
-          <div className="mt-5 flex justify-between font-mono text-sm text-slate-500"><span>← holds you back</span><span>lifts you →</span></div>
-        </SectionCard>
-      )}
+        </div>
+      </Panel>
 
+      {/* ── Actions: the only part of the report you can act on ── */}
       {actions.length > 0 && (
-        <SectionCard title="Your highest-leverage moves" eyebrow="Ranked by actual point-impact — not a generic checklist." delay={0.3}>
-          <div className="space-y-4">
+        <SectionCard
+          title="Your highest-leverage moves"
+          label={`${topActions.length} ranked`}
+          eyebrow="Ranked by actual point-impact on your index — not a generic checklist."
+        >
+          <ol>
             {topActions.map((action, i) => {
               const impact = action.index_impact;
               const prevIndex = runningIndex[i];
               const nextIndex = runningIndex[i + 1];
+              const first = i === 0;
               return (
-                <motion.div
+                <Row
+                  as="li"
                   key={i}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.35 + i * 0.07 }}
-                  className="flex gap-5 p-6 rounded-2xl border border-slate-700/70 bg-slate-900/80"
+                  className={`grid grid-cols-[2.5rem_minmax(0,1fr)] items-start gap-x-4 gap-y-3 py-6 sm:grid-cols-[3rem_minmax(0,1fr)_7rem] sm:gap-x-6 ${
+                    first ? 'border-l-2 border-l-red pl-4 sm:pl-5' : ''
+                  }`}
                 >
-                  <div className={`flex-shrink-0 w-20 h-20 rounded-2xl flex flex-col items-center justify-center border ${
-                    impact != null && impact >= 0 ? 'border-emerald-400/30 bg-emerald-400/5 text-emerald-400' : 'border-slate-700 bg-slate-800/40 text-slate-400'
-                  }`}>
-                    {impact != null ? (
-                      <>
-                        <span className="text-xl font-bold">{impact >= 0 ? '+' : ''}{impact}</span>
-                        <span className="text-[11px] uppercase tracking-widest text-slate-500 mt-0.5">pts</span>
-                      </>
-                    ) : (
-                      <span className="text-xl font-bold">{PRIORITY_LABEL[action.priority]}</span>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <span className="text-lg font-semibold text-white">{action.title}</span>
-                    <p className="mt-1 text-sm text-slate-400 leading-relaxed">{action.description}</p>
+                  <span className="ml-num text-[20px] font-bold leading-none text-graphite">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+
+                  <div className="min-w-0">
+                    <h3 className="text-[18px] font-bold uppercase leading-tight tracking-[-0.015em] text-bone">
+                      {action.title}
+                    </h3>
+                    <p className="mt-2 max-w-[70ch] text-[16px] leading-[1.6] text-graphite">
+                      {action.description}
+                    </p>
                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <span className={`rounded-full border px-3 py-1 text-xs ${EFFORT_COLOUR[action.estimated_effort]} border-current/25`}>
-                        Effort: {action.estimated_effort.charAt(0).toUpperCase() + action.estimated_effort.slice(1)}
-                      </span>
+                      {first && <StatusLabel tone="accent">Start here</StatusLabel>}
+                      <StatusLabel>
+                        Effort:{' '}
+                        {action.estimated_effort.charAt(0).toUpperCase() +
+                          action.estimated_effort.slice(1)}
+                      </StatusLabel>
                       {action.deadline && (
-                        <span className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-400">
-                          by {formatLocalDate(action.deadline)}
-                        </span>
+                        <StatusLabel>By {formatLocalDate(action.deadline)}</StatusLabel>
                       )}
                     </div>
                     {impact != null && (
-                      <p className="mt-3 text-xs text-slate-500">
-                        {targetLabel} index <strong className="text-slate-300">{prevIndex}</strong> → <strong className="text-slate-300">{nextIndex}</strong>
+                      <p className="ml-num mt-3 text-[13px] text-graphite">
+                        {targetLabel} index {prevIndex} → <span className="text-bone">{nextIndex}</span>
                       </p>
                     )}
                   </div>
-                </motion.div>
+
+                  <div className="col-start-2 sm:col-start-3 sm:justify-self-end sm:text-right">
+                    {impact != null ? (
+                      <>
+                        <span className="ml-num text-[26px] font-bold leading-none text-bone">
+                          {impact >= 0 ? '+' : ''}
+                          {impact}
+                        </span>
+                        <span className="ml-label mt-1 block sm:text-right">index pts</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="ml-num text-[26px] font-bold leading-none text-bone">
+                          {PRIORITY_LABEL[action.priority]}
+                        </span>
+                        <span className="ml-label mt-1 block sm:text-right">priority</span>
+                      </>
+                    )}
+                  </div>
+                </Row>
               );
             })}
+          </ol>
+
+          {/* Where those moves land you */}
+          <div className="mt-6 border border-rule p-5">
+            <span className="ml-label">If you close the moves above</span>
+            <div className="mt-3 flex flex-wrap items-baseline gap-3">
+              <span className="ml-num text-[28px] font-bold leading-none text-graphite">
+                {comp.index}
+              </span>
+              <span className="text-graphite" aria-hidden="true">
+                →
+              </span>
+              <span className="ml-num text-[28px] font-bold leading-none text-bone">
+                {finalIndex}
+              </span>
+              <span className="text-[15px] text-graphite">
+                {projectedBand.label} for {targetLabel}
+              </span>
+            </div>
+            <Meter
+              value={finalIndex}
+              className="mt-4"
+              label={`Projected ${targetLabel} index: ${finalIndex} out of 100`}
+            />
           </div>
         </SectionCard>
       )}
 
-      <div className="rounded-[1.7rem] border border-slate-700/70 bg-slate-900/70 p-6 sm:p-8">
-        <h2 className="font-serif text-3xl font-bold text-white">If you close the top moves</h2>
-        <div className="mt-6 flex items-center gap-5">
-          <span className="font-serif text-3xl text-gold-400">{comp.index}</span><span className="text-slate-400">→</span><span className="font-serif text-3xl text-emerald-400">{finalIndex}</span>
-          <div className="h-3 flex-1 rounded-full bg-slate-800 overflow-hidden"><div className="h-full bg-linear-to-r from-gold-400 via-gold-400 to-emerald-400" style={{ width: `${finalIndex}%` }} /></div>
-          <span className="text-slate-300">{projectedBand.label} for {targetLabel}</span>
+      {/* ── Where you stand, by tier ──────────────────────────── */}
+      <SectionCard
+        title="Where you stand, by tier"
+        label={`${comp.per_tier.length} tiers`}
+        eyebrow="One score isn't the whole story — the same profile reads differently at each tier."
+      >
+        <div className="border-t border-rule">
+          {comp.per_tier.map((t) => {
+            const b = COMP_BAND[t.band] ?? COMP_BAND.developing;
+            return (
+              <Row
+                key={t.tier}
+                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 py-4 sm:grid-cols-[11rem_3rem_minmax(0,1fr)_7rem] sm:gap-x-5"
+              >
+                <span className="text-[15px] text-bone">{tierLabel(t.tier)}</span>
+                <span className="ml-num text-right text-[18px] font-bold text-bone sm:text-left">
+                  {t.index}
+                </span>
+                <Meter
+                  value={t.index}
+                  className="col-span-2 sm:col-span-1"
+                  label={`${tierLabel(t.tier)}: ${t.index} out of 100`}
+                />
+                <span className="col-span-2 flex items-center justify-between gap-3 sm:col-span-1 sm:justify-end">
+                  <span className="ml-num text-[13px] text-graphite">
+                    ≈ {pctText(t.estimated_probability)}
+                  </span>
+                  <StatusLabel tone={b.tone}>{b.label}</StatusLabel>
+                </span>
+              </Row>
+            );
+          })}
         </div>
-      </div>
-    </div>
+
+        <p className="mt-6 max-w-[72ch] border-l-2 border-rule-bright pl-4 text-[16px] leading-[1.6] text-graphite">
+          <span className="text-bone">Recommended aim:</span> anchor applications at{' '}
+          <span className="text-bone">{tierLabel(comp.recommended_target)}</span> and keep{' '}
+          <span className="text-bone">{tierLabel(comp.stretch_target)}</span> live as a stretch.
+        </p>
+      </SectionCard>
+
+      {/* ── What drives the score ─────────────────────────────── */}
+      {comp.contributions.length > 0 && (
+        <SectionCard
+          title={`What's driving your ${targetLabel} score`}
+          label={`${comp.contributions.length} factors`}
+          eyebrow="Every point traces to something real in your profile."
+        >
+          <div className="border-t border-rule">
+            {comp.contributions.map((f, i) => {
+              const pos = f.points >= 0;
+              const width = `${(Math.abs(f.points) / maxMag) * 100}%`;
+              return (
+                <Row
+                  key={i}
+                  className="grid grid-cols-[minmax(0,1fr)_3.5rem] items-center gap-x-4 py-3.5 sm:grid-cols-[minmax(0,1fr)_3.5rem_minmax(0,42%)] sm:gap-x-5"
+                >
+                  <span className="text-[15px] leading-snug text-bone">{f.label}</span>
+                  <span
+                    className={`ml-num text-right text-[15px] font-bold ${
+                      pos ? 'text-bone' : 'text-graphite'
+                    }`}
+                  >
+                    {pos ? '+' : ''}
+                    {f.points}
+                  </span>
+                  {/* Diverging bar around a centre line. Direction is stated by
+                      the sign next to it, so it never relies on the bar alone. */}
+                  <span className="hidden h-3 items-stretch sm:flex" aria-hidden="true">
+                    <span className="flex w-1/2 justify-end">
+                      {!pos && <span className="bg-rule-bright" style={{ width }} />}
+                    </span>
+                    <span className="w-px bg-rule" />
+                    <span className="flex w-1/2 justify-start">
+                      {pos && <span className="bg-bone" style={{ width }} />}
+                    </span>
+                  </span>
+                </Row>
+              );
+            })}
+          </div>
+          <div className="ml-label mt-3 flex justify-between">
+            <span>◂ Holds you back</span>
+            <span>Lifts you ▸</span>
+          </div>
+        </SectionCard>
+      )}
+    </>
   );
 }
 
@@ -341,259 +412,228 @@ export default function ReportClient({
   const createdDate = new Date(createdAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
-    <div className="min-h-screen bg-navy-950 relative">
-      {/* Background */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full opacity-8"
-          style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.25) 0%, transparent 70%)', filter: 'blur(80px)' }} />
-        <div className="absolute bottom-1/3 right-0 w-96 h-96 rounded-full opacity-6"
-          style={{ background: 'radial-gradient(circle, rgba(29,78,216,0.4) 0%, transparent 70%)', filter: 'blur(100px)' }} />
-      </div>
+    <PageShell>
+      <PageHeader
+        label="Career Compass"
+        title="Your Career Compass"
+        lede="Your profile scored against real investment-banking career paths, with the moves that shift it most."
+        actions={<StatusLabel>Generated {createdDate}</StatusLabel>}
+      />
 
-      <div className="relative z-10 max-w-5xl mx-auto px-4 py-12 space-y-6">
+      {/* ── Competitiveness (primary lens) ── */}
+      {report.competitiveness && (
+        <CompetitivenessSection comp={report.competitiveness} actions={report.actions} />
+      )}
 
-        {/* ── Header ── */}
-        <motion.div
-          initial={{ opacity: 0, y: -16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-8"
-        >
-          <Link href="/" className="inline-flex items-center gap-2 mb-6 text-slate-500 hover:text-gold-400 transition-colors text-sm">
-            ← Back to TrajectoryOS
-          </Link>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-gold-400/25 bg-gold-400/6 mb-4">
-            <span className="w-1.5 h-1.5 rounded-full bg-gold-400" />
-            <span className="text-gold-400 text-xs font-medium tracking-wider uppercase">Career Compass Report</span>
+      {/* ── Stage + Fit band (fallback for reports predating competitiveness) ── */}
+      {!report.competitiveness && (
+        <Panel className="mt-10">
+          <PanelHeader
+            label="Assessment"
+            title="Stage and fit"
+            action={<StatusLabel tone={fitCfg.tone}>{fitCfg.label}</StatusLabel>}
+          />
+          <div className="grid gap-6 p-5 sm:grid-cols-2 sm:p-6">
+            <Stat
+              label="Career stage"
+              value={report.stage}
+              sub={STAGE_LABELS[report.stage] ?? report.stage_description}
+            />
+            <Stat
+              label="Reached your target"
+              value={`${successPct}%`}
+              sub={
+                <>
+                  of matched profiles reached your target
+                  {fitDetailParts.length > 0 && (
+                    <span className="ml-num mt-1 block">{fitDetailParts.join(' · ')}</span>
+                  )}
+                </>
+              }
+            />
           </div>
-          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-white mb-2">
-            Your Career Compass
-          </h1>
-          <p className="text-slate-500 text-sm">Generated {createdDate}</p>
-        </motion.div>
+        </Panel>
+      )}
 
-        {/* ── Competitiveness (primary lens) ── */}
-        {report.competitiveness && <CompetitivenessSection comp={report.competitiveness} actions={report.actions} />}
-
-        {/* ── Stage + Fit band (fallback for reports predating competitiveness) ── */}
-        {!report.competitiveness && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="grid grid-cols-2 gap-4"
+      {/* ── You vs cohort median ── */}
+      {report.gaps.length > 0 && (
+        <SectionCard
+          title={`You vs. the median ${tierLabel(report.target.tier)} analyst`}
+          label={`${report.gaps.slice(0, 6).length} dimensions`}
+          eyebrow="Measured against the matched professional cohort."
         >
-          {/* Stage */}
-          <div className="glass border border-white/8 rounded-2xl p-5">
-            <div className="text-xs text-slate-500 uppercase tracking-widest mb-1">Career Stage</div>
-            <div className="text-2xl font-bold text-white font-serif mb-1">{report.stage}</div>
-            <div className="text-sm text-slate-400">{STAGE_LABELS[report.stage] ?? report.stage_description}</div>
-          </div>
-
-          {/* Fit band */}
-          <div className={`glass border rounded-2xl p-5 ${fitCfg.bg}`}>
-            <div className="text-xs text-slate-500 uppercase tracking-widest mb-1">Fit Assessment</div>
-            <div className={`text-xl font-bold font-serif mb-1 ${fitCfg.colour}`}>{fitCfg.label}</div>
-            <div className="text-xs text-slate-400">
-              {successPct}% of matched profiles reached your target
+          <div className="border-t border-rule">
+            <div className="ml-label hidden grid-cols-[1.4fr_0.7fr_0.9fr_5rem] gap-3 border-b border-rule py-2.5 sm:grid">
+              <span>Dimension</span>
+              <span>You</span>
+              <span>Cohort signal</span>
+              <span className="text-right">Status</span>
             </div>
-            {fitDetailParts.length > 0 && (
-              <div className="text-[11px] text-slate-500 mt-1">
-                {fitDetailParts.join(' · ')}
-              </div>
-            )}
-          </div>
-        </motion.div>
-        )}
-
-
-        {/* ── You vs cohort median ── */}
-        {report.gaps.length > 0 && (
-          <SectionCard title={`You vs. the median ${tierLabel(report.target.tier)} analyst`} eyebrow="Measured against the matched professional cohort." delay={0.18}>
-            <div className="overflow-hidden rounded-2xl border border-slate-800">
-              <div className="grid grid-cols-[1.3fr_0.8fr_0.8fr_0.5fr] gap-3 border-b border-slate-800 px-4 py-3 text-xs uppercase tracking-[0.25em] text-slate-500">
-                <span>Dimension</span><span>You</span><span>Cohort signal</span><span className="text-right">Status</span>
-              </div>
-              {report.gaps.slice(0, 6).map((gap) => (
-                <div key={gap.gap_key} className="grid grid-cols-[1.3fr_0.8fr_0.8fr_0.5fr] gap-3 border-b border-slate-800 px-4 py-4 last:border-b-0">
-                  <span className="text-slate-200">{gap.display_name}</span>
-                  <span className="font-semibold text-white">{gap.student_has ? 'Yes' : 'Not yet'}</span>
-                  <span className="text-slate-400">{Math.round(gap.match_pct * 100)}% have this</span>
-                  <span className={`text-right text-xs font-bold tracking-[0.18em] uppercase ${gap.student_has ? 'text-emerald-400' : gap.actionability === 'high' ? 'text-orange-400' : 'text-slate-400'}`}>
+            {report.gaps.slice(0, 6).map((gap) => (
+              <Row
+                key={gap.gap_key}
+                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 py-3.5 sm:grid-cols-[1.4fr_0.7fr_0.9fr_5rem]"
+              >
+                <span className="text-[15px] text-bone">{gap.display_name}</span>
+                <span className="text-right text-[14px] font-semibold text-bone sm:text-left">
+                  {gap.student_has ? 'Yes' : 'Not yet'}
+                </span>
+                <span className="ml-num text-[13px] text-graphite">
+                  {Math.round(gap.match_pct * 100)}% have this
+                </span>
+                <span className="justify-self-end">
+                  <StatusLabel
+                    tone={gap.student_has ? 'ok' : gap.actionability === 'high' ? 'warn' : 'neutral'}
+                  >
                     {gap.student_has ? 'On par' : gap.actionability === 'high' ? 'Gap' : 'Build'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-        )}
-
-        {/* ── Match stats ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.15 }}
-          className="glass border border-white/8 rounded-2xl p-5"
-        >
-          <div className="text-xs text-slate-500 uppercase tracking-widest mb-4">Match Statistics</div>
-          <div className="grid grid-cols-3 gap-4">
-            {[
-              { label: 'Profiles analysed', value: report.match_summary.total_professionals ?? report.match_summary.pool_size },
-              { label: 'Similar to you', value: report.match_summary.matched_count },
-              { label: 'Reached target', value: report.match_summary.reached_target_count },
-            ].map(({ label, value }) => (
-              <div key={label} className="text-center">
-                <div className="text-2xl font-bold text-white font-serif">{value}</div>
-                <div className="text-xs text-slate-500 mt-1">{label}</div>
-              </div>
+                  </StatusLabel>
+                </span>
+              </Row>
             ))}
           </div>
-
-          {/* Bar */}
-          <div className="mt-5">
-            <div className="flex justify-between text-xs text-slate-500 mb-1.5">
-              <span>Success rate</span>
-              <span className={fitCfg.colour}>{successPct}%</span>
-            </div>
-            <div className="h-2 rounded-full bg-white/6 overflow-hidden">
-              <motion.div
-                className="h-full rounded-full"
-                style={{ background: fitCfg.bar }}
-                initial={{ width: 0 }}
-                animate={{ width: `${successPct}%` }}
-                transition={{ duration: 1, delay: 0.6, ease: 'easeOut' }}
-              />
-            </div>
-          </div>
-
-          {report.match_summary.low_data_warning && (
-            <p className="mt-3 text-xs text-amber-400/70 bg-amber-400/5 border border-amber-400/15 rounded-lg px-3 py-2">
-              Limited data for your exact profile — results are directional.
-            </p>
-          )}
-        </motion.div>
-
-        {/* ── Where You Stand ── */}
-        <SectionCard title="Where You Stand" delay={0.2}>
-          <Prose text={llm.sections.where_you_stand} />
         </SectionCard>
+      )}
 
-        {/* ── Matched Paths ── */}
-        <SectionCard title="People who started like you — and made it" eyebrow="Closest real trajectories, anonymised." delay={0.25}>
-          <Prose text={llm.sections.matched_paths} />
+      {/* ── Match stats ── */}
+      <SectionCard
+        title="Match statistics"
+        label="Scoring engine"
+        eyebrow="How large the comparable pool was, and how much of it reached your target."
+      >
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+          {[
+            { label: 'Profiles analysed', value: report.match_summary.total_professionals ?? report.match_summary.pool_size },
+            { label: 'Similar to you', value: report.match_summary.matched_count },
+            { label: 'Reached target', value: report.match_summary.reached_target_count },
+          ].map(({ label, value }) => (
+            <Stat key={label} label={label} value={value} />
+          ))}
+        </div>
 
-          {report.top_paths.length > 0 && (
-            <div className="mt-5 space-y-3">
-              {report.top_paths.slice(0, 3).map((path, i) => (
-                <motion.div
-                  key={path.anonymised_profile_id}
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.35 + i * 0.08 }}
-                  className="flex items-center gap-4 p-5 rounded-2xl bg-slate-900/80 border border-slate-700/70"
-                >
-                  <div className="flex-shrink-0 w-16 h-10 rounded-xl bg-gold-400/10 border border-gold-400/25 flex items-center justify-center text-gold-300 text-sm font-mono font-bold">
-                    P{String(i + 1).padStart(3, '0')}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs text-slate-500 mb-1">
-                      Now at <span className="text-slate-300">{path.reached_tier.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</span>
-                    </div>
-                    <p className="text-sm text-slate-300 leading-relaxed">{path.path_summary}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </SectionCard>
-
-        {/* ── Gaps ── */}
-        {report.gaps.length > 0 && (
-          <SectionCard title="Profile Gaps" delay={0.3}>
-            <p className="text-slate-400 text-sm mb-4">
-              Based on your matched cohort, here&apos;s what&apos;s missing from your profile.
-            </p>
-            <div className="space-y-3">
-              {report.gaps.slice(0, 6).map((gap) => (
-                <div key={gap.gap_key} className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-white">{gap.display_name}</span>
-                    <span className={`text-xs ${
-                      gap.actionability === 'high' ? 'text-emerald-400' :
-                      gap.actionability === 'medium' ? 'text-gold-400' : 'text-slate-500'
-                    }`}>
-                      {Math.round(gap.match_pct * 100)}% have this
-                    </span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-white/6 overflow-hidden">
-                    <motion.div
-                      className="h-full rounded-full"
-                      style={{
-                        background: gap.actionability === 'high' ? '#34d399' :
-                          gap.actionability === 'medium' ? '#d4af37' : '#64748b'
-                      }}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.round(gap.match_pct * 100)}%` }}
-                      transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-        )}
-
-        {/* ── Why these moves matter ── */}
-        <SectionCard title="Why these moves matter" eyebrow="The reasoning behind your roadmap." delay={0.35}>
-          <Prose text={llm.sections.what_to_do_next} />
-        </SectionCard>
-
-        {/* ── Next recruiting window ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="glass border border-gold-400/15 rounded-2xl p-5 flex items-center justify-between gap-4"
-        >
-          <div>
-            <div className="text-xs text-slate-500 uppercase tracking-widest mb-1">Next Recruiting Window</div>
-            <div className="text-white font-semibold">{report.context.next_recruiting_window}</div>
+        <div className="mt-6 max-w-[32rem]">
+          <div className="flex items-baseline justify-between">
+            <span className="ml-label">Success rate</span>
+            <span className="ml-num text-[13px] text-bone">{successPct}%</span>
           </div>
-          <div className="w-10 h-10 rounded-full bg-gold-400/10 border border-gold-400/20 flex items-center justify-center flex-shrink-0">
-            <svg className="w-5 h-5 text-gold-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-        </motion.div>
-
-        {/* ── Download the full deep-dive ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="glass border border-gold-400/20 rounded-2xl p-6 flex justify-center"
-        >
-          <DownloadCompassReport reportId={reportId} />
-        </motion.div>
-
-        {/* ── Footer CTA ── */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="text-center pt-4 pb-8 space-y-3"
-        >
-          <p className="text-slate-500 text-xs">
-            Report generated with TrajectoryOS scoring engine · {new Date(createdAt).toLocaleDateString('en-AU')}
+          <Meter
+            value={successPct}
+            className="mt-1.5"
+            label={`Success rate: ${successPct}%`}
+          />
+          <p className="mt-2 text-[14px] text-graphite">
+            <StatusLabel tone={fitCfg.tone} className="mr-2">
+              {fitCfg.label}
+            </StatusLabel>
+            {fitDetailParts.length > 0 && (
+              <span className="ml-num">{fitDetailParts.join(' · ')}</span>
+            )}
           </p>
-          <Link
-            href="/tools/career-compass"
-            className="inline-block text-gold-400 hover:text-gold-300 transition-colors text-sm font-medium"
-          >
-            Learn how Career Compass works →
-          </Link>
-        </motion.div>
+        </div>
+
+        {report.match_summary.low_data_warning && (
+          <p className="mt-5 flex flex-wrap items-center gap-2 border border-warn/40 px-4 py-3 text-[15px] text-graphite">
+            <StatusLabel tone="warn">Limited data</StatusLabel>
+            Limited data for your exact profile — results are directional.
+          </p>
+        )}
+      </SectionCard>
+
+      {/* ── Where You Stand ── */}
+      <SectionCard title="Where you stand" label="Analysis">
+        <Prose text={llm.sections.where_you_stand} />
+      </SectionCard>
+
+      {/* ── Matched Paths ── */}
+      <SectionCard
+        title="People who started like you — and made it"
+        label={`${report.top_paths.slice(0, 3).length} paths`}
+        eyebrow="Closest real trajectories, anonymised."
+      >
+        <Prose text={llm.sections.matched_paths} />
+
+        {report.top_paths.length > 0 && (
+          <div className="mt-6 border-t border-rule">
+            {report.top_paths.slice(0, 3).map((path, i) => (
+              <Row
+                key={path.anonymised_profile_id}
+                className="grid grid-cols-[3.5rem_minmax(0,1fr)] items-start gap-x-4 py-4"
+              >
+                <span className="ml-num text-[13px] font-bold text-graphite">
+                  P{String(i + 1).padStart(3, '0')}
+                </span>
+                <span className="min-w-0">
+                  <span className="ml-label block">
+                    Now at{' '}
+                    {path.reached_tier.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                  </span>
+                  <span className="mt-1.5 block max-w-[72ch] text-[15px] leading-[1.6] text-bone/90">
+                    {path.path_summary}
+                  </span>
+                </span>
+              </Row>
+            ))}
+          </div>
+        )}
+      </SectionCard>
+
+      {/* ── Gaps ── */}
+      {report.gaps.length > 0 && (
+        <SectionCard
+          title="Profile gaps"
+          label={`${report.gaps.slice(0, 6).length} tracked`}
+          eyebrow="Based on your matched cohort, here's what's missing from your profile."
+        >
+          <div className="border-t border-rule">
+            {report.gaps.slice(0, 6).map((gap) => (
+              <Row key={gap.gap_key} className="py-4">
+                <div className="flex items-baseline justify-between gap-4">
+                  <span className="text-[15px] text-bone">{gap.display_name}</span>
+                  <span className="ml-num shrink-0 text-[13px] text-graphite">
+                    {Math.round(gap.match_pct * 100)}% have this
+                  </span>
+                </div>
+                <Meter
+                  value={Math.round(gap.match_pct * 100)}
+                  className="mt-2"
+                  label={`${gap.display_name}: ${Math.round(gap.match_pct * 100)}% of the cohort have this`}
+                />
+              </Row>
+            ))}
+          </div>
+        </SectionCard>
+      )}
+
+      {/* ── Why these moves matter ── */}
+      <SectionCard
+        title="Why these moves matter"
+        label="Analysis"
+        eyebrow="The reasoning behind your roadmap."
+      >
+        <Prose text={llm.sections.what_to_do_next} />
+      </SectionCard>
+
+      {/* ── Next recruiting window ── */}
+      <div className="mt-10 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-y border-rule py-4">
+        <span className="ml-label">Next recruiting window</span>
+        <span className="text-[16px] font-semibold text-bone">
+          {report.context.next_recruiting_window}
+        </span>
       </div>
-    </div>
+
+      {/* ── Download the full deep-dive ── */}
+      <SectionCard title="Full written deep-dive" label="PDF">
+        <DownloadCompassReport reportId={reportId} />
+      </SectionCard>
+
+      {/* ── Footer ── */}
+      <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-rule pt-6">
+        <p className="ml-label">
+          TrajectoryOS scoring engine · {new Date(createdAt).toLocaleDateString('en-AU')}
+        </p>
+        <Link href="/tools/career-compass" className="text-[15px] font-semibold text-red hover:underline">
+          How Career Compass works <span aria-hidden="true">▸</span>
+        </Link>
+      </div>
+    </PageShell>
   );
 }

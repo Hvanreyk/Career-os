@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { HeroImage } from '@/components/home/HeroImage';
 import { Wordmark } from '@/components/ui/Wordmark';
+import { LandingNav } from './LandingNav';
 import { PlateMotion, Reveal, ScrollProgress } from './interactions';
 import {
   brand,
@@ -18,7 +19,7 @@ import './landing.css';
 
 /** The approved hero plate. */
 const plate = {
-  id: 'v1',
+  ref: '01',
   name: 'Window',
   slug: 'h1-window',
   caption: 'PLATE 01 · 1-BIT · OBSERVED',
@@ -82,14 +83,16 @@ export function Landing() {
     <div className="di min-h-screen overflow-x-hidden">
       {/* ── Terminal bar ─────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 bg-[var(--di-black)]/92 backdrop-blur-[2px]">
-        <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-3 sm:px-8">
-          <Wordmark className="h-6 w-auto" ink="var(--di-bone)" accent="var(--di-red)" />
-          <div className="flex items-center gap-5">
-            <Tag className="hidden sm:inline">SYS · CAREER MAP</Tag>
-            <Tag>
-              PLATE {plate.id.toUpperCase()} · {plate.name.toUpperCase()}
-            </Tag>
-          </div>
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-0 px-5 py-3 sm:px-8">
+          <Link href="/" aria-label="MappedLabs — home" className="di-link flex items-center">
+            <Wordmark className="h-6 w-auto" ink="var(--di-bone)" accent="var(--di-red)" />
+          </Link>
+          {/* The plate marginalia is the first thing to go when the bar gets
+              crowded — navigation has to survive at every width. */}
+          <Tag className="ml-auto mr-4 hidden xl:inline">
+            PLATE {plate.ref} · {plate.name.toUpperCase()}
+          </Tag>
+          <LandingNav />
         </div>
         <ScrollProgress />
       </header>
@@ -362,10 +365,16 @@ export function Landing() {
               </h3>
               <Tag>EVERY POINT TRACES TO SOMETHING REAL</Tag>
             </div>
+            {/* Scale to the largest driver actually present rather than a
+                hard-coded 15, so a bigger swing can't overflow its cell. */}
             <ul className="mt-5">
               {sampleProfile.drivers.map((d) => {
+                const scale = Math.max(
+                  1,
+                  ...sampleProfile.drivers.map((x) => Math.abs(x.points)),
+                );
                 const positive = d.points > 0;
-                const width = `${(Math.abs(d.points) / 15) * 100}%`;
+                const width = `${Math.min(100, (Math.abs(d.points) / scale) * 100)}%`;
                 return (
                   <li
                     key={d.factor}
@@ -383,7 +392,14 @@ export function Landing() {
                       {positive ? '+' : ''}
                       {d.points}
                     </span>
-                    <span className="hidden h-3 sm:block" aria-hidden="true">
+                    {/* Negative drivers grow leftward, matching the
+                        "← HOLDS YOU BACK / LIFTS YOU →" legend below. */}
+                    <span
+                      className={`hidden h-3 overflow-hidden sm:flex ${
+                        positive ? 'justify-start' : 'justify-end'
+                      }`}
+                      aria-hidden="true"
+                    >
                       <span
                         className="block h-full"
                         style={{
@@ -516,7 +532,7 @@ export function Landing() {
       <footer className="border-t border-[var(--di-rule)] pb-24 pt-8">
         <div className="mx-auto mb-7 flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-5 sm:px-8">
           <Tag>
-            {brand.name} · PLATE {plate.id.toUpperCase()} · {plate.name.toUpperCase()}
+            {brand.name} · PLATE {plate.ref} · {plate.name.toUpperCase()}
           </Tag>
           <Tag>DITHERED INTELLIGENCE</Tag>
         </div>

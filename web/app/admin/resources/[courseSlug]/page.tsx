@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, History } from 'lucide-react';
 import { AdminCourseEditor } from '@/components/admin/AdminCourseEditor';
 import { AdminModuleEditor, NewModuleForm } from '@/components/admin/AdminModuleEditor';
+import { PageHeader, PageShell } from '@/components/ui/PageHeader';
+import { Panel, PanelHeader } from '@/components/ui/Panel';
 import { requireAdmin } from '@/lib/auth';
 import { getResourceDefinition } from '@/lib/resources/catalog';
 import { createServiceClient } from '@/lib/supabase/server';
@@ -36,24 +37,32 @@ export default async function AdminCoursePage({ params }: { params: Promise<{ co
     : [{ data: [] }, { data: [] }];
 
   return (
-    <div className="min-h-screen bg-navy-950 px-6 pt-28 pb-24">
-      <div className="max-w-5xl mx-auto">
-        <Link href="/admin/resources" className="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-300 text-sm mb-6">
-          <ArrowLeft className="w-4 h-4" /> Resource admin
+    <div className="min-h-screen bg-ink pt-16">
+      <PageShell>
+        <Link
+          href="/admin/resources"
+          className="ml-label inline-flex min-h-[44px] items-center gap-2 hover:text-bone"
+        >
+          <span aria-hidden="true">◂</span> Resource admin
         </Link>
-        <div className="mb-8">
-          <p className="text-xs font-semibold uppercase tracking-widest text-gold-400 mb-2">{resource.mode}</p>
-          <h1 className="font-serif text-3xl md:text-4xl font-bold text-white">{course.title}</h1>
-          <p className="text-slate-500 text-sm mt-2">/{course.slug}</p>
+        <PageHeader
+          label={resource.mode}
+          title={course.title}
+          lede={<span className="ml-num">/{course.slug}</span>}
+          className="mt-2"
+        />
+
+        <div className="mt-8">
+          <AdminCourseEditor course={course} />
         </div>
 
-        <AdminCourseEditor course={course} />
-
-        <div className="mt-10 mb-5 flex items-center justify-between">
-          <h2 className="font-serif text-2xl font-bold text-white">Modules and lessons</h2>
-          <span className="text-xs text-slate-500">{modules?.length ?? 0} modules</span>
+        <div className="mt-12 flex flex-wrap items-baseline justify-between gap-4 border-b border-bone pb-3">
+          <h2 className="text-[17px] font-bold uppercase tracking-[-0.015em] text-bone">
+            Modules and lessons
+          </h2>
+          <span className="ml-label">{modules?.length ?? 0} modules</span>
         </div>
-        <div className="space-y-5">
+        <div className="mt-5 space-y-5">
           {(modules ?? []).map((module) => (
             <AdminModuleEditor
               key={module.id}
@@ -69,22 +78,28 @@ export default async function AdminCoursePage({ params }: { params: Promise<{ co
           <NewModuleForm courseId={course.id} />
         </div>
 
-        <div className="mt-10 glass rounded-2xl border border-white/8 p-6">
-          <h2 className="text-white font-semibold flex items-center gap-2 mb-4"><History className="w-4 h-4 text-gold-400" /> Recent revisions</h2>
-          <div className="space-y-3">
-            {(revisions ?? []).length === 0 && <p className="text-sm text-slate-500">No Admin UI revisions yet.</p>}
+        <Panel className="mt-12">
+          <PanelHeader title="Recent revisions" label="Audit trail" />
+          <div className="px-4 sm:px-5">
+            {(revisions ?? []).length === 0 && (
+              <p className="py-4 text-[15px] text-graphite">No Admin UI revisions yet.</p>
+            )}
             {(revisions ?? []).map((revision) => (
-              <div key={revision.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm border-b border-white/6 pb-3 last:border-0 last:pb-0">
-                <span className="text-white">{revision.entity_type}</span>
-                <span className="text-gold-400">{revision.action}</span>
-                <span className="text-slate-500">revision {revision.revision}</span>
-                <span className="text-slate-600 ml-auto">{new Date(revision.created_at).toLocaleString('en-AU')}</span>
-                {revision.note && <p className="basis-full text-slate-400">{revision.note}</p>}
+              <div key={revision.id} className="ml-row flex flex-wrap items-center gap-x-3 gap-y-1 py-3">
+                <span className="ml-num text-[13px] text-bone">{revision.entity_type}</span>
+                <span className="ml-label text-red">{revision.action}</span>
+                <span className="ml-num text-[13px] text-graphite">revision {revision.revision}</span>
+                <span className="ml-num ml-auto text-[12px] text-graphite">
+                  {new Date(revision.created_at).toLocaleString('en-AU')}
+                </span>
+                {revision.note && (
+                  <p className="basis-full text-[14px] leading-snug text-graphite">{revision.note}</p>
+                )}
               </div>
             ))}
           </div>
-        </div>
-      </div>
+        </Panel>
+      </PageShell>
     </div>
   );
 }

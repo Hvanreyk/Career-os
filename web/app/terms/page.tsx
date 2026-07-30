@@ -34,9 +34,12 @@ const sections = [
   },
 ];
 
+// Bump this when the text below actually changes.
+const LAST_UPDATED = '2026-07-30';
+
 const NOTICE =
   'This is placeholder legal content for development purposes only. These terms should be reviewed and replaced by a qualified legal professional before public launch.';
 
 export default function TermsPage() {
-  return <LegalPage title="Terms of Use" notice={NOTICE} sections={sections} />;
+  return <LegalPage title="Terms of Use" notice={NOTICE} sections={sections} updated={LAST_UPDATED} />;
 }

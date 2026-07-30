@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Loader2, Plus } from 'lucide-react';
-import { CourseIcon } from '@/components/courses/icons';
 import type { ResourceDefinition } from '@/lib/resources/catalog';
 import { submitAdminContent } from '@/lib/admin/client';
+import { Panel } from '@/components/ui/Panel';
+import { StatusLabel } from '@/components/ui/Status';
 
 interface Props {
   resource: ResourceDefinition;
@@ -41,52 +41,55 @@ export function AdminResourceCard({ resource, course }: Props) {
   }
 
   return (
-    <div className="glass rounded-2xl border border-white/8 p-6 flex flex-col">
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <div className="w-11 h-11 rounded-xl bg-gold-400/10 flex items-center justify-center">
-          <CourseIcon name={resource.icon} className="w-5 h-5 text-gold-400" />
+    <Panel className="flex flex-col">
+      <div className="flex flex-1 flex-col p-5">
+        <div className="flex items-start justify-between gap-3">
+          <span className="ml-label">{resource.slug}</span>
+          <StatusLabel
+            tone={course?.status === 'published' ? 'ok' : course ? 'warn' : 'neutral'}
+            className="shrink-0"
+          >
+            {course?.status ?? 'not initialised'}
+          </StatusLabel>
         </div>
-        <span
-          className={`text-xs px-2.5 py-1 rounded-full border ${
-            course?.status === 'published'
-              ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300'
-              : course
-                ? 'border-amber-400/25 bg-amber-400/10 text-amber-300'
-                : 'border-white/10 text-slate-500'
-          }`}
-        >
-          {course?.status ?? 'not initialised'}
-        </span>
-      </div>
-      <h2 className="text-white font-semibold text-lg mb-2">{resource.title}</h2>
-      <p className="text-slate-400 text-sm leading-relaxed flex-1">{resource.description}</p>
-      {course && (
-        <p className="text-xs text-slate-600 mt-4">
-          {course.editorial_source} source · revision {course.editorial_revision}
+        <h2 className="mt-3 text-[17px] font-bold uppercase tracking-[-0.015em] text-bone">
+          {resource.title}
+        </h2>
+        <p className="mt-2 flex-1 text-[15px] leading-[1.6] text-graphite">
+          {resource.description}
         </p>
-      )}
-      <div className="mt-5 pt-4 border-t border-white/8">
+        {course && (
+          <p className="ml-num mt-4 text-[12px] text-graphite">
+            {course.editorial_source} source · revision {course.editorial_revision}
+          </p>
+        )}
+      </div>
+      <div className="border-t border-rule px-5 py-2">
         {course ? (
           <button
             type="button"
             onClick={() => router.push(`/admin/resources/${resource.slug}`)}
-            className="text-sm text-gold-400 hover:text-gold-300 flex items-center gap-2"
+            className="ml-btn ml-btn-text min-h-[44px] text-[14px]"
           >
-            Manage content <ArrowRight className="w-4 h-4" />
+            Manage content <span aria-hidden="true">▸</span>
           </button>
         ) : (
           <button
             type="button"
             onClick={() => void initialize()}
             disabled={busy}
-            className="text-sm text-gold-400 hover:text-gold-300 flex items-center gap-2 disabled:opacity-50"
+            className="ml-btn ml-btn-text min-h-[44px] text-[14px]"
           >
-            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            Create draft course
+            {busy ? 'Creating…' : 'Create draft course'}
           </button>
         )}
-        {error && <p className="text-red-400 text-xs mt-3">{error}</p>}
+        {error && (
+          <p role="alert" className="pb-2 text-[13px] leading-snug text-red">
+            <span aria-hidden="true">▲ </span>
+            {error}
+          </p>
+        )}
       </div>
-    </div>
+    </Panel>
   );
 }

@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { ArrowRight, ChevronLeft, Loader2 } from 'lucide-react';
 import { ChoiceButton } from '@/components/onboard/ChoiceButton';
+import { Button } from '@/components/ui/Button';
+import { Meter } from '@/components/ui/Status';
 import { ReadinessGauge } from './ReadinessGauge';
 
 // Serializable question data comes from the server page (which imports
@@ -90,40 +89,45 @@ export function DiagnosticWizard({
       .filter((slug) => moduleTitles[slug])
       .slice(0, 3);
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         <ReadinessGauge
           score={readiness.score}
           dimensions={readiness.dimensions}
           dimensionLabels={dimensionLabels}
           heading="Your readiness score"
         />
+
         {priorities.length > 0 && (
-          <div className="glass rounded-2xl border border-white/8 p-7">
-            <p className="text-xs font-semibold text-gold-400 uppercase tracking-widest mb-4">
-              Start here
+          <section>
+            <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-bone pb-3">
+              <h2 className="text-[17px] font-bold uppercase tracking-[-0.015em] text-bone">
+                Start here
+              </h2>
+              <span className="ml-label">Recommended order</span>
+            </div>
+            <p className="mt-4 max-w-[66ch] text-[16px] leading-[1.6] text-graphite">
+              Based on your answers, these modules will move your readiness fastest.
             </p>
-            <p className="text-slate-400 text-sm mb-4">
-              Based on your answers, these modules will move your readiness fastest:
-            </p>
-            <ol className="space-y-2">
+            <ol className="mt-3">
               {priorities.map((slug, i) => (
-                <li key={slug} className="flex items-center gap-3 text-sm">
-                  <span className="w-6 h-6 rounded-full bg-gold-400/10 text-gold-400 font-semibold flex items-center justify-center shrink-0 text-xs">
-                    {i + 1}
+                <li
+                  key={slug}
+                  className="ml-row grid grid-cols-[2.5rem_minmax(0,1fr)] items-baseline gap-x-4 py-4"
+                >
+                  <span className="ml-num text-[13px] text-red" aria-hidden="true">
+                    {String(i + 1).padStart(2, '0')}
                   </span>
-                  <span className="text-white">{moduleTitles[slug]}</span>
+                  <span className="text-[16px] leading-[1.5] text-bone">{moduleTitles[slug]}</span>
                 </li>
               ))}
             </ol>
-          </div>
+          </section>
         )}
-        <div className="flex justify-end">
-          <Link
-            href={`/resources/${courseSlug}`}
-            className="px-5 py-3 bg-gold-400 text-navy-950 font-semibold text-sm rounded-xl hover:bg-gold-300 transition-all shadow-[0_0_20px_rgba(212,175,55,0.25)] flex items-center gap-2"
-          >
-            Back to {courseTitle} <ArrowRight className="w-4 h-4" />
-          </Link>
+
+        <div className="border-t border-rule pt-6">
+          <Button href={`/resources/${courseSlug}`} size="lg">
+            Back to {courseTitle} <span aria-hidden="true">▸</span>
+          </Button>
         </div>
       </div>
     );
@@ -135,63 +139,60 @@ export function DiagnosticWizard({
 
   return (
     <div>
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-slate-500 uppercase tracking-widest">
-            Question {step + 1} of {questions.length}
+      {/* Position in the sequence, printed as figures — a wizard should never
+          leave you guessing how much is left. */}
+      <div className="border-b border-rule pb-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <span className="ml-label">
+            Question <span className="ml-num text-bone">{step + 1}</span> of{' '}
+            <span className="ml-num">{questions.length}</span>
           </span>
           {prefill[question.id] && !answers[question.id] && (
-            <span className="text-xs text-slate-600">Suggested from your profile</span>
+            <span className="ml-label">Suggested from your profile</span>
           )}
         </div>
-        <div className="h-1 rounded-full bg-navy-800 overflow-hidden">
-          <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-gold-500 to-gold-300"
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
-          />
-        </div>
+        <Meter
+          value={progress}
+          accent
+          className="mt-3"
+          label={`Diagnostic progress: question ${step + 1} of ${questions.length}`}
+        />
       </div>
 
-      <motion.div
-        key={question.id}
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, ease: 'easeOut' }}
-      >
-        <h2 className="font-serif text-2xl font-bold text-white mb-6">{question.prompt}</h2>
-        <div className="space-y-3">
-          {question.options.map((opt) => (
+      <h2 className="mt-8 max-w-[42ch] text-[20px] font-bold leading-[1.25] tracking-[-0.02em] text-bone">
+        {question.prompt}
+      </h2>
+
+      {/* One frame around the options; ChoiceButton draws the hairlines. */}
+      <div className="mt-5 border border-rule">
+        {question.options.map((opt) => (
+          <div key={opt.id} className="ml-row">
             <ChoiceButton
-              key={opt.id}
               selected={answers[question.id] === opt.id}
               onClick={() => choose(opt.id)}
             >
               {opt.text}
             </ChoiceButton>
-          ))}
-        </div>
-      </motion.div>
+          </div>
+        ))}
+      </div>
 
-      <div className="flex items-center justify-between mt-8">
+      <div className="mt-6 flex min-h-[44px] items-center justify-between gap-4">
         {step > 0 ? (
-          <button
-            type="button"
-            onClick={() => setStep((s) => s - 1)}
-            className="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-300 text-sm transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" /> Back
-          </button>
+          <Button onClick={() => setStep((s) => s - 1)} variant="ghost">
+            <span aria-hidden="true">◂</span> Back
+          </Button>
         ) : (
           <span />
         )}
-        {submitting && (
-          <span className="text-sm text-slate-400 flex items-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin" /> Scoring…
-          </span>
-        )}
+        {submitting && <span className="ml-label">▸ Scoring…</span>}
       </div>
-      {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
+
+      {error && (
+        <p className="mt-4 text-[15px] text-red" role="alert">
+          ▲ {error}
+        </p>
+      )}
     </div>
   );
 }

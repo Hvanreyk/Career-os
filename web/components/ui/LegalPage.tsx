@@ -11,23 +11,33 @@ export function LegalPage({
   title,
   notice,
   sections,
+  updated,
 }: {
   title: string;
   /** The placeholder-content warning. Kept prominent on purpose. */
   notice: string;
   sections: { title: string; body: string }[];
+  /**
+   * ISO date the text was last edited. Passed in rather than derived from
+   * `new Date()`: a generated date claims the policy changed today every day,
+   * and makes the output differ between build time and request time.
+   */
+  updated: string;
 }) {
-  const updated = new Date().toLocaleDateString('en-AU', {
+  const updatedLabel = new Date(`${updated}T00:00:00Z`).toLocaleDateString('en-AU', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+    timeZone: 'UTC',
   });
 
   return (
     <PageShell width="narrow">
       <PageHeader label="Legal" title={title} />
 
-      <p className="ml-label mt-4">Last updated: {updated}</p>
+      <p className="ml-label mt-4">
+        Last updated: <time dateTime={updated}>{updatedLabel}</time>
+      </p>
 
       <p
         className="mt-6 border-l-2 border-red bg-surface px-4 py-3 text-[15px] leading-[1.6] text-bone"

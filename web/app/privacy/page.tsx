@@ -34,9 +34,12 @@ const sections = [
   },
 ];
 
+// Bump this when the text below actually changes.
+const LAST_UPDATED = '2026-07-30';
+
 const NOTICE =
   'This is placeholder legal content for development purposes only. This policy should be reviewed and replaced by a qualified legal professional before public launch.';
 
 export default function PrivacyPage() {
-  return <LegalPage title="Privacy Policy" notice={NOTICE} sections={sections} />;
+  return <LegalPage title="Privacy Policy" notice={NOTICE} sections={sections} updated={LAST_UPDATED} />;
 }

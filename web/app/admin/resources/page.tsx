@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { Activity, ArrowLeft, BarChart3, ShieldCheck } from 'lucide-react';
 import { AdminResourceCard } from '@/components/admin/AdminResourceCard';
+import { PageHeader, PageShell } from '@/components/ui/PageHeader';
+import { Panel, PanelHeader, Stat } from '@/components/ui/Panel';
 import { requireAdmin } from '@/lib/auth';
 import { RESOURCE_CATALOG } from '@/lib/resources/catalog';
 import { createServiceClient } from '@/lib/supabase/server';
@@ -95,52 +96,93 @@ export default async function AdminResourcesPage({
   });
 
   return (
-    <div className="min-h-screen bg-navy-950 px-6 pt-28 pb-24">
-      <div className="max-w-7xl mx-auto">
-        <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-300 text-sm mb-6">
-          <ArrowLeft className="w-4 h-4" /> Dashboard
+    <div className="min-h-screen bg-ink pt-16">
+      <PageShell width="wide">
+        <Link
+          href="/dashboard"
+          className="ml-label inline-flex min-h-[44px] items-center gap-2 hover:text-bone"
+        >
+          <span aria-hidden="true">◂</span> Dashboard
         </Link>
-        <div className="flex flex-wrap items-end justify-between gap-6 mb-10">
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-widest text-gold-400 mb-3 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4" /> Admin only
-            </div>
-            <h1 className="font-serif text-4xl font-bold text-white">Resource content</h1>
-            <p className="text-slate-400 mt-3 max-w-2xl">
-              Create draft learning content, edit lessons and quizzes, review changes, and publish each resource deliberately.
-            </p>
-          </div>
-          <div className="glass rounded-xl border border-white/8 px-5 py-3 flex items-center gap-3">
-            <Activity className="w-5 h-5 text-gold-400" />
-            <div><div className="text-white font-semibold">{eventCount ?? 0}</div><div className="text-xs text-slate-500">product events</div></div>
-          </div>
-        </div>
-        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <PageHeader
+          label="Admin only"
+          title="Resource content"
+          lede="Create draft learning content, edit lessons and quizzes, review changes, and publish each resource deliberately."
+          actions={<Stat label="Product events" value={eventCount ?? 0} />}
+          className="mt-2"
+        />
+
+        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {RESOURCE_CATALOG.map((resource) => (
             <AdminResourceCard key={resource.slug} resource={resource} course={courses.get(resource.slug) ?? null} />
           ))}
         </div>
-        <div className="glass rounded-2xl border border-white/8 p-6 mt-8">
-          <div className="flex flex-wrap items-end justify-between gap-4 mb-5">
-            <div>
-              <div className="flex items-center gap-2 text-gold-400 text-xs uppercase tracking-widest font-semibold mb-2"><BarChart3 className="w-4 h-4" />Resume activation funnel</div>
-              <p className="text-slate-500 text-sm">Operational counts only; these figures do not imply causal conversion.</p>
-            </div>
-            <form className="flex flex-wrap gap-3 items-end" method="get">
-              <label className="text-xs text-slate-500">From<input type="date" name="from" defaultValue={from} className="block mt-1 px-3 py-2 rounded-lg bg-navy-950 border border-white/10 text-white [color-scheme:dark]" /></label>
-              <label className="text-xs text-slate-500">To<input type="date" name="to" defaultValue={to} className="block mt-1 px-3 py-2 rounded-lg bg-navy-950 border border-white/10 text-white [color-scheme:dark]" /></label>
-              <button type="submit" className="px-4 py-2 rounded-lg bg-white/10 text-white text-sm">Apply</button>
+
+        <Panel className="mt-8">
+          <PanelHeader title="Resume activation funnel" label="Operational counts" />
+          <div className="flex flex-wrap items-end justify-between gap-4 border-b border-rule p-4 sm:p-5">
+            <p className="max-w-[52ch] text-[15px] leading-snug text-graphite">
+              Operational counts only; these figures do not imply causal conversion.
+            </p>
+            <form className="flex flex-wrap items-end gap-3" method="get">
+              <div>
+                <label htmlFor="funnel-from" className="block text-[13px] font-semibold text-bone">
+                  From
+                </label>
+                <input
+                  id="funnel-from"
+                  type="date"
+                  name="from"
+                  defaultValue={from}
+                  className="ml-field ml-num mt-2 w-auto [color-scheme:dark]"
+                />
+              </div>
+              <div>
+                <label htmlFor="funnel-to" className="block text-[13px] font-semibold text-bone">
+                  To
+                </label>
+                <input
+                  id="funnel-to"
+                  type="date"
+                  name="to"
+                  defaultValue={to}
+                  className="ml-field ml-num mt-2 w-auto [color-scheme:dark]"
+                />
+              </div>
+              <button type="submit" className="ml-btn ml-btn-secondary min-h-[44px] px-5 text-[13px]">
+                Apply
+              </button>
             </form>
           </div>
-          {events.length === 50000 && <p className="text-amber-300 text-xs mb-4">The 50,000-event safety limit was reached; narrow the date range for complete counts.</p>}
+          {events.length === 50000 && (
+            <p role="alert" className="border-b border-rule px-4 py-3 text-[14px] text-warn sm:px-5">
+              <span aria-hidden="true">▲ </span>
+              Limit reached: the 50,000-event safety limit was hit; narrow the date range for
+              complete counts.
+            </p>
+          )}
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead><tr className="text-left text-slate-500 border-b border-white/8"><th className="py-2 pr-4">Stage</th><th className="py-2 px-4">Events</th><th className="py-2 pl-4">Unique users / visitors</th></tr></thead>
-              <tbody>{funnel.map((stage) => <tr key={stage.label} className="border-b border-white/5 last:border-0"><td className="py-3 pr-4 text-slate-300">{stage.label}</td><td className="py-3 px-4 text-white font-semibold">{stage.total}</td><td className="py-3 pl-4 text-white font-semibold">{stage.unique}</td></tr>)}</tbody>
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-rule text-left">
+                  <th scope="col" className="ml-label px-4 py-3 font-normal sm:px-5">Stage</th>
+                  <th scope="col" className="ml-label px-4 py-3 font-normal">Events</th>
+                  <th scope="col" className="ml-label px-4 py-3 font-normal sm:px-5">Unique users / visitors</th>
+                </tr>
+              </thead>
+              <tbody>
+                {funnel.map((stage) => (
+                  <tr key={stage.label} className="ml-row">
+                    <td className="px-4 py-3 text-[15px] text-bone sm:px-5">{stage.label}</td>
+                    <td className="ml-num px-4 py-3 text-[15px] font-bold text-bone">{stage.total}</td>
+                    <td className="ml-num px-4 py-3 text-[15px] font-bold text-bone sm:px-5">{stage.unique}</td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </div>
-        </div>
-      </div>
+        </Panel>
+      </PageShell>
     </div>
   );
 }

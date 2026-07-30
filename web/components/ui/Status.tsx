@@ -51,11 +51,14 @@ export function Meter({
   className?: string;
 }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
+  // Clamped to match the visual clamp — an out-of-range value would otherwise
+  // draw correctly while reporting nonsense to assistive tech.
+  const announced = Math.round(Math.max(0, Math.min(max, value)));
   return (
     <div
       className={`h-1.5 w-full bg-raised ${className}`}
       role="meter"
-      aria-valuenow={Math.round(value)}
+      aria-valuenow={announced}
       aria-valuemin={0}
       aria-valuemax={max}
       aria-label={label}

@@ -4,7 +4,8 @@ import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { Loader2, LogIn } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Field } from '@/components/ui/Field';
 
 // Only allow same-site relative redirect targets ("/dashboard", not "//evil.com").
 function safeNext(next: string | null): string {
@@ -45,57 +46,54 @@ function LoginForm() {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-4">
-      <div>
-        <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">
-          Email address
-        </label>
-        <input
-          type="email"
-          required
-          autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@university.edu.au"
-          className="w-full bg-navy-800/60 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-gold-400/40 transition-colors"
-        />
-      </div>
+    <form onSubmit={submit} className="space-y-5">
+      <Field label="Email address" error={error || null}>
+        {(props) => (
+          <input
+            {...props}
+            type="email"
+            required
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@university.edu.au"
+            className="ml-field"
+          />
+        )}
+      </Field>
 
       <div>
-        <div className="flex items-center justify-between mb-2">
-          <label className="text-xs text-slate-400 uppercase tracking-wider">Password</label>
+        <Field label="Password">
+          {(props) => (
+            <input
+              {...props}
+              type="password"
+              required
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Your password"
+              className="ml-field"
+            />
+          )}
+        </Field>
+        <p className="mt-2">
           <Link
             href="/forgot-password"
-            className="text-xs text-slate-500 hover:text-gold-400 transition-colors"
+            className="inline-flex min-h-[44px] items-center text-[13px] text-graphite hover:text-bone"
           >
             Forgot password?
           </Link>
-        </div>
-        <input
-          type="password"
-          required
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Your password"
-          className="w-full bg-navy-800/60 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-gold-400/40 transition-colors"
-        />
+        </p>
       </div>
 
-      {error && <div className="text-red-400 text-xs px-1">{error}</div>}
+      <Button type="submit" disabled={!email || !password} loading={loading} className="w-full">
+        {loading ? 'Signing in…' : 'Log in'}
+      </Button>
 
-      <button
-        type="submit"
-        disabled={loading || !email || !password}
-        className="w-full py-4 bg-gold-400 text-navy-950 font-semibold rounded-xl hover:bg-gold-300 transition-all shadow-[0_0_24px_rgba(212,175,55,0.3)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-      >
-        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
-        {loading ? 'Signing in...' : 'Log In'}
-      </button>
-
-      <p className="text-slate-600 text-xs text-center leading-relaxed">
+      <p className="text-[14px] leading-relaxed text-graphite">
         New here?{' '}
-        <Link href="/onboard/goal" className="text-gold-400/80 hover:text-gold-300">
+        <Link href="/onboard/goal" className="text-red hover:underline">
           Start your career assessment
         </Link>{' '}
         to create an account.
@@ -106,15 +104,17 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-navy-950 flex items-center justify-center px-6 pt-24 pb-16">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="font-serif text-3xl font-bold text-white mb-2">Welcome back</h1>
-          <p className="text-slate-400 text-sm">
+    <div className="flex min-h-screen items-center justify-center bg-ink px-5 pb-16 pt-24">
+      <div className="w-full max-w-[26rem]">
+        <header className="border-b border-rule pb-5">
+          <span className="ml-label">Account</span>
+          <h1 className="ml-title mt-2.5 text-bone">Welcome back</h1>
+          <p className="mt-3 text-[16px] leading-[1.6] text-graphite">
             Log in to your dashboard to view your Career Compass report.
           </p>
-        </div>
-        <div className="glass border border-white/10 rounded-2xl p-8">
+        </header>
+
+        <div className="mt-7">
           <Suspense fallback={null}>
             <LoginForm />
           </Suspense>

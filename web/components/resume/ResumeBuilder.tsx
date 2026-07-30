@@ -10,7 +10,6 @@ import type {
   ResumeSectionRow,
   ResumeWorkspaceData,
 } from '@trajectoryos/core/resume/types';
-import { AlertTriangle, Crosshair, FileText, FileUp, Plus, Sparkles, Trash2, Wand2 } from 'lucide-react';
 import { api } from './api';
 import { CritiquePanel } from './CritiquePanel';
 import { ExportMenu } from './ExportMenu';
@@ -18,8 +17,12 @@ import { ImportDialog } from './ai/ImportDialog';
 import { AutoCreateDialog } from './ai/AutoCreateDialog';
 import { ImproveDialog } from './ai/ImproveDialog';
 import { TailorDialog } from './ai/TailorDialog';
+import { Notice } from './ai/Notice';
 import { SectionList, SECTION_KINDS } from './builder/SectionList';
 import { ContactHeader } from './builder/ContactHeader';
+import { Button } from '@/components/ui/Button';
+import { Panel } from '@/components/ui/Panel';
+import { StateBlock } from '@/components/ui/StateBlock';
 
 interface Props {
   initialData: ResumeWorkspaceData;
@@ -242,22 +245,41 @@ export function ResumeBuilder({ initialData }: Props) {
 
   if (!resume) {
     return (
-      <div className="glass rounded-2xl border border-gold-400/20 p-10 text-center max-w-2xl mx-auto">
-        <FileText className="w-10 h-10 text-gold-400 mx-auto mb-4" />
-        <h2 className="font-serif text-2xl font-bold text-white mb-3">Create your master resume</h2>
-        <p className="text-slate-400 text-sm mb-6">Build a structured resume, auto-create one from your profile, import an existing PDF or Word file, and export a polished document — with AI help only when you ask for it.</p>
-        <div className="flex flex-wrap gap-3 justify-center">
-          <button onClick={() => setDialog('autocreate')} disabled={busy !== null} className="px-5 py-3 bg-gold-400 text-navy-950 font-semibold rounded-xl flex items-center gap-2 disabled:opacity-50">
-            <Sparkles className="w-4 h-4" />Auto-create from my profile
-          </button>
-          <button onClick={() => setDialog('import')} disabled={busy !== null} className="px-5 py-3 border border-gold-400/30 text-gold-300 font-semibold rounded-xl flex items-center gap-2 disabled:opacity-50">
-            <FileUp className="w-4 h-4" />Import PDF / Word
-          </button>
-          <button onClick={() => void createResume()} disabled={busy !== null} className="px-5 py-3 border border-white/15 text-slate-300 font-semibold rounded-xl disabled:opacity-50">
-            {busy === 'resume' ? 'Creating…' : 'Start from scratch'}
-          </button>
-        </div>
-        {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
+      <div className="mx-auto max-w-2xl">
+        <StateBlock
+          kind="empty"
+          title="Create your master resume"
+          action={
+            <>
+              <Button onClick={() => setDialog('autocreate')} disabled={busy !== null}>
+                Auto-create from my profile
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setDialog('import')}
+                disabled={busy !== null}
+              >
+                Import PDF / Word
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => void createResume()}
+                disabled={busy !== null}
+                loading={busy === 'resume'}
+              >
+                {busy === 'resume' ? 'Creating…' : 'Start from scratch'}
+              </Button>
+            </>
+          }
+        >
+          Build a structured resume, auto-create one from your profile, import an existing PDF or
+          Word file, and export a polished document — with AI help only when you ask for it.
+        </StateBlock>
+        {error && (
+          <div className="mt-4">
+            <Notice tone="error" alert>{error}</Notice>
+          </div>
+        )}
         {dialog === 'import' && <ImportDialog onClose={() => setDialog(null)} onApplied={setWorkspace} />}
         {dialog === 'autocreate' && <AutoCreateDialog hasExistingContent={false} onClose={() => setDialog(null)} onApplied={setWorkspace} />}
       </div>
@@ -266,35 +288,83 @@ export function ResumeBuilder({ initialData }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="glass rounded-2xl border border-white/8 p-5 flex flex-wrap gap-4 items-end">
-        <label className="flex-1 min-w-64 text-xs text-slate-500">Resume title
-          <input value={resume.title} onChange={(e) => setResume({ ...resume, title: e.target.value })} maxLength={120}
-            className="mt-1 w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm" />
-        </label>
-        <label className="text-xs text-slate-500">Status
-          <select value={resume.status} onChange={(e) => setResume({ ...resume, status: e.target.value as ResumeRow['status'] })}
-            className="mt-1 block px-3 py-2 rounded-lg bg-navy-950 border border-white/10 text-white text-sm">
-            <option value="draft">Draft</option><option value="current">Current</option>
-          </select>
-        </label>
-        <button
-          onClick={() => void (async () => {
-            setBusy('resume'); setError(null);
-            try {
-              const result = await api<{ resume: ResumeRow }>('/resume', 'PATCH', { title: resume.title, status: resume.status });
-              setResume(result.resume);
-            } catch (value) { fail(value); } finally { setBusy(null); }
-          })()}
-          disabled={busy === 'resume'}
-          className="px-4 py-2 rounded-lg bg-white/10 text-white text-sm"
-        >Save details</button>
-        <button onClick={() => setDialog('autocreate')} className="px-3 py-2 rounded-lg border border-gold-400/30 text-gold-300 text-sm flex gap-1.5 items-center"><Sparkles className="w-4 h-4" />Auto-create</button>
-        <button onClick={() => setDialog('import')} className="px-3 py-2 rounded-lg border border-white/15 text-slate-300 text-sm flex gap-1.5 items-center"><FileUp className="w-4 h-4" />Import</button>
-        <button onClick={() => setDialog('improve')} disabled={sections.length === 0} className="px-3 py-2 rounded-lg border border-white/15 text-slate-300 text-sm flex gap-1.5 items-center disabled:opacity-40"><Wand2 className="w-4 h-4" />Improve</button>
-        <button onClick={() => setDialog('tailor')} disabled={sections.length === 0} className="px-3 py-2 rounded-lg border border-white/15 text-slate-300 text-sm flex gap-1.5 items-center disabled:opacity-40"><Crosshair className="w-4 h-4" />Tailor to JD</button>
-        <ExportMenu />
-        <button onClick={() => void deleteAll()} disabled={busy !== null} className="px-3 py-2 text-red-300 text-sm hover:bg-red-400/10 rounded-lg flex gap-2 items-center"><Trash2 className="w-4 h-4" />Delete all data</button>
-      </div>
+      <Panel>
+        <div className="flex flex-wrap items-end gap-4 border-b border-rule p-4 sm:p-5">
+          <div className="min-w-64 flex-1">
+            <label htmlFor="resume-title" className="block text-[13px] font-semibold text-bone">
+              Resume title
+            </label>
+            <input
+              id="resume-title"
+              value={resume.title}
+              onChange={(e) => setResume({ ...resume, title: e.target.value })}
+              maxLength={120}
+              className="ml-field mt-2"
+            />
+          </div>
+          <div>
+            <label htmlFor="resume-status" className="block text-[13px] font-semibold text-bone">
+              Status
+            </label>
+            <select
+              id="resume-status"
+              value={resume.status}
+              onChange={(e) => setResume({ ...resume, status: e.target.value as ResumeRow['status'] })}
+              className="ml-field mt-2 w-auto"
+            >
+              <option value="draft">Draft</option><option value="current">Current</option>
+            </select>
+          </div>
+          <Button
+            variant="secondary"
+            onClick={() => void (async () => {
+              setBusy('resume'); setError(null);
+              try {
+                const result = await api<{ resume: ResumeRow }>('/resume', 'PATCH', { title: resume.title, status: resume.status });
+                setResume(result.resume);
+              } catch (value) { fail(value); } finally { setBusy(null); }
+            })()}
+            disabled={busy === 'resume'}
+            loading={busy === 'resume'}
+          >
+            Save details
+          </Button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 p-4 sm:p-5">
+          <span className="ml-label mr-1">Tools</span>
+          <Button variant="secondary" size="sm" onClick={() => setDialog('autocreate')}>
+            Auto-create
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => setDialog('import')}>
+            Import
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setDialog('improve')}
+            disabled={sections.length === 0}
+          >
+            Improve
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setDialog('tailor')}
+            disabled={sections.length === 0}
+          >
+            Tailor to JD
+          </Button>
+          <ExportMenu compact />
+          <button
+            onClick={() => void deleteAll()}
+            disabled={busy !== null}
+            className="ml-btn ml-btn-text min-h-[44px] px-2 text-[13px] disabled:opacity-40"
+          >
+            Delete all data
+          </button>
+        </div>
+      </Panel>
 
       {dialog === 'import' && <ImportDialog onClose={() => setDialog(null)} onApplied={setWorkspace} />}
       {dialog === 'autocreate' && <AutoCreateDialog hasExistingContent={sections.length > 0} onClose={() => setDialog(null)} onApplied={setWorkspace} />}
@@ -305,15 +375,34 @@ export function ResumeBuilder({ initialData }: Props) {
 
       <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] gap-6 items-start">
         <div className="space-y-4">
-          <div className="glass rounded-2xl border border-white/8 p-4">
-            <div className="grid sm:grid-cols-[10rem_1fr_auto] gap-2">
-              <select value={newKind} onChange={(e) => setNewKind(e.target.value as ResumeSectionKind)} className="px-3 py-2 rounded-lg bg-navy-950 border border-white/10 text-white text-sm">
+          <Panel className="p-4">
+            <span className="ml-label">Add a section</span>
+            <div className="mt-2 grid gap-2 sm:grid-cols-[10rem_1fr_auto]">
+              <select
+                value={newKind}
+                onChange={(e) => setNewKind(e.target.value as ResumeSectionKind)}
+                aria-label="New section type"
+                className="ml-field"
+              >
                 {SECTION_KINDS.map((kind) => <option key={kind.value} value={kind.value}>{kind.label}</option>)}
               </select>
-              <input value={newHeading} onChange={(e) => setNewHeading(e.target.value)} maxLength={80} placeholder="Section heading" className="px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm" />
-              <button onClick={() => void addSection()} disabled={!newHeading.trim() || busy !== null} className="px-4 py-2 bg-gold-400 text-navy-950 font-semibold text-sm rounded-lg flex gap-1 items-center"><Plus className="w-4 h-4" />Section</button>
+              <input
+                value={newHeading}
+                onChange={(e) => setNewHeading(e.target.value)}
+                maxLength={80}
+                placeholder="Section heading"
+                aria-label="New section heading"
+                className="ml-field"
+              />
+              <Button
+                variant="secondary"
+                onClick={() => void addSection()}
+                disabled={!newHeading.trim() || busy !== null}
+              >
+                <span aria-hidden="true">+</span> Section
+              </Button>
             </div>
-          </div>
+          </Panel>
 
           <SectionList
             sections={sections}
@@ -336,9 +425,9 @@ export function ResumeBuilder({ initialData }: Props) {
 
         <div className="lg:sticky lg:top-24 space-y-4">
           {!selected ? (
-            <div className="glass rounded-2xl border border-white/8 p-10 text-center text-slate-500 text-sm">
+            <StateBlock kind="empty" title="No bullet selected">
               Select or add a bullet to open the AI critique workshop.
-            </div>
+            </StateBlock>
           ) : (
             <CritiquePanel
               bullet={selected}
@@ -354,7 +443,7 @@ export function ResumeBuilder({ initialData }: Props) {
               onDeleteBullet={(id) => void deleteBullet(id)}
             />
           )}
-          {error && <div role="alert" className="rounded-xl border border-red-400/20 bg-red-400/10 p-3 text-red-300 text-sm flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0" />{error}</div>}
+          {error && <Notice tone="error" alert>{error}</Notice>}
         </div>
       </div>
     </div>

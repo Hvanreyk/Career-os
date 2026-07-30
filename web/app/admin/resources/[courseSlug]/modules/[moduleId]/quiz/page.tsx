@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import { AdminQuizEditor } from '@/components/admin/AdminQuizEditor';
+import { PageHeader, PageShell } from '@/components/ui/PageHeader';
 import { requireAdmin } from '@/lib/auth';
 import { getResourceDefinition } from '@/lib/resources/catalog';
 import { createServiceClient } from '@/lib/supabase/server';
@@ -20,13 +20,19 @@ export default async function AdminQuizPage({ params }: { params: Promise<{ cour
   const { data: questions } = await service.from('quiz_questions').select('*').eq('module_id', module.id).order('sort_order');
 
   return (
-    <div className="min-h-screen bg-navy-950 px-6 pt-28 pb-24">
-      <div className="max-w-4xl mx-auto">
-        <Link href={`/admin/resources/${courseSlug}`} className="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-300 text-sm mb-6"><ArrowLeft className="w-4 h-4" /> {course.title}</Link>
-        <p className="text-xs text-gold-400 uppercase tracking-widest mb-2">Module quiz</p>
-        <h1 className="font-serif text-3xl font-bold text-white mb-8">{module.title}</h1>
-        <AdminQuizEditor courseId={course.id} moduleId={module.id} questions={questions ?? []} />
-      </div>
+    <div className="min-h-screen bg-ink pt-16">
+      <PageShell>
+        <Link
+          href={`/admin/resources/${courseSlug}`}
+          className="ml-label inline-flex min-h-[44px] items-center gap-2 hover:text-bone"
+        >
+          <span aria-hidden="true">◂</span> {course.title}
+        </Link>
+        <PageHeader label="Module quiz" title={module.title} className="mt-2" />
+        <div className="mt-8">
+          <AdminQuizEditor courseId={course.id} moduleId={module.id} questions={questions ?? []} />
+        </div>
+      </PageShell>
     </div>
   );
 }

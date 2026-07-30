@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import type { ResumeRow } from '@trajectoryos/core/resume/types';
+import { Panel, PanelHeader } from '@/components/ui/Panel';
+import { Button } from '@/components/ui/Button';
+import { Field } from '@/components/ui/Field';
 
 interface Props {
   resume: ResumeRow;
@@ -35,34 +38,48 @@ export function ContactHeader({ resume, busy, onSave }: Props) {
   const dirty = FIELDS.some(({ key }) => (resume[key] ?? '') !== values[key].trim());
 
   return (
-    <div className="glass rounded-2xl border border-white/8 p-5">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-white font-semibold text-sm">Contact header</h2>
-        <button
-          onClick={() => onSave({
-            fullName: values.full_name.trim() || null,
-            email: values.email.trim() || null,
-            phone: values.phone.trim() || null,
-            linkedinUrl: values.linkedin_url.trim() || null,
-            location: values.location.trim() || null,
-          })}
-          disabled={!dirty || busy}
-          className="px-3 py-1.5 rounded-lg bg-white/10 text-white text-xs disabled:opacity-40"
-        >Save contact details</button>
-      </div>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+    <Panel>
+      <PanelHeader
+        title="Contact header"
+        label="Appears on every export"
+        action={
+          <span className="flex items-center gap-3">
+            <span className="ml-label" aria-live="polite">
+              {busy ? 'Saving…' : dirty ? 'Unsaved changes' : 'Saved'}
+            </span>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={!dirty || busy}
+              onClick={() => onSave({
+                fullName: values.full_name.trim() || null,
+                email: values.email.trim() || null,
+                phone: values.phone.trim() || null,
+                linkedinUrl: values.linkedin_url.trim() || null,
+                location: values.location.trim() || null,
+              })}
+            >
+              Save contact details
+            </Button>
+          </span>
+        }
+      />
+      <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-3">
         {FIELDS.map(({ key, label, max, placeholder }) => (
-          <label key={key} className="text-xs text-slate-500">{label}
-            <input
-              value={values[key]}
-              onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
-              maxLength={max}
-              placeholder={placeholder}
-              className="mt-1 w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm"
-            />
-          </label>
+          <Field key={key} label={label}>
+            {(props) => (
+              <input
+                {...props}
+                value={values[key]}
+                onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
+                maxLength={max}
+                placeholder={placeholder}
+                className="ml-field"
+              />
+            )}
+          </Field>
         ))}
       </div>
-    </div>
+    </Panel>
   );
 }

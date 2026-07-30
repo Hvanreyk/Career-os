@@ -100,9 +100,11 @@ export default function ReviewPage() {
               </Link>
             </div>
             <dl className="mt-3">
-              {s.rows.map(([label, value]) => (
+              {/* Index-keyed: the Experience section derives its labels from
+                  firm + year, which two identical entries would collide on. */}
+              {s.rows.map(([label, value], rowIndex) => (
                 <div
-                  key={label}
+                  key={`${label}-${rowIndex}`}
                   className="flex justify-between gap-6 border-b border-rule/60 py-2 last:border-0"
                 >
                   <dt className="text-[14px] text-graphite">{label}</dt>

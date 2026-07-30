@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { StepShell } from '@/components/onboard/StepShell';
+import { StepActions } from '@/components/onboard/StepParts';
+import { Button } from '@/components/ui/Button';
+import { Field } from '@/components/ui/Field';
 import { createClient } from '@/lib/supabase/client';
-import { Mail, Loader2, Lock, ArrowRight } from 'lucide-react';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -70,25 +72,26 @@ export default function SignupPage() {
         subtitle="No new account needed — generate your report now."
         backHref="/onboard/review"
       >
-        <div className="glass border border-gold-400/20 rounded-2xl p-8 text-center">
-          <p className="text-slate-400 text-sm mb-6">
-            Signed in as <span className="text-gold-400">{existingEmail}</span>
-          </p>
-          <button
-            onClick={() => router.push('/report/loading')}
-            className="w-full py-4 bg-gold-400 text-navy-950 font-semibold rounded-xl hover:bg-gold-300 transition-all shadow-[0_0_24px_rgba(212,175,55,0.3)] flex items-center justify-center gap-2"
-          >
-            Generate My Report <ArrowRight className="w-4 h-4" />
-          </button>
-          <button
+        <div className="ml-panel p-5 sm:p-6">
+          <span className="ml-label">Signed in as</span>
+          <p className="ml-num mt-2 break-all text-[15px] text-bone">{existingEmail}</p>
+        </div>
+
+        <StepActions
+          onContinue={() => router.push('/report/loading')}
+          label="Generate my report"
+        />
+
+        <div className="mt-2">
+          <Button
+            variant="ghost"
             onClick={async () => {
               await createClient().auth.signOut();
               setExistingEmail(null);
             }}
-            className="mt-4 text-slate-500 hover:text-slate-300 text-sm transition-colors"
           >
             Use a different account
-          </button>
+          </Button>
         </div>
       </StepShell>
     );
@@ -102,25 +105,22 @@ export default function SignupPage() {
         subtitle="Confirm your address to finish creating your account."
         backHref="/onboard/review"
       >
-        <div className="glass border border-gold-400/20 rounded-2xl p-8 text-center">
-          <div className="w-16 h-16 rounded-full bg-gold-400/10 flex items-center justify-center mx-auto mb-5">
-            <Mail className="w-7 h-7 text-gold-400" />
-          </div>
-          <h2 className="font-serif text-xl font-bold text-white mb-2">Confirmation email sent</h2>
-          <p className="text-slate-400 text-sm leading-relaxed mb-4">
+        <div className="ml-panel p-5 sm:p-6">
+          <span className="ml-label">▸ Confirmation sent</span>
+          <p className="mt-3 max-w-[62ch] text-[16px] leading-[1.65] text-bone/90">
             Click the link in the email to activate your account — your report will be
             generated as soon as you&apos;re confirmed. You can log in with your password
             from then on.
           </p>
-          <p className="text-slate-500 text-xs">
-            Sent to <span className="text-gold-400">{email}</span>
+          <p className="mt-4 text-[14px] text-graphite">
+            Sent to <span className="ml-num break-all text-bone">{email}</span>
           </p>
-          <button
-            onClick={() => setConfirmSent(false)}
-            className="mt-6 text-slate-500 hover:text-slate-300 text-sm transition-colors"
-          >
+        </div>
+
+        <div className="mt-4">
+          <Button variant="ghost" onClick={() => setConfirmSent(false)}>
             Use a different email
-          </button>
+          </Button>
         </div>
       </StepShell>
     );
@@ -133,65 +133,67 @@ export default function SignupPage() {
       subtitle="Set an email and password so you can come back to your report anytime."
       backHref="/onboard/review"
     >
-      <form onSubmit={submit} className="space-y-4">
-        <div>
-          <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">
-            Email address
-          </label>
-          <input
-            type="email"
-            required
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@university.edu.au"
-            className="w-full bg-navy-800/60 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-gold-400/40 transition-colors"
-          />
-        </div>
+      <form onSubmit={submit} className="space-y-5">
+        <Field label="Email address" required>
+          {(props) => (
+            <input
+              {...props}
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@university.edu.au"
+              className="ml-field"
+            />
+          )}
+        </Field>
 
-        <div>
-          <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">
-            Password
-          </label>
-          <input
-            type="password"
-            required
-            minLength={8}
-            autoComplete="new-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="At least 8 characters"
-            className="w-full bg-navy-800/60 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-gold-400/40 transition-colors"
-          />
-        </div>
+        <Field label="Password" hint="At least 8 characters." required>
+          {(props) => (
+            <input
+              {...props}
+              type="password"
+              required
+              minLength={8}
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 8 characters"
+              className="ml-field"
+            />
+          )}
+        </Field>
 
         {error && (
-          <div className="text-red-400 text-xs px-1">
-            {error}{' '}
-            {error.toLowerCase().includes('already') && (
-              <Link href="/login?next=/report/loading" className="text-gold-400 hover:text-gold-300 underline">
-                Go to login
-              </Link>
-            )}
-          </div>
+          <p role="alert" className="flex gap-1.5 text-[14px] leading-snug text-red">
+            <span aria-hidden="true">▲</span>
+            <span>
+              {error}{' '}
+              {error.toLowerCase().includes('already') && (
+                <Link href="/login?next=/report/loading" className="underline">
+                  Go to login
+                </Link>
+              )}
+            </span>
+          </p>
         )}
 
-        <button
+        <StepActions
           type="submit"
-          disabled={loading || !email || password.length < 8}
-          className="w-full py-4 bg-gold-400 text-navy-950 font-semibold rounded-xl hover:bg-gold-300 transition-all shadow-[0_0_24px_rgba(212,175,55,0.3)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
-          {loading ? 'Creating account...' : 'Create Account & Generate Report'}
-        </button>
-
-        <p className="text-slate-600 text-xs text-center leading-relaxed">
-          Already have an account?{' '}
-          <Link href="/login?next=/report/loading" className="text-gold-400/80 hover:text-gold-300">
-            Log in
-          </Link>{' '}
-          and we&apos;ll generate your report from this profile.
-        </p>
+          disabled={!email || password.length < 8}
+          loading={loading}
+          label={loading ? 'Creating account…' : 'Create account & generate report'}
+          note={
+            <>
+              Already have an account?{' '}
+              <Link href="/login?next=/report/loading" className="text-red hover:underline">
+                Log in
+              </Link>{' '}
+              and we&apos;ll generate your report from this profile.
+            </>
+          }
+        />
       </form>
     </StepShell>
   );

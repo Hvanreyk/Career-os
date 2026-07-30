@@ -2,8 +2,9 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Plus, Save, Trash2 } from 'lucide-react';
 import { submitAdminContent } from '@/lib/admin/client';
+import { Button } from '@/components/ui/Button';
+import { Field } from '@/components/ui/Field';
 
 interface QuizOption {
   id: string;
@@ -22,9 +23,6 @@ interface QuestionData {
   editorial_source: 'file' | 'admin';
   editorial_revision: number;
 }
-
-const inputClass =
-  'w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-gold-400/50';
 
 function QuestionEditor({ courseId, question }: { courseId: string; question: QuestionData }) {
   const router = useRouter();
@@ -71,43 +69,152 @@ function QuestionEditor({ courseId, question }: { courseId: string; question: Qu
     }
   }
 
+  const publishing = question.status !== 'published' && form.status === 'published';
+
   return (
-    <form onSubmit={(event) => void save(event)} className="glass rounded-2xl border border-white/8 p-6 space-y-4">
-      <div className="flex items-start justify-between gap-4">
+    <form onSubmit={(event) => void save(event)} className="ml-panel">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-rule px-4 py-3 sm:px-5">
         <div>
-          <p className="text-xs text-gold-400 uppercase tracking-wider">{question.slug}</p>
-          <p className="text-xs text-slate-600 mt-1">{question.editorial_source} source · revision {question.editorial_revision}</p>
+          <p className="ml-label text-bone">{question.slug}</p>
+          <p className="ml-num mt-1 text-[12px] text-graphite">
+            {question.editorial_source} source · revision {question.editorial_revision}
+          </p>
         </div>
-        <button type="submit" disabled={busy} className="px-3 py-2 rounded-lg border border-white/10 text-slate-300 hover:text-white text-sm flex items-center gap-2 disabled:opacity-50">
-          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save
-        </button>
+        <Button type="submit" variant="secondary" disabled={busy} loading={busy}>
+          Save question
+        </Button>
       </div>
-      <div className="grid sm:grid-cols-[1fr_9rem_7rem] gap-3">
-        <input className={inputClass} value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} aria-label="Question slug" />
-        <select className={inputClass} value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as QuestionData['status'] })}>
-          <option value="draft">Draft</option><option value="published">Published</option>
-        </select>
-        <input type="number" min={0} className={inputClass} value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} aria-label="Question order" />
-      </div>
-      <textarea className={`${inputClass} min-h-24`} value={form.prompt} onChange={(e) => setForm({ ...form, prompt: e.target.value })} placeholder="Question prompt" />
-      <div className="space-y-2">
-        {form.options.map((option, index) => (
-          <div key={index} className="grid grid-cols-[5rem_1fr_auto] gap-2">
-            <input className={inputClass} value={option.id} onChange={(e) => updateOption(index, { id: e.target.value })} aria-label={`Option ${index + 1} ID`} />
-            <input className={inputClass} value={option.text} onChange={(e) => updateOption(index, { text: e.target.value })} aria-label={`Option ${index + 1} text`} />
-            <button type="button" onClick={() => setForm({ ...form, options: form.options.filter((_, i) => i !== index) })} disabled={form.options.length <= 2} className="p-2 text-slate-500 hover:text-red-400 disabled:opacity-25"><Trash2 className="w-4 h-4" /></button>
+
+      <div className="space-y-4 p-4 sm:p-5">
+        <div className="grid gap-4 sm:grid-cols-[1fr_9rem_7rem]">
+          <Field label="Question slug">
+            {(props) => (
+              <input
+                {...props}
+                className="ml-field ml-num"
+                value={form.slug}
+                onChange={(e) => setForm({ ...form, slug: e.target.value })}
+              />
+            )}
+          </Field>
+          <Field label="Status">
+            {(props) => (
+              <select
+                {...props}
+                className="ml-field"
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value as QuestionData['status'] })}
+              >
+                <option value="draft">Draft</option><option value="published">Published</option>
+              </select>
+            )}
+          </Field>
+          <Field label="Order">
+            {(props) => (
+              <input
+                {...props}
+                type="number"
+                min={0}
+                className="ml-field ml-num"
+                value={form.sort_order}
+                onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })}
+              />
+            )}
+          </Field>
+        </div>
+
+        <Field label="Question prompt">
+          {(props) => (
+            <textarea
+              {...props}
+              className="ml-field min-h-24"
+              value={form.prompt}
+              onChange={(e) => setForm({ ...form, prompt: e.target.value })}
+              placeholder="Question prompt"
+            />
+          )}
+        </Field>
+
+        <div>
+          <span className="ml-label">Options</span>
+          <div className="mt-2 space-y-2">
+            {form.options.map((option, index) => (
+              <div key={index} className="grid grid-cols-[5rem_1fr_auto] gap-2">
+                <input
+                  className="ml-field ml-num"
+                  value={option.id}
+                  onChange={(e) => updateOption(index, { id: e.target.value })}
+                  aria-label={`Option ${index + 1} ID`}
+                />
+                <input
+                  className="ml-field"
+                  value={option.text}
+                  onChange={(e) => updateOption(index, { text: e.target.value })}
+                  aria-label={`Option ${index + 1} text`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, options: form.options.filter((_, i) => i !== index) })}
+                  disabled={form.options.length <= 2}
+                  aria-label={`Delete option ${index + 1}`}
+                  className="flex h-11 w-11 items-center justify-center text-graphite hover:text-red disabled:opacity-25"
+                >
+                  <span aria-hidden="true">✕</span>
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, options: [...form.options, { id: String.fromCharCode(97 + form.options.length), text: '' }] })}
+              className="ml-btn ml-btn-text min-h-[44px] text-[13px]"
+            >
+              <span aria-hidden="true">+</span> Add option
+            </button>
           </div>
-        ))}
-        <button type="button" onClick={() => setForm({ ...form, options: [...form.options, { id: String.fromCharCode(97 + form.options.length), text: '' }] })} className="text-xs text-gold-400 flex items-center gap-1.5"><Plus className="w-3.5 h-3.5" /> Add option</button>
+        </div>
+
+        <Field label="Correct option ID" hint="Never sent to the browser on the student side.">
+          {(props) => (
+            <select
+              {...props}
+              className="ml-field ml-num"
+              value={form.correct_option_id}
+              onChange={(e) => setForm({ ...form, correct_option_id: e.target.value })}
+            >
+              {form.options.map((option) => <option key={option.id} value={option.id}>{option.id || '(blank)'}</option>)}
+            </select>
+          )}
+        </Field>
+
+        <Field label="Answer explanation">
+          {(props) => (
+            <textarea
+              {...props}
+              className="ml-field min-h-24"
+              value={form.explanation}
+              onChange={(e) => setForm({ ...form, explanation: e.target.value })}
+              placeholder="Answer explanation"
+            />
+          )}
+        </Field>
+
+        {publishing && (
+          <p className="border-l-2 border-warn bg-raised px-3 py-2.5 text-[14px] leading-snug text-bone">
+            <span className="ml-label text-warn">
+              <span aria-hidden="true">▲ </span>Warning
+            </span>
+            <span className="mt-1 block">
+              Saving will publish this question. Correct answers remain server-only.
+            </span>
+          </p>
+        )}
+        {error && (
+          <p role="alert" className="text-[14px] text-red">
+            <span aria-hidden="true">▲ </span>
+            {error}
+          </p>
+        )}
       </div>
-      <label className="block">
-        <span className="text-xs text-slate-500 block mb-1.5">Correct option ID</span>
-        <select className={inputClass} value={form.correct_option_id} onChange={(e) => setForm({ ...form, correct_option_id: e.target.value })}>
-          {form.options.map((option) => <option key={option.id} value={option.id}>{option.id || '(blank)'}</option>)}
-        </select>
-      </label>
-      <textarea className={`${inputClass} min-h-24`} value={form.explanation} onChange={(e) => setForm({ ...form, explanation: e.target.value })} placeholder="Answer explanation" />
-      {error && <p className="text-red-400 text-sm">{error}</p>}
     </form>
   );
 }
@@ -158,18 +265,37 @@ export function AdminQuizEditor({
   return (
     <div className="space-y-5">
       {questions.map((question) => <QuestionEditor key={question.id} courseId={courseId} question={question} />)}
-      <form onSubmit={(event) => void create(event)} className="glass rounded-2xl border border-dashed border-white/12 p-5 space-y-3">
-        <h2 className="text-white font-semibold">Add quiz question</h2>
-        <div className="grid sm:grid-cols-[12rem_1fr_auto] gap-2">
-          <input className={inputClass} value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="question-slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" />
-          <input className={inputClass} value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Question prompt" />
-          <button type="submit" disabled={busy || !slug || !prompt} className="px-4 py-2 rounded-xl bg-gold-400 text-navy-950 font-semibold text-sm flex items-center gap-2 disabled:opacity-50">
-            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Add
-          </button>
+      <form onSubmit={(event) => void create(event)} className="border border-dashed border-rule-bright bg-surface p-4 sm:p-5">
+        <h2 className="text-[13px] font-bold uppercase tracking-[0.06em] text-bone">
+          Add quiz question
+        </h2>
+        <div className="mt-3 grid gap-2 sm:grid-cols-[12rem_1fr_auto]">
+          <input
+            className="ml-field ml-num"
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            placeholder="question-slug"
+            aria-label="New question slug"
+            pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+          />
+          <input
+            className="ml-field"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="Question prompt"
+            aria-label="New question prompt"
+          />
+          <Button type="submit" disabled={busy || !slug || !prompt} loading={busy}>
+            <span aria-hidden="true">+</span> Add
+          </Button>
         </div>
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && (
+          <p role="alert" className="mt-3 text-[14px] text-red">
+            <span aria-hidden="true">▲ </span>
+            {error}
+          </p>
+        )}
       </form>
     </div>
   );
 }
-

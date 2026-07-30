@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * Contact form.
@@ -11,10 +11,24 @@ import { useState } from 'react';
  */
 export function ContactForm() {
   const [sent, setSent] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // A live region mounted at the same moment as its content is announced
+  // inconsistently, and the submit button that had focus unmounts — which
+  // drops keyboard users back at the document start. Focusing the panel
+  // fixes both.
+  useEffect(() => {
+    if (sent) panelRef.current?.focus();
+  }, [sent]);
 
   if (sent) {
     return (
-      <div className="border border-rule bg-surface p-6" role="status">
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        className="border border-rule bg-surface p-6"
+        role="status"
+      >
         <span className="ml-label text-red">▸ Submitted</span>
         <h2 className="mt-3 text-[18px] font-bold uppercase tracking-[-0.01em] text-bone">
           Message captured
