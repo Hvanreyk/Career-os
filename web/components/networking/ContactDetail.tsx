@@ -15,25 +15,13 @@ import type {
   NetworkingMessageRow,
   RelationshipStage,
 } from '@trajectoryos/core/networking/types';
-import {
-  CalendarPlus,
-  Check,
-  ChevronLeft,
-  Coffee,
-  ExternalLink,
-  Loader2,
-  Mail,
-  NotebookPen,
-  Trash2,
-  UserPlus,
-} from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { CheckControl, Field } from '@/components/ui/Field';
+import { Panel } from '@/components/ui/Panel';
+import { StatusLabel } from '@/components/ui/Status';
 import { networkingApi } from './api';
 import { LinkedinGlyph } from './LinkedinGlyph';
-
-const INPUT = 'w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-gold-400/50';
-const SELECT = `${INPUT} [&>option]:bg-navy-950`;
-const BUTTON = 'text-xs px-3 py-1.5 rounded-full border border-white/10 text-slate-400 hover:text-white hover:border-gold-400/40 transition-colors disabled:opacity-50';
-const PRIMARY = 'text-sm px-4 py-2 rounded-full bg-gold-400/15 text-gold-400 border border-gold-400/40 hover:bg-gold-400/25 transition-colors disabled:opacity-50 inline-flex items-center gap-2';
+import { Notice, SectionHeading, Toggle } from './ui';
 
 const CompleteChatResponseSchema = z.object({ namesDropped: z.array(z.string()).default([]) });
 
@@ -79,6 +67,9 @@ interface Props {
   linkedTargetIds: string[];
   otherContacts: Array<{ id: string; full_name: string }>;
 }
+
+/** Every side panel is the same square form block. */
+const FORM_PANEL = 'ml-panel p-5 sm:p-6';
 
 /**
  * Full contact record: identity + stage, quick actions, next action,
@@ -132,100 +123,148 @@ export function ContactDetail(props: Props) {
   }
 
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Australia/Sydney';
+  const identity = [contact.role_title, contact.firm, contact.city].filter(Boolean).join(' · ');
 
   return (
-    <div className="space-y-5">
-      <Link href={`${base}/contacts`} className="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-300 text-sm">
-        <ChevronLeft className="w-4 h-4" /> All contacts
+    <div className="space-y-8">
+      <Link href={`${base}/contacts`} className="ml-btn ml-btn-text min-h-[44px] text-[14px]">
+        <span aria-hidden="true">◂</span> All contacts
       </Link>
-      {error && <p role="alert" className="text-sm text-red-400 border border-red-400/30 bg-red-400/10 rounded-lg px-4 py-2.5">{error}</p>}
 
-      {/* Identity + stage */}
-      <div className="glass rounded-2xl border border-white/8 p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="font-serif text-2xl font-bold text-white">
-              {contact.full_name}
-              {contact.is_alum && <span className="ml-2 align-middle text-[10px] px-1.5 py-0.5 rounded bg-gold-400/15 text-gold-400 uppercase tracking-wider">Alum</span>}
-            </h2>
-            <p className="text-sm text-slate-400 mt-1">
-              {[contact.role_title, contact.firm, contact.city].filter(Boolean).join(' · ') || 'No role details yet'}
+      {error && <Notice>{error}</Notice>}
+
+      {/* ── Record head ────────────────────────────────────────── */}
+      <header className="border-b border-rule pb-6">
+        <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-6">
+          <div className="min-w-0">
+            <span className="ml-label">Contact record</span>
+            <h1 className="ml-title mt-2.5 text-bone">{contact.full_name}</h1>
+            {(contact.is_alum || contact.do_not_contact) && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {contact.is_alum && <StatusLabel>Alum</StatusLabel>}
+                {contact.do_not_contact && <StatusLabel tone="accent">Do not contact</StatusLabel>}
+              </div>
+            )}
+            <p className="mt-3 text-[16px] leading-[1.6] text-graphite">
+              {identity || 'No role details yet'}
             </p>
-            <div className="flex flex-wrap items-center gap-2 mt-3">
+            <div className="mt-4 flex flex-wrap items-center gap-2">
               {contact.email && (
-                <a href={`mailto:${contact.email}`} className={`${BUTTON} inline-flex items-center gap-1.5`}><Mail className="w-3 h-3" /> {contact.email}</a>
+                <a
+                  href={`mailto:${contact.email}`}
+                  className="ml-btn ml-btn-secondary min-h-[44px] px-4 text-[13px] normal-case tracking-normal"
+                >
+                  {contact.email}
+                </a>
               )}
               {contact.linkedin_url && (
-                <a href={contact.linkedin_url} target="_blank" rel="noreferrer" className={`${BUTTON} inline-flex items-center gap-1.5`}>
-                  <LinkedinGlyph className="w-3 h-3" /> LinkedIn <ExternalLink className="w-3 h-3" />
+                <a
+                  href={contact.linkedin_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="ml-btn ml-btn-secondary min-h-[44px] px-4 text-[13px]"
+                >
+                  <LinkedinGlyph className="h-3.5 w-3.5" /> LinkedIn
+                  <span className="sr-only"> (opens in a new tab)</span>
+                  <span aria-hidden="true">↗</span>
                 </a>
               )}
             </div>
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <select
-              value={contact.stage}
-              onChange={(event) => patchContact({ stage: event.target.value as RelationshipStage })}
+
+          <div className="w-full max-w-[17rem]">
+            <Field label="Relationship stage">
+              {(p) => (
+                <select
+                  {...p}
+                  value={contact.stage}
+                  onChange={(event) => patchContact({ stage: event.target.value as RelationshipStage })}
+                  disabled={busy}
+                  className="ml-field"
+                >
+                  {Object.entries(STAGE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              )}
+            </Field>
+            <CheckControl
+              checked={contact.do_not_contact}
+              onChange={() => patchContact({ do_not_contact: !contact.do_not_contact })}
               disabled={busy}
-              className={`${SELECT} w-auto`}
-              aria-label="Relationship stage"
+              label="Do not contact"
+            />
+            <button
+              type="button"
+              onClick={deleteContact}
+              disabled={busy}
+              className="ml-btn ml-btn-text mt-1 min-h-[44px] text-[14px] text-graphite hover:text-red disabled:opacity-45"
             >
-              {Object.entries(STAGE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </select>
-            <label className="flex items-center gap-2 text-xs text-slate-500">
-              <input
-                type="checkbox"
-                checked={contact.do_not_contact}
-                onChange={(event) => patchContact({ do_not_contact: event.target.checked })}
-                className="accent-[#d3a955]"
-              />
-              Do not contact
-            </label>
-            <button type="button" onClick={deleteContact} disabled={busy} className="text-xs text-slate-600 hover:text-red-400 transition-colors inline-flex items-center gap-1">
-              <Trash2 className="w-3 h-3" /> Delete contact
+              Delete contact
             </button>
           </div>
         </div>
+
         {targets.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-white/5">
-            <p className="text-xs text-slate-500 mb-2">Target firms</p>
-            <div className="flex flex-wrap gap-2">
+          <fieldset className="mt-6 border-t border-rule pt-5">
+            <legend className="sr-only">Target firms</legend>
+            <span className="text-[13px] font-semibold text-bone">Target firms</span>
+            <div className="mt-2 flex flex-wrap gap-2">
               {targets.map((target) => {
                 const linked = linkedTargetIds.includes(target.id);
                 return (
-                  <button
+                  <Toggle
                     key={target.id}
-                    type="button"
+                    active={linked}
                     disabled={busy}
                     onClick={() => patchContact({
                       bank_target_ids: linked
                         ? linkedTargetIds.filter((t) => t !== target.id)
                         : [...linkedTargetIds, target.id],
                     })}
-                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${linked ? 'border-gold-400/50 bg-gold-400/10 text-gold-400' : 'border-white/10 text-slate-400 hover:text-white'}`}
+                    aria-label={`${linked ? 'Unlink from' : 'Link to'} ${target.bank_name}`}
                   >
                     {target.bank_name}
-                  </button>
+                  </Toggle>
                 );
               })}
             </div>
-          </div>
+          </fieldset>
         )}
-      </div>
+      </header>
 
-      {/* Quick actions */}
-      <div className="flex flex-wrap gap-2">
-        <Link href={`${base}/messages?contact=${contact.id}&channel=email`} className={`${BUTTON} inline-flex items-center gap-1.5`}><Mail className="w-3.5 h-3.5" /> Draft email</Link>
-        <Link href={`${base}/messages?contact=${contact.id}&channel=linkedin`} className={`${BUTTON} inline-flex items-center gap-1.5`}><LinkedinGlyph className="w-3.5 h-3.5" /> Draft LinkedIn</Link>
-        <button type="button" onClick={() => setPanel(panel === 'log' ? 'none' : 'log')} className={`${BUTTON} inline-flex items-center gap-1.5`}><NotebookPen className="w-3.5 h-3.5" /> Log interaction</button>
-        <button type="button" onClick={() => setPanel(panel === 'followup' ? 'none' : 'followup')} className={`${BUTTON} inline-flex items-center gap-1.5`}><CalendarPlus className="w-3.5 h-3.5" /> Schedule follow-up</button>
-        <button type="button" onClick={() => setPanel(panel === 'chat' ? 'none' : 'chat')} className={`${BUTTON} inline-flex items-center gap-1.5`}><Coffee className="w-3.5 h-3.5" /> Schedule coffee chat</button>
-        <button type="button" onClick={() => setPanel(panel === 'intro' ? 'none' : 'intro')} className={`${BUTTON} inline-flex items-center gap-1.5`}><UserPlus className="w-3.5 h-3.5" /> Record introduction</button>
+      {/* ── Actions ────────────────────────────────────────────── */}
+      <div>
+        <span className="ml-label">Record an action</span>
+        <div className="mt-2.5 flex flex-wrap gap-2">
+          <Link
+            href={`${base}/messages?contact=${contact.id}&channel=email`}
+            className="ml-btn ml-btn-secondary min-h-[44px] px-5 text-[13px]"
+          >
+            Draft email
+          </Link>
+          <Link
+            href={`${base}/messages?contact=${contact.id}&channel=linkedin`}
+            className="ml-btn ml-btn-secondary min-h-[44px] px-5 text-[13px]"
+          >
+            Draft LinkedIn
+          </Link>
+          <Button variant="secondary" onClick={() => setPanel(panel === 'log' ? 'none' : 'log')} aria-expanded={panel === 'log'}>
+            Log interaction
+          </Button>
+          <Button variant="secondary" onClick={() => setPanel(panel === 'followup' ? 'none' : 'followup')} aria-expanded={panel === 'followup'}>
+            Schedule follow-up
+          </Button>
+          <Button variant="secondary" onClick={() => setPanel(panel === 'chat' ? 'none' : 'chat')} aria-expanded={panel === 'chat'}>
+            Schedule coffee chat
+          </Button>
+          <Button variant="secondary" onClick={() => setPanel(panel === 'intro' ? 'none' : 'intro')} aria-expanded={panel === 'intro'}>
+            Record introduction
+          </Button>
+        </div>
       </div>
 
       {panel === 'log' && (
         <form
-          className="glass rounded-2xl border border-white/8 p-5 grid sm:grid-cols-2 gap-3"
+          className={FORM_PANEL}
           onSubmit={(event) => {
             event.preventDefault();
             const type = INTERACTION_TYPES.find((t) => t.value === logForm.type)!;
@@ -243,19 +282,41 @@ export function ContactDetail(props: Props) {
             });
           }}
         >
-          <select value={logForm.type} onChange={(e) => setLogForm({ ...logForm, type: e.target.value as InteractionType })} className={SELECT} aria-label="Interaction type">
-            {INTERACTION_TYPES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-          <input value={logForm.summary} onChange={(e) => setLogForm({ ...logForm, summary: e.target.value })} placeholder="What happened? (kept private)" className={INPUT} aria-label="Summary" />
-          <button type="submit" disabled={busy} className={`${PRIMARY} sm:col-span-2 w-fit`}>
-            {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Log it
-          </button>
+          <SectionHeading title="Log interaction" />
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <Field label="Interaction type">
+              {(p) => (
+                <select
+                  {...p}
+                  value={logForm.type}
+                  onChange={(e) => setLogForm({ ...logForm, type: e.target.value as InteractionType })}
+                  className="ml-field"
+                >
+                  {INTERACTION_TYPES.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              )}
+            </Field>
+            <Field label="Summary" hint="Kept private to your workspace.">
+              {(p) => (
+                <input
+                  {...p}
+                  value={logForm.summary}
+                  onChange={(e) => setLogForm({ ...logForm, summary: e.target.value })}
+                  placeholder="What happened?"
+                  className="ml-field"
+                />
+              )}
+            </Field>
+          </div>
+          <Button type="submit" disabled={busy} loading={busy} className="mt-5">
+            Log it
+          </Button>
         </form>
       )}
 
       {panel === 'followup' && (
         <form
-          className="glass rounded-2xl border border-white/8 p-5 grid sm:grid-cols-3 gap-3"
+          className={FORM_PANEL}
           onSubmit={(event) => {
             event.preventDefault();
             void run(async () => {
@@ -269,21 +330,54 @@ export function ContactDetail(props: Props) {
             });
           }}
         >
-          <select value={followUpForm.kind} onChange={(e) => setFollowUpForm({ ...followUpForm, kind: e.target.value as FollowUpKind })} className={SELECT} aria-label="Follow-up kind">
-            {FOLLOWUP_KINDS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-          <input type="date" value={followUpForm.due} onChange={(e) => setFollowUpForm({ ...followUpForm, due: e.target.value })} className={`${INPUT} [color-scheme:dark]`} aria-label="Due date" />
-          <input value={followUpForm.reason} onChange={(e) => setFollowUpForm({ ...followUpForm, reason: e.target.value })} placeholder="Why (optional)" className={INPUT} aria-label="Reason" />
-          <p className="sm:col-span-3 text-xs text-slate-500 -mt-1">One active next action per contact — scheduling replaces the current one.</p>
-          <button type="submit" disabled={busy} className={`${PRIMARY} w-fit`}>
-            {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Schedule
-          </button>
+          <SectionHeading title="Schedule follow-up" label="One per contact" />
+          <div className="mt-5 grid gap-4 sm:grid-cols-3">
+            <Field label="Kind">
+              {(p) => (
+                <select
+                  {...p}
+                  value={followUpForm.kind}
+                  onChange={(e) => setFollowUpForm({ ...followUpForm, kind: e.target.value as FollowUpKind })}
+                  className="ml-field"
+                >
+                  {FOLLOWUP_KINDS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              )}
+            </Field>
+            <Field label="Due date">
+              {(p) => (
+                <input
+                  {...p}
+                  type="date"
+                  value={followUpForm.due}
+                  onChange={(e) => setFollowUpForm({ ...followUpForm, due: e.target.value })}
+                  className="ml-field [color-scheme:dark]"
+                />
+              )}
+            </Field>
+            <Field label="Reason" hint="Optional.">
+              {(p) => (
+                <input
+                  {...p}
+                  value={followUpForm.reason}
+                  onChange={(e) => setFollowUpForm({ ...followUpForm, reason: e.target.value })}
+                  className="ml-field"
+                />
+              )}
+            </Field>
+          </div>
+          <p className="mt-4 max-w-[62ch] border-l-2 border-red pl-4 text-[15px] leading-[1.55] text-graphite">
+            One active next action per contact — scheduling replaces the current one.
+          </p>
+          <Button type="submit" disabled={busy} loading={busy} className="mt-5">
+            Schedule
+          </Button>
         </form>
       )}
 
       {panel === 'chat' && (
         <form
-          className="glass rounded-2xl border border-white/8 p-5 grid sm:grid-cols-3 gap-3"
+          className={FORM_PANEL}
           onSubmit={(event) => {
             event.preventDefault();
             if (!chatForm.when) return;
@@ -299,21 +393,55 @@ export function ContactDetail(props: Props) {
             });
           }}
         >
-          <input type="datetime-local" required value={chatForm.when} onChange={(e) => setChatForm({ ...chatForm, when: e.target.value })} className={`${INPUT} [color-scheme:dark]`} aria-label="When" />
-          <select value={chatForm.duration} onChange={(e) => setChatForm({ ...chatForm, duration: Number(e.target.value) })} className={SELECT} aria-label="Duration">
-            {[15, 20, 30, 45, 60].map((minutes) => <option key={minutes} value={minutes}>{minutes} min</option>)}
-          </select>
-          <input value={chatForm.location} onChange={(e) => setChatForm({ ...chatForm, location: e.target.value })} placeholder="Location or video link" className={INPUT} aria-label="Location" />
-          <p className="sm:col-span-3 text-xs text-slate-500 -mt-1">Times use your timezone ({timezone}). A role-calibrated prep sheet is created automatically.</p>
-          <button type="submit" disabled={busy} className={`${PRIMARY} w-fit`}>
-            {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Schedule chat
-          </button>
+          <SectionHeading title="Schedule coffee chat" />
+          <div className="mt-5 grid gap-4 sm:grid-cols-3">
+            <Field label="When" hint={`Times use your timezone (${timezone}).`} required>
+              {(p) => (
+                <input
+                  {...p}
+                  type="datetime-local"
+                  required
+                  value={chatForm.when}
+                  onChange={(e) => setChatForm({ ...chatForm, when: e.target.value })}
+                  className="ml-field [color-scheme:dark]"
+                />
+              )}
+            </Field>
+            <Field label="Duration">
+              {(p) => (
+                <select
+                  {...p}
+                  value={chatForm.duration}
+                  onChange={(e) => setChatForm({ ...chatForm, duration: Number(e.target.value) })}
+                  className="ml-field"
+                >
+                  {[15, 20, 30, 45, 60].map((minutes) => <option key={minutes} value={minutes}>{minutes} min</option>)}
+                </select>
+              )}
+            </Field>
+            <Field label="Location" hint="A place, or a video link.">
+              {(p) => (
+                <input
+                  {...p}
+                  value={chatForm.location}
+                  onChange={(e) => setChatForm({ ...chatForm, location: e.target.value })}
+                  className="ml-field"
+                />
+              )}
+            </Field>
+          </div>
+          <p className="mt-4 max-w-[62ch] text-[15px] leading-[1.55] text-graphite">
+            A role-calibrated prep sheet is created automatically.
+          </p>
+          <Button type="submit" disabled={busy} loading={busy} className="mt-5">
+            Schedule chat
+          </Button>
         </form>
       )}
 
       {panel === 'intro' && (
         <form
-          className="glass rounded-2xl border border-white/8 p-5 grid sm:grid-cols-3 gap-3"
+          className={FORM_PANEL}
           onSubmit={(event) => {
             event.preventDefault();
             void run(async () => {
@@ -328,207 +456,356 @@ export function ContactDetail(props: Props) {
             });
           }}
         >
-          <select value={introForm.to_contact_id} onChange={(e) => setIntroForm({ ...introForm, to_contact_id: e.target.value })} className={SELECT} aria-label="Introduce me to (existing contact)">
-            <option value="">Someone new (name below)</option>
-            {otherContacts.map((other) => <option key={other.id} value={other.id}>{other.full_name}</option>)}
-          </select>
-          <input value={introForm.to_name} onChange={(e) => setIntroForm({ ...introForm, to_name: e.target.value })} placeholder="Their name (if not a contact yet)" className={INPUT} aria-label="Name" />
-          <input value={introForm.notes} onChange={(e) => setIntroForm({ ...introForm, notes: e.target.value })} placeholder="Context (optional)" className={INPUT} aria-label="Notes" />
-          <p className="sm:col-span-3 text-xs text-slate-500 -mt-1">
-            {contact.full_name} can introduce you. Ask with a short forwardable paragraph — draft one in the Message Lab (purpose: warm-intro request).
+          <SectionHeading title="Record introduction" />
+          <div className="mt-5 grid gap-4 sm:grid-cols-3">
+            <Field label="Introduce me to">
+              {(p) => (
+                <select
+                  {...p}
+                  value={introForm.to_contact_id}
+                  onChange={(e) => setIntroForm({ ...introForm, to_contact_id: e.target.value })}
+                  className="ml-field"
+                >
+                  <option value="">Someone new (name below)</option>
+                  {otherContacts.map((other) => <option key={other.id} value={other.id}>{other.full_name}</option>)}
+                </select>
+              )}
+            </Field>
+            <Field label="Their name" hint="If they are not a contact yet.">
+              {(p) => (
+                <input
+                  {...p}
+                  value={introForm.to_name}
+                  onChange={(e) => setIntroForm({ ...introForm, to_name: e.target.value })}
+                  className="ml-field"
+                />
+              )}
+            </Field>
+            <Field label="Context" hint="Optional.">
+              {(p) => (
+                <input
+                  {...p}
+                  value={introForm.notes}
+                  onChange={(e) => setIntroForm({ ...introForm, notes: e.target.value })}
+                  className="ml-field"
+                />
+              )}
+            </Field>
+          </div>
+          <p className="mt-4 max-w-[62ch] text-[15px] leading-[1.55] text-graphite">
+            {contact.full_name} can introduce you. Ask with a short forwardable paragraph — draft one in
+            the Message Lab (purpose: warm-intro request).
           </p>
-          <button type="submit" disabled={busy} className={`${PRIMARY} w-fit`}>
-            {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Record
-          </button>
+          <Button type="submit" disabled={busy} loading={busy} className="mt-5">
+            Record
+          </Button>
         </form>
       )}
 
-      <div className="grid lg:grid-cols-3 gap-5">
-        {/* Timeline */}
-        <div className="lg:col-span-2 glass rounded-2xl border border-white/8 p-6">
-          <h3 className="text-white font-semibold mb-4">Timeline</h3>
+      {/* ── Timeline + rail ────────────────────────────────────── */}
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:gap-10">
+        <section>
+          <SectionHeading title="Timeline" label={`${interactions.length} logged`} />
           {interactions.length === 0 ? (
-            <p className="text-sm text-slate-500">No interactions yet. Log your first touch or draft outreach in the Message Lab.</p>
+            <p className="mt-4 max-w-[62ch] text-[16px] leading-[1.6] text-graphite">
+              No interactions yet. Log your first touch, or draft outreach in the Message Lab.
+            </p>
           ) : (
-            <ul className="space-y-4">
+            <ul className="mt-2">
               {interactions.map((interaction) => (
-                <li key={interaction.id} className="flex gap-3">
-                  <span className="w-2 h-2 rounded-full bg-gold-400/70 mt-2 shrink-0" />
-                  <div>
-                    <p className="text-sm text-white">
-                      {INTERACTION_TYPES.find((t) => t.value === interaction.type)?.label ?? interaction.type.replace(/_/g, ' ')}
+                <li key={interaction.id} className="ml-row py-4">
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <span className="text-[16px] font-semibold text-bone">
+                      {INTERACTION_TYPES.find((t) => t.value === interaction.type)?.label
+                        ?? interaction.type.replace(/_/g, ' ')}
                       {interaction.type === 'coffee_chat' && ' Coffee chat'}
-                      <span className="text-xs text-slate-500 ml-2">{new Date(interaction.occurred_at).toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' })}</span>
-                    </p>
-                    {interaction.summary && <p className="text-sm text-slate-400 mt-0.5 leading-relaxed whitespace-pre-wrap">{interaction.summary}</p>}
-                    {interaction.outcome && <p className="text-xs text-slate-500 mt-0.5">Outcome: {interaction.outcome}</p>}
+                    </span>
+                    <span className="ml-num text-[13px] text-graphite">
+                      {new Date(interaction.occurred_at).toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' })}
+                    </span>
                   </div>
+                  {interaction.summary && (
+                    <p className="mt-1.5 max-w-[70ch] whitespace-pre-wrap text-[16px] leading-[1.6] text-graphite">
+                      {interaction.summary}
+                    </p>
+                  )}
+                  {interaction.outcome && (
+                    <p className="mt-1.5 text-[14px] text-graphite">
+                      <span className="ml-label">Outcome</span> {interaction.outcome}
+                    </p>
+                  )}
                 </li>
               ))}
             </ul>
           )}
-        </div>
+        </section>
 
-        {/* Right rail */}
-        <div className="space-y-5">
-          <div className="glass rounded-2xl border border-white/8 p-5">
-            <h3 className="text-white font-semibold mb-3">Next action</h3>
+        <div className="space-y-8">
+          {/* Next action */}
+          <section>
+            <SectionHeading title="Next action" />
             {activeFollowUp ? (
-              <div>
-                <p className="text-sm text-white">{FOLLOWUP_KINDS.find((k) => k.value === activeFollowUp.kind)?.label ?? activeFollowUp.kind}</p>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Due {new Date(activeFollowUp.due_at).toLocaleDateString('en-AU')}{activeFollowUp.status === 'snoozed' ? ' (snoozed)' : ''}
+              <div className="mt-4">
+                <p className="text-[16px] font-semibold text-bone">
+                  {FOLLOWUP_KINDS.find((k) => k.value === activeFollowUp.kind)?.label ?? activeFollowUp.kind}
                 </p>
-                {activeFollowUp.reason && <p className="text-xs text-slate-400 mt-1">{activeFollowUp.reason}</p>}
-                <div className="flex gap-2 mt-3">
-                  <button type="button" disabled={busy} onClick={() => run(async () => { await networkingApi(`/followups/${activeFollowUp.id}`, 'PATCH', { status: 'completed' }); })} className={`${BUTTON} inline-flex items-center gap-1`}>
-                    <Check className="w-3 h-3" /> Done
-                  </button>
-                  <button type="button" disabled={busy} onClick={() => run(async () => { await networkingApi(`/followups/${activeFollowUp.id}`, 'PATCH', { status: 'cancelled' }); })} className={BUTTON}>
+                <p className="ml-num mt-1 text-[13px] text-graphite">
+                  Due {new Date(activeFollowUp.due_at).toLocaleDateString('en-AU')}
+                  {activeFollowUp.status === 'snoozed' ? ' · snoozed' : ''}
+                </p>
+                {activeFollowUp.reason && (
+                  <p className="mt-2 text-[15px] leading-[1.55] text-graphite">{activeFollowUp.reason}</p>
+                )}
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => run(async () => { await networkingApi(`/followups/${activeFollowUp.id}`, 'PATCH', { status: 'completed' }); })}
+                  >
+                    Done
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => run(async () => { await networkingApi(`/followups/${activeFollowUp.id}`, 'PATCH', { status: 'cancelled' }); })}
+                  >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-slate-500">No next action scheduled — every live relationship should have one.</p>
+              <p className="mt-4 text-[16px] leading-[1.6] text-graphite">
+                No next action scheduled — every live relationship should have one.
+              </p>
             )}
-          </div>
+          </section>
 
-          <div className="glass rounded-2xl border border-white/8 p-5">
-            <h3 className="text-white font-semibold mb-3">Coffee chats</h3>
-            {chats.length === 0 && <p className="text-sm text-slate-500">None yet.</p>}
-            <ul className="space-y-4">
-              {chats.map((chat) => (
-                <li key={chat.id} className="border border-white/8 rounded-xl p-3.5">
-                  <p className="text-sm text-white">
-                    {new Date(chat.scheduled_at).toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' })}
-                    <span className="text-xs text-slate-500 ml-2">{chat.duration_minutes} min · {chat.status}</span>
-                  </p>
-                  {chat.status === 'scheduled' && chat.prep && (
-                    <details className="mt-2">
-                      <summary className="text-xs text-gold-400 cursor-pointer">Prep sheet</summary>
-                      <ul className="mt-2 space-y-1.5">
-                        {((chat.prep as { questions?: string[] }).questions ?? []).map((question) => (
-                          <li key={question} className="text-xs text-slate-400 leading-relaxed">• {question}</li>
-                        ))}
-                      </ul>
-                    </details>
-                  )}
-                  {chat.status === 'scheduled' && (
-                    <div className="flex gap-2 mt-2.5">
-                      <button type="button" className={BUTTON} onClick={() => setDebriefFor(debriefFor === chat.id ? null : chat.id)}>Complete + debrief</button>
-                      <button type="button" disabled={busy} className={BUTTON} onClick={() => run(async () => { await networkingApi(`/coffee-chats/${chat.id}`, 'PATCH', { action: 'cancel' }); })}>Cancel</button>
+          {/* Coffee chats */}
+          <section>
+            <SectionHeading title="Coffee chats" label={`${chats.length}`} />
+            {chats.length === 0 ? (
+              <p className="mt-4 text-[16px] text-graphite">None yet.</p>
+            ) : (
+              <ul className="mt-2">
+                {chats.map((chat) => (
+                  <li key={chat.id} className="ml-row py-4">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                      <span className="ml-num text-[14px] text-bone">
+                        {new Date(chat.scheduled_at).toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' })}
+                      </span>
+                      <StatusLabel>{chat.duration_minutes} min · {chat.status}</StatusLabel>
                     </div>
-                  )}
-                  {chat.status === 'completed' && chat.debrief && (
-                    <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">{(chat.debrief as { learned?: string }).learned}</p>
-                  )}
-                  {debriefFor === chat.id && (
-                    <form
-                      className="mt-3 space-y-2"
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        void run(async () => {
-                          const names = debrief.names.split(',').map((n) => n.trim()).filter(Boolean);
-                          const raw = await networkingApi<unknown>(`/coffee-chats/${chat.id}`, 'PATCH', {
-                            action: 'complete',
-                            debrief: {
-                              learned: debrief.learned,
-                              referral_offered: debrief.referral_offered,
-                              names_dropped: names,
-                              promises_made: debrief.promises_made,
-                              outcome: debrief.outcome,
-                            },
-                          });
-                          const result = CompleteChatResponseSchema.parse(raw);
-                          setDroppedNames(result.namesDropped);
-                          setDebriefFor(null);
-                        });
-                      }}
-                    >
-                      <textarea required value={debrief.learned} onChange={(e) => setDebrief({ ...debrief, learned: e.target.value })} rows={3} placeholder="What did you learn?" className={INPUT} aria-label="What did you learn" />
-                      <input value={debrief.names} onChange={(e) => setDebrief({ ...debrief, names: e.target.value })} placeholder="Names they mentioned (comma-separated)" className={INPUT} aria-label="Names dropped" />
-                      <input value={debrief.promises_made} onChange={(e) => setDebrief({ ...debrief, promises_made: e.target.value })} placeholder="Anything you promised to do" className={INPUT} aria-label="Promises made" />
-                      <label className="flex items-center gap-2 text-xs text-slate-400">
-                        <input type="checkbox" checked={debrief.referral_offered} onChange={(e) => setDebrief({ ...debrief, referral_offered: e.target.checked })} className="accent-[#d3a955]" />
-                        They offered a referral or to pass my name on
-                      </label>
-                      <p className="text-xs text-slate-500">Completing queues your thank-you (due within 24h) automatically.</p>
-                      <button type="submit" disabled={busy} className={`${PRIMARY} w-fit`}>
-                        {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Save debrief
-                      </button>
-                    </form>
-                  )}
-                </li>
-              ))}
-            </ul>
-            {droppedNames.length > 0 && (
-              <div className="mt-3 border border-gold-400/25 rounded-xl p-3">
-                <p className="text-xs text-gold-400 mb-2">Add the people they mentioned as prospects:</p>
-                <div className="flex flex-wrap gap-2">
-                  {droppedNames.map((name) => (
-                    <button
-                      key={name}
-                      type="button"
-                      disabled={busy}
-                      className={BUTTON}
-                      onClick={() => run(async () => {
-                        await networkingApi('/contacts', 'POST', { full_name: name, firm: contact.firm, source: 'introduction' });
-                        setDroppedNames((prev) => prev.filter((n) => n !== name));
-                      })}
-                    >
-                      + {name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
 
-          {introductions.length > 0 && (
-            <div className="glass rounded-2xl border border-white/8 p-5">
-              <h3 className="text-white font-semibold mb-3">Introductions via {contact.full_name.split(' ')[0]}</h3>
-              <ul className="space-y-2">
-                {introductions.map((intro) => (
-                  <li key={intro.id} className="text-sm text-slate-400 flex items-center justify-between gap-2">
-                    <span>{intro.to_name || 'Contact'} <span className="text-xs text-slate-600">({intro.status})</span></span>
-                    {intro.status !== 'made' && intro.status !== 'declined' && (
-                      <button type="button" disabled={busy} className={BUTTON} onClick={() => run(async () => { await networkingApi(`/introductions/${intro.id}`, 'PATCH', { status: intro.status === 'planned' ? 'requested' : 'made' }); })}>
-                        Mark {intro.status === 'planned' ? 'requested' : 'made'}
-                      </button>
+                    {chat.status === 'scheduled' && chat.prep && (
+                      <details className="mt-3">
+                        <summary className="ml-label cursor-pointer text-bone">Prep sheet</summary>
+                        <ul className="mt-2 space-y-1.5">
+                          {((chat.prep as { questions?: string[] }).questions ?? []).map((question) => (
+                            <li key={question} className="text-[15px] leading-[1.55] text-graphite">
+                              <span aria-hidden="true">— </span>{question}
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
+
+                    {chat.status === 'scheduled' && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setDebriefFor(debriefFor === chat.id ? null : chat.id)}
+                          aria-expanded={debriefFor === chat.id}
+                        >
+                          Complete + debrief
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={busy}
+                          onClick={() => run(async () => { await networkingApi(`/coffee-chats/${chat.id}`, 'PATCH', { action: 'cancel' }); })}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    )}
+
+                    {chat.status === 'completed' && chat.debrief && (
+                      <p className="mt-2 text-[15px] leading-[1.55] text-graphite">
+                        {(chat.debrief as { learned?: string }).learned}
+                      </p>
+                    )}
+
+                    {debriefFor === chat.id && (
+                      <form
+                        className="mt-4 space-y-4 border-l-2 border-rule-bright pl-4"
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          void run(async () => {
+                            const names = debrief.names.split(',').map((n) => n.trim()).filter(Boolean);
+                            const raw = await networkingApi<unknown>(`/coffee-chats/${chat.id}`, 'PATCH', {
+                              action: 'complete',
+                              debrief: {
+                                learned: debrief.learned,
+                                referral_offered: debrief.referral_offered,
+                                names_dropped: names,
+                                promises_made: debrief.promises_made,
+                                outcome: debrief.outcome,
+                              },
+                            });
+                            const result = CompleteChatResponseSchema.parse(raw);
+                            setDroppedNames(result.namesDropped);
+                            setDebriefFor(null);
+                          });
+                        }}
+                      >
+                        <Field label="What did you learn?" required>
+                          {(p) => (
+                            <textarea
+                              {...p}
+                              required
+                              value={debrief.learned}
+                              onChange={(e) => setDebrief({ ...debrief, learned: e.target.value })}
+                              rows={3}
+                              className="ml-field"
+                            />
+                          )}
+                        </Field>
+                        <Field
+                          label="Names they mentioned"
+                          hint="Comma-separated. Each one can be added as a prospect afterwards."
+                        >
+                          {(p) => (
+                            <input
+                              {...p}
+                              value={debrief.names}
+                              onChange={(e) => setDebrief({ ...debrief, names: e.target.value })}
+                              className="ml-field"
+                            />
+                          )}
+                        </Field>
+                        <Field label="Anything you promised to do">
+                          {(p) => (
+                            <input
+                              {...p}
+                              value={debrief.promises_made}
+                              onChange={(e) => setDebrief({ ...debrief, promises_made: e.target.value })}
+                              className="ml-field"
+                            />
+                          )}
+                        </Field>
+                        <CheckControl
+                          checked={debrief.referral_offered}
+                          onChange={() => setDebrief({ ...debrief, referral_offered: !debrief.referral_offered })}
+                          label="They offered a referral, or to pass my name on"
+                        />
+                        <p className="text-[14px] leading-[1.55] text-graphite">
+                          Completing queues your thank-you (due within 24 hours) automatically.
+                        </p>
+                        <Button type="submit" disabled={busy} loading={busy}>
+                          Save debrief
+                        </Button>
+                      </form>
                     )}
                   </li>
                 ))}
               </ul>
-            </div>
+            )}
+
+            {droppedNames.length > 0 && (
+              <Panel as="div" raised className="mt-4 p-4">
+                <span className="ml-label">Add the people they mentioned</span>
+                <div className="mt-2.5 flex flex-wrap gap-2">
+                  {droppedNames.map((name) => (
+                    <Button
+                      key={name}
+                      variant="secondary"
+                      size="sm"
+                      disabled={busy}
+                      onClick={() => run(async () => {
+                        await networkingApi('/contacts', 'POST', { full_name: name, firm: contact.firm, source: 'introduction' });
+                        setDroppedNames((prev) => prev.filter((n) => n !== name));
+                      })}
+                      aria-label={`Add ${name} as a prospect`}
+                    >
+                      + {name}
+                    </Button>
+                  ))}
+                </div>
+              </Panel>
+            )}
+          </section>
+
+          {introductions.length > 0 && (
+            <section>
+              <SectionHeading title={`Introductions via ${contact.full_name.split(' ')[0]}`} />
+              <ul className="mt-2">
+                {introductions.map((intro) => (
+                  <li
+                    key={intro.id}
+                    className="ml-row flex flex-wrap items-center justify-between gap-x-3 gap-y-2 py-3"
+                  >
+                    <span className="flex flex-wrap items-center gap-2 text-[15px] text-bone">
+                      {intro.to_name || 'Contact'}
+                      <StatusLabel>{intro.status}</StatusLabel>
+                    </span>
+                    {intro.status !== 'made' && intro.status !== 'declined' && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={busy}
+                        onClick={() => run(async () => { await networkingApi(`/introductions/${intro.id}`, 'PATCH', { status: intro.status === 'planned' ? 'requested' : 'made' }); })}
+                      >
+                        Mark {intro.status === 'planned' ? 'requested' : 'made'}
+                      </Button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
 
-          <div className="glass rounded-2xl border border-white/8 p-5">
-            <h3 className="text-white font-semibold mb-3">Private notes</h3>
-            <textarea
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-              onBlur={() => { if (notes !== contact.notes) void patchContact({ notes }); }}
-              rows={4}
-              placeholder="Research, common ground, what matters to them…"
-              className={INPUT}
-              aria-label="Private notes"
-            />
-          </div>
+          {/* Private notes */}
+          <section>
+            <SectionHeading title="Private notes" />
+            <div className="mt-4">
+              <Field label="Notes" hint="Saved when you click away. Never shared or sent.">
+                {(p) => (
+                  <textarea
+                    {...p}
+                    value={notes}
+                    onChange={(event) => setNotes(event.target.value)}
+                    onBlur={() => { if (notes !== contact.notes) void patchContact({ notes }); }}
+                    rows={4}
+                    placeholder="Research, common ground, what matters to them…"
+                    className="ml-field"
+                  />
+                )}
+              </Field>
+            </div>
+          </section>
 
           {messages.length > 0 && (
-            <div className="glass rounded-2xl border border-white/8 p-5">
-              <h3 className="text-white font-semibold mb-3">Drafts & messages</h3>
-              <ul className="space-y-2">
+            <section>
+              <SectionHeading title="Drafts and messages" label={`${messages.length}`} />
+              <ul className="mt-2">
                 {messages.slice(0, 6).map((message) => (
-                  <li key={message.id}>
-                    <Link href={`${base}/messages?message=${message.id}`} className="text-sm text-slate-400 hover:text-gold-400 transition-colors">
-                      {message.purpose.replace(/_/g, ' ')} · {message.channel} · <span className="text-xs">{message.state}</span>
+                  <li key={message.id} className="ml-row">
+                    <Link
+                      href={`${base}/messages?message=${message.id}`}
+                      className="ml-row-hover flex min-h-[44px] flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2.5 text-[15px] text-bone hover:text-red"
+                    >
+                      <span className="capitalize">{message.purpose.replace(/_/g, ' ')}</span>
+                      <span className="ml-num text-[12px] uppercase tracking-[0.12em] text-graphite">
+                        {message.channel} · {message.state}
+                      </span>
                     </Link>
                   </li>
                 ))}
               </ul>
-            </div>
+            </section>
           )}
         </div>
       </div>

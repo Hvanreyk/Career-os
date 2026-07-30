@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { ResumeDocumentSchema, type ResumeDocument } from '@trajectoryos/core/resume/document';
-import { AlertTriangle, FileUp, Loader2 } from 'lucide-react';
 import { api, RESUME_API } from '../api';
 import { useResumeAiJob } from '../useResumeAiJob';
 import { Dialog } from './Dialog';
 import { DocumentProposal } from './ProposalReview';
+import { Notice } from './Notice';
+import { Button } from '@/components/ui/Button';
 import type { WorkspaceRows } from '../ResumeBuilder';
 
 interface Props {
@@ -62,6 +63,8 @@ export function ImportDialog({ onClose, onApplied }: Props) {
   }
 
   const working = state.phase === 'creating' || state.phase === 'processing';
+  const tabClass = (active: boolean) =>
+    `ml-btn min-h-[44px] px-4 text-[12px] ${active ? 'ml-btn-primary on-accent' : 'ml-btn-secondary'}`;
 
   return (
     <Dialog
@@ -81,16 +84,32 @@ export function ImportDialog({ onClose, onApplied }: Props) {
         />
       ) : (
         <div className="space-y-4">
-          <div className="flex gap-2">
-            <button onClick={() => setTab('upload')} className={`px-3 py-1.5 rounded-lg text-xs ${tab === 'upload' ? 'bg-gold-400 text-navy-950 font-semibold' : 'border border-white/10 text-slate-400'}`}>Upload file</button>
-            <button onClick={() => setTab('paste')} className={`px-3 py-1.5 rounded-lg text-xs ${tab === 'paste' ? 'bg-gold-400 text-navy-950 font-semibold' : 'border border-white/10 text-slate-400'}`}>Paste text</button>
+          <div className="flex gap-2" role="group" aria-label="Import source">
+            <button
+              onClick={() => setTab('upload')}
+              aria-pressed={tab === 'upload'}
+              className={tabClass(tab === 'upload')}
+            >
+              Upload file
+            </button>
+            <button
+              onClick={() => setTab('paste')}
+              aria-pressed={tab === 'paste'}
+              className={tabClass(tab === 'paste')}
+            >
+              Paste text
+            </button>
           </div>
 
           {tab === 'upload' ? (
-            <label className="block rounded-xl border border-dashed border-white/20 p-8 text-center cursor-pointer hover:border-gold-400/40">
-              <FileUp className="w-8 h-8 text-gold-400 mx-auto mb-2" />
-              <span className="text-slate-300 text-sm block">{file ? file.name : 'Choose a PDF or Word (.docx) file'}</span>
-              <span className="text-slate-600 text-xs">Max 4.5 MB. Scanned PDFs are not supported — use the paste tab instead.</span>
+            <label className="block cursor-pointer border border-dashed border-rule-bright p-8 text-center hover:border-bone">
+              <span className="ml-label block">Source file</span>
+              <span className="mt-2 block text-[16px] text-bone">
+                {file ? file.name : 'Choose a PDF or Word (.docx) file'}
+              </span>
+              <span className="mt-1.5 block text-[13px] text-graphite">
+                Max 4.5 MB. Scanned PDFs are not supported — use the paste tab instead.
+              </span>
               <input
                 type="file"
                 accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -105,24 +124,26 @@ export function ImportDialog({ onClose, onApplied }: Props) {
               rows={10}
               maxLength={40000}
               placeholder="Paste the full text of your resume here…"
-              className="w-full px-3 py-3 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm resize-y"
+              aria-label="Resume text"
+              className="ml-field resize-y"
             />
           )}
 
           {state.phase === 'error' && (
-            <div role="alert" className="rounded-xl border border-red-400/20 bg-red-400/10 p-3 text-red-300 text-sm flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0" />{state.error}</div>
+            <Notice tone="error" alert>{state.error}</Notice>
           )}
-          {applyError && (
-            <div role="alert" className="rounded-xl border border-red-400/20 bg-red-400/10 p-3 text-red-300 text-sm flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0" />{applyError}</div>
-          )}
+          {applyError && <Notice tone="error" alert>{applyError}</Notice>}
 
-          <button
+          <Button
             onClick={() => void start()}
-            disabled={working || (tab === 'upload' ? !file : text.trim().length < 200)}
-            className="w-full px-5 py-3 bg-gold-400 text-navy-950 font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
+            disabled={tab === 'upload' ? !file : text.trim().length < 200}
+            loading={working}
+            className="w-full"
           >
-            {working ? <><Loader2 className="w-4 h-4 animate-spin" />{state.phase === 'creating' ? 'Reading your file…' : 'Structuring your resume…'}</> : 'Import with AI'}
-          </button>
+            {working
+              ? state.phase === 'creating' ? 'Reading your file…' : 'Structuring your resume…'
+              : 'Import with AI'}
+          </Button>
         </div>
       )}
     </Dialog>

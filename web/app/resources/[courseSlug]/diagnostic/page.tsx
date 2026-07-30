@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { ChevronLeft } from 'lucide-react';
 import {
   DIAGNOSTIC_QUESTIONS,
   DIMENSION_LABELS,
@@ -12,6 +11,8 @@ import { requireUser } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 import { getCourseStructure } from '@/lib/courses/queries';
 import { DiagnosticWizard } from '@/components/courses/DiagnosticWizard';
+import { PageHeader, PageShell } from '@/components/ui/PageHeader';
+import { StatusLabel } from '@/components/ui/Status';
 import { resourceHasCapability } from '@/lib/resources/catalog';
 
 export const metadata: Metadata = { title: 'Diagnostic' };
@@ -61,27 +62,26 @@ export default async function DiagnosticPage({
   );
 
   return (
-    <div className="min-h-screen bg-navy-950 px-6 pt-28 pb-24">
-      <div className="max-w-lg mx-auto">
-        <Link
-          href={`/resources/${courseSlug}`}
-          className="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-300 text-sm mb-6 transition-colors"
-        >
-          <ChevronLeft className="w-4 h-4" /> {structure.course.title}
-        </Link>
-        <div className="mb-8">
-          <p className="text-xs font-semibold text-gold-400 uppercase tracking-widest mb-2">
-            Diagnostic
-          </p>
-          <h1 className="font-serif text-3xl font-bold text-white mb-2">
-            Where are you starting from?
-          </h1>
-          <p className="text-slate-400 text-sm leading-relaxed">
-            Two minutes, twelve questions. Your answers produce a readiness score and a
-            recommended order for the course — answer honestly, not aspirationally.
-          </p>
-        </div>
+    <PageShell width="narrow">
+      <Link
+        href={`/resources/${courseSlug}`}
+        className="ml-label inline-flex min-h-[44px] items-center hover:text-bone"
+      >
+        <span aria-hidden="true" className="mr-2">
+          ◂
+        </span>
+        {structure.course.title}
+      </Link>
 
+      <PageHeader
+        className="mt-1"
+        label="Diagnostic"
+        title="Where are you starting from?"
+        lede="Two minutes, twelve questions. Your answers produce a readiness score and a recommended order for the course — answer honestly, not aspirationally."
+        actions={<StatusLabel>{questions.length} questions</StatusLabel>}
+      />
+
+      <div className="mt-10">
         <DiagnosticWizard
           courseSlug={courseSlug}
           courseTitle={structure.course.title}
@@ -91,6 +91,6 @@ export default async function DiagnosticPage({
           moduleTitles={moduleTitles}
         />
       </div>
-    </div>
+    </PageShell>
   );
 }

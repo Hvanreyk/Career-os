@@ -1,7 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Landmark, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { StateBlock } from '@/components/ui/StateBlock';
+import { StatusLabel } from '@/components/ui/Status';
 import { createClient } from '@/lib/supabase/client';
 import type { BankTargetRow } from '@/lib/courses/types';
 
@@ -29,14 +31,12 @@ const STATUS_LABELS: Record<string, string> = {
   closed: 'Closed',
 };
 
-const STATUS_COLOURS: Record<string, string> = {
-  researching: 'bg-white/10 text-slate-300',
-  networking: 'bg-sky-400/15 text-sky-300',
-  applied: 'bg-gold-400/15 text-gold-300',
-  interviewing: 'bg-purple-400/15 text-purple-300',
-  offer: 'bg-emerald-400/15 text-emerald-300',
-  rejected: 'bg-red-400/15 text-red-300',
-  closed: 'bg-white/5 text-slate-500',
+// The word carries the status; the tone only reinforces the two outcomes that
+// are genuinely terminal. Everything in flight stays neutral so a long list
+// does not turn into a colour chart.
+const STATUS_TONES: Record<string, 'neutral' | 'ok' | 'warn'> = {
+  offer: 'ok',
+  rejected: 'warn',
 };
 
 const PRIORITY_LABELS: Record<number, string> = { 1: 'High', 2: 'Medium', 3: 'Low' };
@@ -61,6 +61,24 @@ const QUICK_ADD = [
 interface Props {
   initialTargets: BankTargetRow[];
   userId: string;
+}
+
+/** Field label + control, sharing one skin across text, date and select. */
+function FieldLabel({
+  label,
+  children,
+  className = '',
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <label className={`block ${className}`}>
+      <span className="ml-label block">{label}</span>
+      <span className="mt-1.5 block">{children}</span>
+    </label>
+  );
 }
 
 export function BankTrackerTable({ initialTargets, userId }: Props) {
@@ -124,165 +142,194 @@ export function BankTrackerTable({ initialTargets, userId }: Props) {
   );
 
   return (
-    <div className="space-y-6">
-      {/* Add */}
-      <div className="glass rounded-2xl border border-white/8 p-6">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void addTarget(newBank);
-          }}
-          className="flex gap-3"
-        >
-          <input
-            type="text"
-            value={newBank}
-            onChange={(e) => setNewBank(e.target.value)}
-            placeholder="Add a firm (any bank, boutique or advisory firm)"
-            className="flex-1 px-4 py-3 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-gold-400/50"
-          />
-          <button
-            type="submit"
-            disabled={!newBank.trim() || busy}
-            className="px-5 py-3 bg-gold-400 text-navy-950 font-semibold text-sm rounded-xl hover:bg-gold-300 transition-all flex items-center gap-2 disabled:opacity-50"
+    <div className="space-y-10">
+      {/* ── Add a firm ─────────────────────────────────────────── */}
+      <section className="ml-panel">
+        <div className="border-b border-rule px-4 py-3 sm:px-5">
+          <span className="ml-label">Add a firm</span>
+        </div>
+        <div className="px-4 py-5 sm:px-5">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void addTarget(newBank);
+            }}
+            className="flex flex-wrap gap-3"
           >
-            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            Add
-          </button>
-        </form>
-        <div className="flex flex-wrap gap-2 mt-4">
-          {QUICK_ADD.filter((name) => !existingNames.has(name.toLowerCase())).map((name) => (
-            <button
-              key={name}
-              type="button"
-              onClick={() => void addTarget(name)}
-              disabled={busy}
-              className="text-xs px-3 py-1.5 rounded-full border border-white/10 text-slate-400 hover:text-white hover:border-gold-400/40 transition-colors disabled:opacity-50"
-            >
-              + {name}
-            </button>
-          ))}
-        </div>
-        {error && <p className="text-red-400 text-xs mt-3">{error}</p>}
-      </div>
+            <input
+              type="text"
+              value={newBank}
+              onChange={(e) => setNewBank(e.target.value)}
+              placeholder="Any bank, boutique or advisory firm"
+              aria-label="Firm name"
+              className="ml-field min-h-[44px] flex-1 basis-[16rem]"
+            />
+            <Button type="submit" disabled={!newBank.trim()} loading={busy}>
+              Add firm
+            </Button>
+          </form>
 
-      {/* Targets */}
-      {sorted.length === 0 ? (
-        <div className="glass rounded-2xl border border-white/8 p-10 text-center">
-          <Landmark className="w-8 h-8 text-slate-600 mx-auto mb-3" />
-          <p className="text-slate-400 text-sm">
-            No targets yet. Add the firms you&apos;re researching — Module 8 walks through
-            how to build and prioritise this list.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {sorted.map((t) => (
-            <div key={t.id} className="glass rounded-2xl border border-white/8 p-5">
-              <div className="flex flex-wrap items-center gap-3 mb-4">
-                <h3 className="text-white font-semibold flex-1 min-w-[10rem]">{t.bank_name}</h3>
-                <span
-                  className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_COLOURS[t.status] ?? STATUS_COLOURS.researching}`}
-                >
-                  {STATUS_LABELS[t.status] ?? t.status}
-                </span>
+          <div className="mt-5">
+            <span className="ml-label">Common AU names — not a ranking</span>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {QUICK_ADD.filter((name) => !existingNames.has(name.toLowerCase())).map((name) => (
                 <button
+                  key={name}
                   type="button"
-                  onClick={() => void removeTarget(t.id)}
-                  className="text-slate-600 hover:text-red-400 transition-colors"
-                  aria-label={`Remove ${t.bank_name}`}
+                  onClick={() => void addTarget(name)}
+                  disabled={busy}
+                  className="ml-row-hover min-h-[44px] border border-rule px-3 text-[13px] text-graphite hover:border-rule-bright hover:text-bone disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  + {name}
                 </button>
-              </div>
-
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-                <label className="block">
-                  <span className="text-xs text-slate-500 block mb-1">Division / team</span>
-                  <input
-                    type="text"
-                    defaultValue={t.division}
-                    placeholder="e.g. M&A, ECM, generalist"
-                    onBlur={(e) => {
-                      if (e.target.value !== t.division) {
-                        void updateTarget(t.id, { division: e.target.value });
-                      }
-                    }}
-                    className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-gold-400/50"
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-xs text-slate-500 block mb-1">Priority</span>
-                  <select
-                    value={t.priority}
-                    onChange={(e) => void updateTarget(t.id, { priority: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-gold-400/50 [&>option]:bg-navy-950"
-                  >
-                    {[1, 2, 3].map((p) => (
-                      <option key={p} value={p}>
-                        {PRIORITY_LABELS[p]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block">
-                  <span className="text-xs text-slate-500 block mb-1">Apps open</span>
-                  <input
-                    type="date"
-                    defaultValue={t.apps_open ?? ''}
-                    onBlur={(e) => {
-                      const v = e.target.value || null;
-                      if (v !== t.apps_open) void updateTarget(t.id, { apps_open: v });
-                    }}
-                    className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-gold-400/50 [color-scheme:dark]"
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-xs text-slate-500 block mb-1">Apps close</span>
-                  <input
-                    type="date"
-                    defaultValue={t.apps_close ?? ''}
-                    onBlur={(e) => {
-                      const v = e.target.value || null;
-                      if (v !== t.apps_close) void updateTarget(t.id, { apps_close: v });
-                    }}
-                    className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-gold-400/50 [color-scheme:dark]"
-                  />
-                </label>
-                <label className="block sm:col-span-2">
-                  <span className="text-xs text-slate-500 block mb-1">Status</span>
-                  <select
-                    value={t.status}
-                    onChange={(e) => void updateTarget(t.id, { status: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-gold-400/50 [&>option]:bg-navy-950"
-                  >
-                    {STATUSES.map((s) => (
-                      <option key={s} value={s}>
-                        {STATUS_LABELS[s]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block sm:col-span-2">
-                  <span className="text-xs text-slate-500 block mb-1">
-                    Why this firm / notes (contacts, deals, eligibility)
-                  </span>
-                  <input
-                    type="text"
-                    defaultValue={t.notes}
-                    placeholder="e.g. spoke to an analyst in March; strong in infrastructure"
-                    onBlur={(e) => {
-                      if (e.target.value !== t.notes) {
-                        void updateTarget(t.id, { notes: e.target.value });
-                      }
-                    }}
-                    className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-gold-400/50"
-                  />
-                </label>
-              </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {error && (
+            <p className="mt-4 text-[14px] text-red" role="alert">
+              ▲ {error}
+            </p>
+          )}
         </div>
+      </section>
+
+      {/* ── Targets ────────────────────────────────────────────── */}
+      {sorted.length === 0 ? (
+        <StateBlock kind="empty" title="No target firms yet">
+          Add the firms you&apos;re researching — Module 8 walks through how to build and
+          prioritise this list.
+        </StateBlock>
+      ) : (
+        <section>
+          <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-bone pb-3">
+            <h2 className="text-[17px] font-bold uppercase tracking-[-0.015em] text-bone">
+              Target list
+            </h2>
+            <span className="ml-label">
+              <span className="ml-num">{sorted.length}</span>{' '}
+              {sorted.length === 1 ? 'firm' : 'firms'}
+            </span>
+          </div>
+
+          <ol>
+            {sorted.map((t, i) => (
+              <li key={t.id} className="ml-row py-6">
+                <div className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-4">
+                  <span className="ml-num pt-1 text-[13px] text-graphite" aria-hidden="true">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                      <h3 className="min-w-0 flex-1 text-[16px] font-bold uppercase tracking-[-0.01em] text-bone">
+                        {t.bank_name}
+                      </h3>
+                      <StatusLabel tone={STATUS_TONES[t.status] ?? 'neutral'}>
+                        {STATUS_LABELS[t.status] ?? t.status}
+                      </StatusLabel>
+                      <StatusLabel>{PRIORITY_LABELS[t.priority] ?? 'Medium'}</StatusLabel>
+                      <button
+                        type="button"
+                        onClick={() => void removeTarget(t.id)}
+                        className="ml-btn ml-btn-text min-h-[44px] px-1 text-[13px]"
+                      >
+                        Remove
+                      </button>
+                    </div>
+
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                      <FieldLabel label="Division / team">
+                        <input
+                          type="text"
+                          defaultValue={t.division}
+                          placeholder="e.g. M&A, ECM, generalist"
+                          onBlur={(e) => {
+                            if (e.target.value !== t.division) {
+                              void updateTarget(t.id, { division: e.target.value });
+                            }
+                          }}
+                          className="ml-field min-h-[44px]"
+                        />
+                      </FieldLabel>
+
+                      <FieldLabel label="Priority">
+                        <select
+                          value={t.priority}
+                          onChange={(e) =>
+                            void updateTarget(t.id, { priority: Number(e.target.value) })
+                          }
+                          className="ml-field min-h-[44px]"
+                        >
+                          {[1, 2, 3].map((p) => (
+                            <option key={p} value={p}>
+                              {PRIORITY_LABELS[p]}
+                            </option>
+                          ))}
+                        </select>
+                      </FieldLabel>
+
+                      <FieldLabel label="Apps open">
+                        <input
+                          type="date"
+                          defaultValue={t.apps_open ?? ''}
+                          onBlur={(e) => {
+                            const v = e.target.value || null;
+                            if (v !== t.apps_open) void updateTarget(t.id, { apps_open: v });
+                          }}
+                          className="ml-field ml-num min-h-[44px] [color-scheme:dark]"
+                        />
+                      </FieldLabel>
+
+                      <FieldLabel label="Apps close">
+                        <input
+                          type="date"
+                          defaultValue={t.apps_close ?? ''}
+                          onBlur={(e) => {
+                            const v = e.target.value || null;
+                            if (v !== t.apps_close) void updateTarget(t.id, { apps_close: v });
+                          }}
+                          className="ml-field ml-num min-h-[44px] [color-scheme:dark]"
+                        />
+                      </FieldLabel>
+
+                      <FieldLabel label="Status" className="sm:col-span-2">
+                        <select
+                          value={t.status}
+                          onChange={(e) => void updateTarget(t.id, { status: e.target.value })}
+                          className="ml-field min-h-[44px]"
+                        >
+                          {STATUSES.map((s) => (
+                            <option key={s} value={s}>
+                              {STATUS_LABELS[s]}
+                            </option>
+                          ))}
+                        </select>
+                      </FieldLabel>
+
+                      <FieldLabel
+                        label="Why this firm / notes"
+                        className="sm:col-span-2 lg:col-span-2"
+                      >
+                        <input
+                          type="text"
+                          defaultValue={t.notes}
+                          placeholder="e.g. spoke to an analyst in March; strong in infrastructure"
+                          onBlur={(e) => {
+                            if (e.target.value !== t.notes) {
+                              void updateTarget(t.id, { notes: e.target.value });
+                            }
+                          }}
+                          className="ml-field min-h-[44px]"
+                        />
+                      </FieldLabel>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
       )}
     </div>
   );

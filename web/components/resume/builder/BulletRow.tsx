@@ -1,7 +1,6 @@
 'use client';
 
 import type { ResumeBulletRow } from '@trajectoryos/core/resume/types';
-import { ArrowDown, ArrowUp, ChevronRight } from 'lucide-react';
 
 interface Props {
   bullet: ResumeBulletRow;
@@ -15,15 +14,41 @@ interface Props {
 /** A single resume bullet: click to open in the critique panel, arrows to reorder. */
 export function BulletRow({ bullet, selected, first, last, onSelect, onMove }: Props) {
   return (
-    <div className="flex gap-2 items-center">
-      <button onClick={onSelect} className={`flex-1 text-left p-3 rounded-xl border flex gap-3 items-start ${selected ? 'border-gold-400/40 bg-gold-400/5' : 'border-white/7 bg-white/[0.02]'}`}>
-        <span className="text-gold-400 mt-0.5">•</span>
-        <span className="text-slate-300 text-sm flex-1 line-clamp-3">{bullet.text}</span>
-        <ChevronRight className="w-4 h-4 text-slate-600 shrink-0" />
+    <div className="flex items-stretch gap-2">
+      <button
+        onClick={onSelect}
+        aria-current={selected ? 'true' : undefined}
+        className={`flex min-h-[44px] flex-1 items-start gap-3 border p-3 text-left ${
+          selected ? 'border-red bg-raised' : 'border-rule bg-surface hover:border-rule-bright'
+        }`}
+      >
+        <span className={selected ? 'text-red' : 'text-graphite'} aria-hidden="true">
+          ▪
+        </span>
+        <span className="line-clamp-3 flex-1 text-[15px] leading-snug text-bone">
+          {bullet.text}
+        </span>
+        <span className="shrink-0 text-graphite" aria-hidden="true">
+          ▸
+        </span>
       </button>
-      <div className="flex flex-col gap-1">
-        <button onClick={() => onMove(-1)} disabled={first} aria-label="Move bullet up" className="text-slate-600 hover:text-slate-300 disabled:opacity-20"><ArrowUp className="w-3.5 h-3.5" /></button>
-        <button onClick={() => onMove(1)} disabled={last} aria-label="Move bullet down" className="text-slate-600 hover:text-slate-300 disabled:opacity-20"><ArrowDown className="w-3.5 h-3.5" /></button>
+      <div className="flex flex-col">
+        <button
+          onClick={() => onMove(-1)}
+          disabled={first}
+          aria-label="Move bullet up"
+          className="flex h-[22px] w-11 items-center justify-center text-graphite hover:text-bone disabled:opacity-25"
+        >
+          <span aria-hidden="true">▲</span>
+        </button>
+        <button
+          onClick={() => onMove(1)}
+          disabled={last}
+          aria-label="Move bullet down"
+          className="flex h-[22px] w-11 items-center justify-center text-graphite hover:text-bone disabled:opacity-25"
+        >
+          <span aria-hidden="true">▼</span>
+        </button>
       </div>
     </div>
   );

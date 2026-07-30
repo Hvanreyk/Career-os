@@ -2,6 +2,8 @@
 
 import type { CoverageReport as Coverage } from '@trajectoryos/core/resume/coverage';
 import type { TailorOutput } from '@trajectoryos/core/resume/document';
+import { Meter, StatusLabel } from '@/components/ui/Status';
+import { Notice } from './Notice';
 
 interface Props {
   coverage: Coverage;
@@ -9,9 +11,9 @@ interface Props {
 }
 
 const MATCH_BADGES = {
-  direct: { label: 'Direct', className: 'bg-emerald-400/15 text-emerald-300 border-emerald-400/30' },
-  stretch: { label: 'Stretch', className: 'bg-amber-400/15 text-amber-300 border-amber-400/30' },
-  gap: { label: 'Gap', className: 'bg-red-400/15 text-red-300 border-red-400/30' },
+  direct: { label: 'Direct', tone: 'ok' },
+  stretch: { label: 'Stretch', tone: 'warn' },
+  gap: { label: 'Gap', tone: 'accent' },
 } as const;
 
 /**
@@ -20,50 +22,59 @@ const MATCH_BADGES = {
  */
 export function CoverageReport({ coverage, tailored }: Props) {
   const matchByRequirement = new Map(tailored.matches.map((match) => [match.requirement_id, match]));
-  const gapByRequirement = new Map(tailored.gaps.map((gap) => [gap.requirement_id, gap]));
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-3">
-      <div className="flex items-end justify-between gap-3">
+    <div className="ml-panel-raised space-y-3 p-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-widest text-gold-400">JD coverage</p>
-          <p className="text-white text-2xl font-bold">{coverage.percent}%</p>
+          <p className="ml-label">JD coverage</p>
+          <p className="ml-num mt-1 text-[26px] font-bold leading-none tracking-[-0.03em] text-bone">
+            {coverage.percent}%
+          </p>
         </div>
-        <p className="text-slate-400 text-xs text-right">
-          {coverage.direct} direct · {coverage.stretch} stretch · {coverage.gaps} gap{coverage.gaps === 1 ? '' : 's'}
+        <p className="ml-num text-right text-[12px] leading-relaxed text-graphite">
+          {coverage.direct} direct · {coverage.stretch} stretch · {coverage.gaps} gap
+          {coverage.gaps === 1 ? '' : 's'}
           {(tailored.jd_analysis.role_title || tailored.jd_analysis.firm) && (
-            <><br />{[tailored.jd_analysis.role_title, tailored.jd_analysis.firm].filter(Boolean).join(' — ')}</>
+            <>
+              <br />
+              {[tailored.jd_analysis.role_title, tailored.jd_analysis.firm].filter(Boolean).join(' — ')}
+            </>
           )}
         </p>
       </div>
-      <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-        <div className="h-full bg-gold-400" style={{ width: `${coverage.percent}%` }} />
-      </div>
-      <ul className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+      <Meter value={coverage.percent} label={`JD coverage ${coverage.percent} percent`} />
+      <ul className="max-h-48 space-y-2 overflow-y-auto pr-1">
         {tailored.jd_analysis.requirements.map((requirement) => {
           const match = matchByRequirement.get(requirement.id);
           const verdict = MATCH_BADGES[match?.match ?? 'gap'];
           return (
-            <li key={requirement.id} className="flex items-start gap-2 text-xs">
-              <span className={`shrink-0 mt-0.5 px-1.5 py-0.5 rounded border text-[10px] font-semibold ${verdict.className}`}>{verdict.label}</span>
-              <span className="text-slate-300">
+            <li key={requirement.id} className="flex items-start gap-2.5">
+              <StatusLabel tone={verdict.tone} className="mt-0.5 shrink-0">
+                {verdict.label}
+              </StatusLabel>
+              <span className="text-[14px] leading-snug text-bone">
                 {requirement.text}
-                {requirement.kind === 'must_have' && <span className="text-slate-500"> (must-have)</span>}
-                {match && match.match !== 'gap' && match.note && <span className="block text-slate-500 mt-0.5">{match.note}</span>}
+                {requirement.kind === 'must_have' && (
+                  <span className="text-graphite"> (must-have)</span>
+                )}
+                {match && match.match !== 'gap' && match.note && (
+                  <span className="mt-0.5 block text-[13px] text-graphite">{match.note}</span>
+                )}
               </span>
             </li>
           );
         })}
       </ul>
       {tailored.gaps.length > 0 && (
-        <div className="rounded-lg border border-red-400/20 bg-red-400/[0.06] p-3">
-          <p className="text-red-300 text-xs font-semibold mb-1.5">Honest gaps — do not claim these unless true</p>
-          <ul className="space-y-1">
+        <Notice tone="error" title="Honest gaps">
+          <p className="text-graphite">Do not claim these unless true.</p>
+          <ul className="mt-1.5 space-y-1">
             {tailored.gaps.map((gap) => (
-              <li key={gap.requirement_id} className="text-red-200/80 text-xs">{gap.honest_suggestion}</li>
+              <li key={gap.requirement_id}>{gap.honest_suggestion}</li>
             ))}
           </ul>
-        </div>
+        </Notice>
       )}
     </div>
   );

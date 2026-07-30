@@ -7,11 +7,12 @@ import {
   type ResumeChange,
   type ResumeDocument,
 } from '@trajectoryos/core/resume/document';
-import { AlertTriangle, Loader2, Sparkles } from 'lucide-react';
 import { api } from '../api';
 import { useResumeAiJob } from '../useResumeAiJob';
 import { Dialog } from './Dialog';
 import { ChangeProposal } from './ProposalReview';
+import { Notice } from './Notice';
+import { Button } from '@/components/ui/Button';
 import type { WorkspaceRows } from '../ResumeBuilder';
 
 interface Props {
@@ -48,6 +49,8 @@ export function ImproveDialog({ onClose, onApplied }: Props) {
     }
   }
 
+  const working = state.phase === 'creating' || state.phase === 'processing';
+
   return (
     <Dialog
       title="Improve my resume"
@@ -59,37 +62,39 @@ export function ImproveDialog({ onClose, onApplied }: Props) {
         <ChangeProposal
           changes={improvement.data.changes}
           applying={applying}
-          header={<p className="text-slate-300 text-sm">{improvement.data.summary}</p>}
+          header={
+            <p className="text-[15px] leading-[1.6] text-bone">{improvement.data.summary}</p>
+          }
           discoveryQuestions={improvement.data.discovery_questions}
           onApply={(accepted) => void apply(accepted)}
           onCancel={onClose}
         />
       ) : state.phase === 'completed' ? (
         <div className="space-y-4">
-          <div className="rounded-xl border border-red-400/20 bg-red-400/10 p-4 text-red-300 text-sm flex gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-            The AI returned improvements we couldn&apos;t validate. Nothing was applied — you can try again.
-          </div>
-          <button onClick={() => reset()} className="px-4 py-2 rounded-lg border border-white/10 text-slate-300 text-sm">Try again</button>
+          <Notice tone="error" title="Could not validate">
+            The AI returned improvements we couldn&apos;t validate. Nothing was applied — you can
+            try again.
+          </Notice>
+          <Button variant="secondary" onClick={() => reset()}>
+            Try again
+          </Button>
         </div>
       ) : (
         <div className="space-y-4">
-          {state.phase === 'error' && (
-            <div role="alert" className="rounded-xl border border-red-400/20 bg-red-400/10 p-3 text-red-300 text-sm flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0" />{state.error}</div>
-          )}
-          <button
+          {state.phase === 'error' && <Notice tone="error" alert>{state.error}</Notice>}
+          <Button
             onClick={() => void run(() => api<{ jobId: string }>('/improve', 'POST'))}
-            disabled={state.phase === 'creating' || state.phase === 'processing'}
-            className="w-full px-5 py-3 bg-gold-400 text-navy-950 font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
+            loading={working}
+            className="w-full"
           >
-            {state.phase === 'creating' || state.phase === 'processing'
-              ? <><Loader2 className="w-4 h-4 animate-spin" />Reviewing your resume…</>
-              : <><Sparkles className="w-4 h-4" />Review my whole resume</>}
-          </button>
+            {working ? 'Reviewing your resume…' : 'Review my whole resume'}
+          </Button>
         </div>
       )}
       {applyError && (
-        <div role="alert" className="mt-3 rounded-xl border border-amber-400/25 bg-amber-400/10 p-3 text-amber-200 text-sm flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0" />{applyError}</div>
+        <div className="mt-3">
+          <Notice tone="warn" alert>{applyError}</Notice>
+        </div>
       )}
     </Dialog>
   );

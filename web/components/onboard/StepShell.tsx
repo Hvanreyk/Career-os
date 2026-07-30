@@ -1,8 +1,5 @@
-'use client';
-
-import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
+import { Wordmark } from '@/components/ui/Wordmark';
 
 const STEPS = ['Goal', 'University', 'Grades', 'Experience', 'Signals', 'Review'];
 
@@ -14,63 +11,66 @@ interface Props {
   children: React.ReactNode;
 }
 
+/**
+ * Onboarding frame.
+ *
+ * Progress is a segmented rule rather than a bar — six discrete steps read as
+ * six discrete steps. The step is also stated in text, so progress is never
+ * carried by the accent colour alone.
+ */
 export function StepShell({ step, title, subtitle, backHref, children }: Props) {
-  const progress = (step / STEPS.length) * 100;
-
   return (
-    <div className="flex-1 flex flex-col items-center px-4 py-8 pt-24">
-      {/* Progress bar */}
-      <div className="w-full max-w-lg mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-slate-500 uppercase tracking-widest">
-            Step {step} of {STEPS.length}
+    <div className="flex flex-1 flex-col">
+      <header className="border-b border-rule">
+        <div className="mx-auto flex h-14 max-w-[52rem] items-center justify-between px-5 sm:px-8">
+          <Link href="/" aria-label="MappedLabs — home" className="flex h-11 items-center pr-2">
+            <Wordmark className="h-5 w-auto" ink="#edeae3" accent="#f0563a" />
+          </Link>
+          <span className="ml-label">
+            Step {step} / {STEPS.length} · {STEPS[step - 1]}
           </span>
-          <span className="text-xs text-gold-400 font-semibold">{STEPS[step - 1]}</span>
         </div>
-        <div className="h-1 rounded-full bg-navy-800 overflow-hidden">
-          <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-gold-500 to-gold-300"
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
-          />
+        <div className="mx-auto max-w-[52rem] px-5 pb-4 sm:px-8">
+          <ol className="flex gap-1.5" aria-label="Progress">
+            {STEPS.map((s, i) => {
+              const done = i < step - 1;
+              const current = i === step - 1;
+              return (
+                <li
+                  key={s}
+                  className={`h-0.5 flex-1 ${
+                    current ? 'bg-red' : done ? 'bg-bone' : 'bg-rule'
+                  }`}
+                  aria-current={current ? 'step' : undefined}
+                >
+                  <span className="sr-only">
+                    {s}
+                    {done ? ' (completed)' : current ? ' (current)' : ''}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
         </div>
-        {/* Step dots */}
-        <div className="flex justify-between mt-2.5">
-          {STEPS.map((s, i) => (
-            <div
-              key={s}
-              className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                i < step ? 'bg-gold-400' : i === step - 1 ? 'bg-gold-400' : 'bg-navy-700'
-              }`}
-            />
-          ))}
-        </div>
-      </div>
+      </header>
 
-      {/* Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: 'easeOut' }}
-        className="w-full max-w-lg"
-      >
+      <div className="mx-auto w-full max-w-[52rem] flex-1 px-5 py-10 sm:px-8 sm:py-14">
         {backHref && (
           <Link
             href={backHref}
-            className="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-300 text-sm mb-5 transition-colors"
+            className="ml-btn ml-btn-text -ml-0.5 mb-4 inline-flex min-h-[44px] text-[14px]"
           >
-            <ChevronLeft className="w-4 h-4" /> Back
+            <span aria-hidden="true">◂</span> Back
           </Link>
         )}
 
-        <div className="mb-7">
-          <h1 className="font-serif text-3xl font-bold text-white mb-2">{title}</h1>
-          {subtitle && <p className="text-slate-400 text-sm leading-relaxed">{subtitle}</p>}
-        </div>
+        <h1 className="ml-title text-bone">{title}</h1>
+        {subtitle && (
+          <p className="mt-3 max-w-[62ch] text-[16px] leading-[1.65] text-graphite">{subtitle}</p>
+        )}
 
-        {children}
-      </motion.div>
+        <div className="mt-8">{children}</div>
+      </div>
     </div>
   );
 }

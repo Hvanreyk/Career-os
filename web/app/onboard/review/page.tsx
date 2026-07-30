@@ -2,8 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { StepShell } from '@/components/onboard/StepShell';
+import { StepActions } from '@/components/onboard/StepParts';
 import { useOnboard } from '@/lib/onboard/context';
-import { ArrowRight, Edit2 } from 'lucide-react';
 import Link from 'next/link';
 
 const TIER_LABELS: Record<string, string> = {
@@ -86,44 +86,43 @@ export default function ReviewPage() {
       subtitle="Make sure everything looks right before we generate your report."
       backHref="/onboard/signals"
     >
-      <div className="space-y-4">
+      {/* A register of what was captured, not five cards. */}
+      <div className="border-t border-rule">
         {sections.map((s) => (
-          <div key={s.title} className="glass border border-white/8 rounded-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3 border-b border-white/6">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
-                {s.title}
-              </span>
+          <section key={s.title} className="border-b border-rule py-5">
+            <div className="flex items-baseline justify-between gap-4">
+              <h2 className="ml-label">{s.title}</h2>
               <Link
                 href={s.href}
-                className="text-slate-600 hover:text-gold-400 transition-colors flex items-center gap-1 text-xs"
+                className="ml-btn ml-btn-text -mr-2 min-h-[44px] min-w-[44px] px-2 text-[14px]"
               >
-                <Edit2 className="w-3 h-3" /> Edit
+                Edit<span className="sr-only"> {s.title}</span>
               </Link>
             </div>
-            <div className="px-5 py-3 divide-y divide-white/5">
-              {s.rows.map(([label, value]) => (
-                <div key={label} className="flex justify-between py-2 text-sm">
-                  <span className="text-slate-500">{label}</span>
-                  <span className="text-white font-medium text-right max-w-[60%]">{value}</span>
+            <dl className="mt-3">
+              {/* Index-keyed: the Experience section derives its labels from
+                  firm + year, which two identical entries would collide on. */}
+              {s.rows.map(([label, value], rowIndex) => (
+                <div
+                  key={`${label}-${rowIndex}`}
+                  className="flex justify-between gap-6 border-b border-rule/60 py-2 last:border-0"
+                >
+                  <dt className="text-[14px] text-graphite">{label}</dt>
+                  <dd className="max-w-[62%] text-right text-[14px] font-medium text-bone">
+                    {value}
+                  </dd>
                 </div>
               ))}
-            </div>
-          </div>
+            </dl>
+          </section>
         ))}
-
-        <div className="glass border border-gold-400/20 rounded-2xl p-5 text-center">
-          <div className="text-gold-400 font-semibold text-sm mb-1">Ready to generate your report?</div>
-          <p className="text-slate-400 text-xs mb-4">
-            You&apos;ll create an account, then we&apos;ll match your profile and generate your personalised Career Compass report.
-          </p>
-          <button
-            onClick={() => router.push('/onboard/signup')}
-            className="w-full py-4 bg-gold-400 text-navy-950 font-bold rounded-xl hover:bg-gold-300 transition-all shadow-[0_0_28px_rgba(212,175,55,0.35)] flex items-center justify-center gap-2"
-          >
-            Create Account & Generate Report <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
       </div>
+
+      <StepActions
+        onContinue={() => router.push('/onboard/signup')}
+        label="Create account & generate"
+        note="You'll create an account, then we'll match your profile and generate your Career Compass report."
+      />
     </StepShell>
   );
 }

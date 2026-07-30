@@ -6,8 +6,10 @@ import type {
   ResumeBulletRow,
   ResumeCritique,
 } from '@trajectoryos/core/resume/types';
-import { AlertTriangle, Check, Loader2, Sparkles, Trash2 } from 'lucide-react';
 import { api } from './api';
+import { Notice } from './ai/Notice';
+import { Panel, PanelHeader } from '@/components/ui/Panel';
+import { Button } from '@/components/ui/Button';
 
 interface CritiqueState {
   critique: ResumeCritique;
@@ -117,47 +119,193 @@ export function CritiquePanel({
 
   return (
     <div className="space-y-4">
-      <div className="glass rounded-2xl border border-white/8 p-5">
-        <div className="flex justify-between gap-3 mb-3">
-          <h2 className="text-white font-semibold">Current bullet</h2>
-          <button onClick={() => onDeleteBullet(bullet.id)} className="text-slate-600 hover:text-red-400" aria-label="Delete selected bullet"><Trash2 className="w-4 h-4" /></button>
-        </div>
-        <textarea value={baseText} onChange={(e) => setBaseText(e.target.value)} maxLength={1000} rows={4} className="w-full px-3 py-3 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm resize-y" />
-        <div className="mt-3 flex flex-wrap gap-3 items-center justify-between">
-          <span className="text-xs text-slate-600">{baseText.length}/1,000</span>
-          <div className="flex gap-2">
-            <select value={bullet.status} onChange={(e) => void setStatus(e.target.value as 'draft' | 'final')} className="px-3 py-2 rounded-lg bg-navy-950 border border-white/10 text-white text-xs"><option value="draft">Draft</option><option value="final">Final</option></select>
-            <button onClick={() => void saveBaseBullet()} disabled={!baseText.trim() || baseText.trim() === bullet.text.trim() || busy !== null} className="px-3 py-2 rounded-lg bg-white/10 text-white text-xs disabled:opacity-40">Save bullet</button>
+      <Panel>
+        <PanelHeader
+          title="Current bullet"
+          action={
+            <button
+              onClick={() => onDeleteBullet(bullet.id)}
+              className="-mr-2 flex h-11 w-11 items-center justify-center text-graphite hover:text-red"
+              aria-label="Delete selected bullet"
+            >
+              <span aria-hidden="true">✕</span>
+            </button>
+          }
+        />
+        <div className="p-4 sm:p-5">
+          <label htmlFor="critique-base-text" className="sr-only">
+            Bullet text
+          </label>
+          <textarea
+            id="critique-base-text"
+            value={baseText}
+            onChange={(e) => setBaseText(e.target.value)}
+            maxLength={1000}
+            rows={4}
+            className="ml-field resize-y"
+          />
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <span className="ml-num text-[12px] text-graphite">{baseText.length}/1,000</span>
+            <div className="flex gap-2">
+              <label htmlFor="critique-status" className="sr-only">
+                Bullet status
+              </label>
+              <select
+                id="critique-status"
+                value={bullet.status}
+                onChange={(e) => void setStatus(e.target.value as 'draft' | 'final')}
+                className="ml-field min-h-[44px] w-auto py-2 text-[14px]"
+              >
+                <option value="draft">Draft</option>
+                <option value="final">Final</option>
+              </select>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => void saveBaseBullet()}
+                disabled={!baseText.trim() || baseText.trim() === bullet.text.trim() || busy !== null}
+              >
+                Save bullet
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      </Panel>
 
-      <div className="rounded-2xl border border-sky-400/20 bg-sky-400/[0.05] p-4 text-xs text-sky-100 leading-relaxed">
-        Your bullet is sent to OpenAI only when you request critique. AI can improve wording but cannot verify truth or guarantee recruiter outcomes. Feedback is not saved unless you save a revision.
-      </div>
+      <Notice tone="info" title="How AI is used">
+        Your bullet is sent to OpenAI only when you request critique. AI can improve wording but
+        cannot verify truth or guarantee recruiter outcomes. Feedback is not saved unless you save
+        a revision.
+      </Notice>
 
-      {!critique && <button onClick={() => void requestCritique()} disabled={busy !== null || remaining === 0} className="w-full px-5 py-3 bg-gold-400 text-navy-950 font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50">
-        {busy === 'critique' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}Request AI critique {remaining !== null && `(${remaining} left today)`}
-      </button>}
+      {!critique && (
+        <Button
+          onClick={() => void requestCritique()}
+          disabled={busy !== null || remaining === 0}
+          loading={busy === 'critique'}
+          className="w-full"
+        >
+          Request AI critique {remaining !== null && `(${remaining} left today)`}
+        </Button>
+      )}
 
-      {critique && <div className="glass rounded-2xl border border-gold-400/20 p-5 space-y-5">
-        <div><div className="text-xs uppercase tracking-widest text-gold-400 mb-2">AI critique</div><p className="text-slate-300 text-sm leading-relaxed">{critique.critique.summary}</p></div>
-        <div><h3 className="text-emerald-300 text-sm font-semibold mb-2">What is working</h3><ul className="space-y-2">{critique.critique.strengths.map((item) => <li key={item} className="text-slate-400 text-sm flex gap-2"><Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />{item}</li>)}</ul></div>
-        {critique.critique.improvements.length > 0 && <div><h3 className="text-amber-300 text-sm font-semibold mb-2">What to reconsider</h3><div className="space-y-3">{critique.critique.improvements.map((item, index) => <div key={`${item.area}-${index}`} className="rounded-xl bg-white/[0.03] p-3"><div className="text-xs uppercase text-amber-300 mb-1">{item.area}</div><p className="text-slate-300 text-sm">{item.observation}</p><p className="text-slate-500 text-xs mt-1">{item.why_it_matters}</p><p className="text-gold-200 text-xs mt-2">Ask yourself: {item.revision_question}</p></div>)}</div></div>}
-        <div><h3 className="text-white text-sm font-semibold mb-2">Rewrite starting points</h3><div className="space-y-2">{critique.critique.rewrite_options.map((option, index) => <button key={index} onClick={() => setRevisedText(option.text)} className="w-full text-left rounded-xl border border-white/8 p-3 hover:border-gold-400/30"><p className="text-slate-300 text-sm">{option.text}</p><p className="text-slate-600 text-xs mt-2">{option.change_summary}</p></button>)}</div></div>
-        <label className="block text-sm text-white font-semibold">Your revision
-          <textarea value={revisedText} onChange={(e) => setRevisedText(e.target.value)} maxLength={1000} rows={5} className="mt-2 w-full px-3 py-3 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm resize-y font-normal" />
-        </label>
-        <div className="flex gap-3">
-          <button onClick={() => { setCritique(null); setRevisedText(bullet.text); }} disabled={busy !== null} className="px-4 py-2 rounded-lg border border-white/10 text-slate-300 text-sm">Discard</button>
-          <button onClick={() => void saveRevision()} disabled={!dirtyRevision || busy !== null} className="flex-1 px-4 py-2 rounded-lg bg-gold-400 text-navy-950 font-semibold text-sm disabled:opacity-50">{busy === 'revision' ? 'Saving…' : 'Save revision'}</button>
-        </div>
-      </div>}
+      {critique && (
+        <Panel className="space-y-6 p-4 sm:p-5">
+          <div>
+            <p className="ml-label text-red">AI critique</p>
+            <p className="mt-2 text-[15px] leading-[1.6] text-bone">{critique.critique.summary}</p>
+          </div>
 
-      {revisions.length > 0 && <div className="glass rounded-2xl border border-white/8 p-5"><h3 className="text-white font-semibold text-sm mb-3">Saved revision history</h3><div className="space-y-4">{revisions.map((revision) => <div key={revision.id} className="border-l border-gold-400/25 pl-4"><p className="text-slate-600 text-xs line-through">{revision.original_text}</p><p className="text-slate-300 text-sm mt-1">{revision.revised_text}</p><p className="text-slate-600 text-xs mt-2">{new Date(revision.created_at).toLocaleString('en-AU')} · {revision.model} · {revision.prompt_version}</p></div>)}</div></div>}
+          <div>
+            <h3 className="border-b border-rule pb-2 text-[13px] font-bold uppercase tracking-[0.06em] text-bone">
+              What is working
+            </h3>
+            <ul className="mt-2">
+              {critique.critique.strengths.map((item) => (
+                <li key={item} className="ml-row flex gap-2.5 py-2.5 text-[15px] leading-snug text-graphite">
+                  <span className="shrink-0 text-ok" aria-hidden="true">✓</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
 
-      {error && <div role="alert" className="rounded-xl border border-red-400/20 bg-red-400/10 p-3 text-red-300 text-sm flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0" />{error}</div>}
-      {notice && <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 p-3 text-emerald-300 text-sm">{notice}</div>}
+          {critique.critique.improvements.length > 0 && (
+            <div>
+              <h3 className="border-b border-rule pb-2 text-[13px] font-bold uppercase tracking-[0.06em] text-bone">
+                What to reconsider
+              </h3>
+              <div className="mt-3 space-y-3">
+                {critique.critique.improvements.map((item, index) => (
+                  <div key={`${item.area}-${index}`} className="ml-panel-raised p-3">
+                    <div className="ml-label">{item.area}</div>
+                    <p className="mt-1.5 text-[15px] leading-snug text-bone">{item.observation}</p>
+                    <p className="mt-1.5 text-[13px] leading-snug text-graphite">
+                      {item.why_it_matters}
+                    </p>
+                    <p className="mt-2 text-[13px] leading-snug text-bone">
+                      Ask yourself: {item.revision_question}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <h3 className="border-b border-rule pb-2 text-[13px] font-bold uppercase tracking-[0.06em] text-bone">
+              Rewrite starting points
+            </h3>
+            <div className="mt-3 space-y-2">
+              {critique.critique.rewrite_options.map((option, index) => (
+                <button
+                  key={index}
+                  onClick={() => setRevisedText(option.text)}
+                  className="block w-full border border-rule p-3 text-left hover:border-rule-bright hover:bg-raised"
+                >
+                  <p className="text-[15px] leading-snug text-bone">{option.text}</p>
+                  <p className="mt-2 text-[13px] leading-snug text-graphite">
+                    {option.change_summary}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="critique-revised-text" className="block text-[13px] font-semibold text-bone">
+              Your revision
+            </label>
+            <textarea
+              id="critique-revised-text"
+              value={revisedText}
+              onChange={(e) => setRevisedText(e.target.value)}
+              maxLength={1000}
+              rows={5}
+              className="ml-field mt-2 resize-y"
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => { setCritique(null); setRevisedText(bullet.text); }}
+              disabled={busy !== null}
+            >
+              Discard
+            </Button>
+            <Button
+              onClick={() => void saveRevision()}
+              disabled={!dirtyRevision || busy !== null}
+              loading={busy === 'revision'}
+              className="flex-1"
+            >
+              {busy === 'revision' ? 'Saving…' : 'Save revision'}
+            </Button>
+          </div>
+        </Panel>
+      )}
+
+      {revisions.length > 0 && (
+        <Panel>
+          <PanelHeader title="Saved revision history" label={`${revisions.length} saved`} />
+          <div className="px-4 sm:px-5">
+            {revisions.map((revision) => (
+              <div key={revision.id} className="ml-row py-4">
+                <p className="text-[13px] text-graphite line-through">{revision.original_text}</p>
+                <p className="mt-1.5 text-[15px] leading-snug text-bone">{revision.revised_text}</p>
+                <p className="ml-num mt-2 text-[12px] text-graphite">
+                  {new Date(revision.created_at).toLocaleString('en-AU')} · {revision.model} ·{' '}
+                  {revision.prompt_version}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      )}
+
+      {error && <Notice tone="error" alert>{error}</Notice>}
+      {notice && <Notice tone="ok" title="Saved">{notice}</Notice>}
     </div>
   );
 }

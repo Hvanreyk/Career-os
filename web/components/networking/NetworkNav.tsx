@@ -14,11 +14,14 @@ const TABS = [
 
 /**
  * Networking workspace navigation tabs.
+ *
+ * The accent underline is the workspace's wayfinding signal, so it is the
+ * one place in the chrome that spends red.
  */
 export function NetworkNav({ base }: { base: string }) {
   const pathname = usePathname();
   return (
-    <nav className="flex flex-wrap gap-1.5 mb-8" aria-label="Networking workspace">
+    <nav className="mb-8 flex flex-wrap border-b border-rule" aria-label="Networking workspace">
       {TABS.map((tab) => {
         const href = `${base}${tab.path}`;
         const active = tab.path === ''
@@ -29,10 +32,10 @@ export function NetworkNav({ base }: { base: string }) {
             key={tab.label}
             href={href}
             aria-current={active ? 'page' : undefined}
-            className={`text-sm px-3.5 py-1.5 rounded-full border transition-colors ${
+            className={`ml-num -mb-px inline-flex min-h-[44px] items-center border-b-2 px-3.5 text-[12px] uppercase tracking-[0.12em] transition-colors sm:px-4 ${
               active
-                ? 'border-gold-400/50 bg-gold-400/10 text-gold-400'
-                : 'border-white/10 text-slate-400 hover:text-white hover:border-white/25'
+                ? 'border-red text-bone'
+                : 'border-transparent text-graphite hover:border-rule-bright hover:text-bone'
             }`}
           >
             {tab.label}

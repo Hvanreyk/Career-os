@@ -8,7 +8,7 @@ export function renderWithPlaceholders(text: string): ReactNode {
   if (parts.length === 1) return text;
   return parts.map((part, index) =>
     part.startsWith('[') && part.endsWith(']')
-      ? <mark key={index} className="bg-amber-400/20 text-amber-200 rounded px-1">{part}</mark>
+      ? <mark key={index} className="bg-transparent px-1 text-warn underline decoration-dotted underline-offset-2">{part}</mark>
       : part,
   );
 }

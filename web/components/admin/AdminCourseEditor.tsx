@@ -2,8 +2,9 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Save } from 'lucide-react';
 import { submitAdminContent } from '@/lib/admin/client';
+import { Button } from '@/components/ui/Button';
+import { Field } from '@/components/ui/Field';
 
 interface CourseData {
   id: string;
@@ -18,9 +19,6 @@ interface CourseData {
   editorial_source: 'file' | 'admin';
   editorial_revision: number;
 }
-
-const inputClass =
-  'w-full px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-gold-400/50';
 
 export function AdminCourseEditor({ course }: { course: CourseData }) {
   const router = useRouter();
@@ -67,74 +65,155 @@ export function AdminCourseEditor({ course }: { course: CourseData }) {
     }
   }
 
+  const publishing = course.status !== 'published' && form.status === 'published';
+
   return (
-    <form onSubmit={(event) => void save(event)} className="glass rounded-2xl border border-white/8 p-6 space-y-5">
-      <div className="flex items-center justify-between gap-4">
+    <form onSubmit={(event) => void save(event)} className="ml-panel">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-rule px-4 py-3 sm:px-5">
         <div>
-          <h2 className="text-white font-semibold text-lg">Course settings</h2>
-          <p className="text-xs text-slate-500 mt-1">
+          <h2 className="text-[15px] font-bold uppercase tracking-[-0.01em] text-bone">
+            Course settings
+          </h2>
+          <p className="ml-num mt-1 text-[12px] text-graphite">
             {course.editorial_source} source · revision {course.editorial_revision}
           </p>
         </div>
-        <button
-          type="submit"
-          disabled={busy}
-          className="px-4 py-2.5 bg-gold-400 text-navy-950 font-semibold text-sm rounded-xl hover:bg-gold-300 flex items-center gap-2 disabled:opacity-50"
-        >
-          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+        <Button type="submit" disabled={busy} loading={busy}>
           Save
-        </button>
+        </Button>
       </div>
 
-      <label className="block">
-        <span className="text-xs text-slate-500 block mb-1.5">Title</span>
-        <input className={inputClass} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-      </label>
-      <label className="block">
-        <span className="text-xs text-slate-500 block mb-1.5">Description</span>
-        <textarea className={`${inputClass} min-h-28`} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-      </label>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <label>
-          <span className="text-xs text-slate-500 block mb-1.5">Status</span>
-          <select className={inputClass} value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as CourseData['status'] })}>
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-          </select>
-        </label>
-        <label>
-          <span className="text-xs text-slate-500 block mb-1.5">Region</span>
-          <select className={inputClass} value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value as CourseData['region'] })}>
-            <option value="au">Australia</option>
-            <option value="global">Global</option>
-            <option value="uk">United Kingdom</option>
-            <option value="us">United States</option>
-          </select>
-        </label>
-        <label>
-          <span className="text-xs text-slate-500 block mb-1.5">Tag</span>
-          <input className={inputClass} value={form.tag} onChange={(e) => setForm({ ...form, tag: e.target.value })} />
-        </label>
-        <label>
-          <span className="text-xs text-slate-500 block mb-1.5">Icon key</span>
-          <input className={inputClass} value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} />
-        </label>
-        <label>
-          <span className="text-xs text-slate-500 block mb-1.5">Last reviewed</span>
-          <input type="date" className={inputClass} value={form.last_reviewed_at ?? ''} onChange={(e) => setForm({ ...form, last_reviewed_at: e.target.value || null })} />
-        </label>
-        <label>
-          <span className="text-xs text-slate-500 block mb-1.5">Display order</span>
-          <input type="number" min={0} className={inputClass} value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} />
-        </label>
+      <div className="space-y-5 p-4 sm:p-5">
+        <Field label="Title">
+          {(props) => (
+            <input
+              {...props}
+              className="ml-field"
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+            />
+          )}
+        </Field>
+        <Field label="Description">
+          {(props) => (
+            <textarea
+              {...props}
+              className="ml-field min-h-28"
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+            />
+          )}
+        </Field>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Field label="Status">
+            {(props) => (
+              <select
+                {...props}
+                className="ml-field"
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value as CourseData['status'] })}
+              >
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+              </select>
+            )}
+          </Field>
+          <Field label="Region">
+            {(props) => (
+              <select
+                {...props}
+                className="ml-field"
+                value={form.region}
+                onChange={(e) => setForm({ ...form, region: e.target.value as CourseData['region'] })}
+              >
+                <option value="au">Australia</option>
+                <option value="global">Global</option>
+                <option value="uk">United Kingdom</option>
+                <option value="us">United States</option>
+              </select>
+            )}
+          </Field>
+          <Field label="Tag">
+            {(props) => (
+              <input
+                {...props}
+                className="ml-field"
+                value={form.tag}
+                onChange={(e) => setForm({ ...form, tag: e.target.value })}
+              />
+            )}
+          </Field>
+          <Field label="Icon key">
+            {(props) => (
+              <input
+                {...props}
+                className="ml-field"
+                value={form.icon}
+                onChange={(e) => setForm({ ...form, icon: e.target.value })}
+              />
+            )}
+          </Field>
+          <Field label="Last reviewed">
+            {(props) => (
+              <input
+                {...props}
+                type="date"
+                className="ml-field ml-num [color-scheme:dark]"
+                value={form.last_reviewed_at ?? ''}
+                onChange={(e) => setForm({ ...form, last_reviewed_at: e.target.value || null })}
+              />
+            )}
+          </Field>
+          <Field label="Display order">
+            {(props) => (
+              <input
+                {...props}
+                type="number"
+                min={0}
+                className="ml-field ml-num"
+                value={form.sort_order}
+                onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })}
+              />
+            )}
+          </Field>
+        </div>
+
+        <Field label="Revision note" hint="Recorded in the audit trail with this save.">
+          {(props) => (
+            <input
+              {...props}
+              className="ml-field"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="What changed and why?"
+            />
+          )}
+        </Field>
+
+        {publishing && (
+          <p className="border-l-2 border-warn bg-raised px-3 py-2.5 text-[14px] leading-snug text-bone">
+            <span className="ml-label text-warn">
+              <span aria-hidden="true">▲ </span>Warning
+            </span>
+            <span className="mt-1 block">
+              Saving will publish this course and make its published modules and lessons public.
+            </span>
+          </p>
+        )}
+        {message && (
+          <p role="status" className="text-[14px] text-ok">
+            <span aria-hidden="true">✓ </span>
+            {message}
+          </p>
+        )}
+        {error && (
+          <p role="alert" className="text-[14px] text-red">
+            <span aria-hidden="true">▲ </span>
+            {error}
+          </p>
+        )}
       </div>
-      <label className="block">
-        <span className="text-xs text-slate-500 block mb-1.5">Revision note</span>
-        <input className={inputClass} value={note} onChange={(e) => setNote(e.target.value)} placeholder="What changed and why?" />
-      </label>
-      {message && <p className="text-emerald-400 text-sm">{message}</p>}
-      {error && <p className="text-red-400 text-sm">{error}</p>}
     </form>
   );
 }
-

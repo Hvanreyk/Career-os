@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ChevronLeft } from 'lucide-react';
 import { NetworkNav } from '@/components/networking/NetworkNav';
 import { requireUser } from '@/lib/auth';
 import { resourceHasCapability } from '@/lib/resources/catalog';
@@ -34,25 +33,27 @@ export default async function NetworkLayout({
 
   const base = `/resources/${courseSlug}/network`;
   return (
-    <div className="min-h-screen bg-navy-950 px-6 pt-28 pb-24">
-      <div className="max-w-7xl mx-auto">
-        <Link
-          href={`/resources/${courseSlug}`}
-          className="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-300 text-sm mb-6"
-        >
-          <ChevronLeft className="w-4 h-4" /> {course.title}
-        </Link>
-        <div className="mb-6">
-          <p className="text-xs font-semibold text-gold-400 uppercase tracking-widest mb-2">Private workspace</p>
-          <h1 className="font-serif text-3xl md:text-4xl font-bold text-white mb-2">Networking workspace</h1>
-          <p className="text-slate-400 text-sm leading-relaxed max-w-3xl">
-            Build real relationships at your target firms: a contact pipeline, a weekly plan driven by the
-            AU recruiting calendar, and truthful outreach reviewed before it is sent.
-          </p>
-        </div>
+    <div className="mx-auto w-full max-w-[90rem] px-5 py-10 sm:px-8 sm:py-12">
+      <Link
+        href={`/resources/${courseSlug}`}
+        className="ml-btn ml-btn-text -ml-0.5 mb-4 inline-flex min-h-[44px] text-[14px]"
+      >
+        <span aria-hidden="true">\u25c2</span> {course.title}
+      </Link>
+
+      <header className="border-b border-rule pb-6">
+        <span className="ml-label">Private workspace</span>
+        <h1 className="ml-title mt-2.5 text-bone">Networking workspace</h1>
+        <p className="mt-4 max-w-[68ch] text-[16px] leading-[1.65] text-graphite">
+          Build real relationships at your target firms: a contact pipeline, a weekly plan driven by
+          the AU recruiting calendar, and truthful outreach reviewed before it is sent.
+        </p>
+      </header>
+
+      <div className="mt-6">
         <NetworkNav base={base} />
-        {children}
       </div>
+      {children}
     </div>
   );
 }

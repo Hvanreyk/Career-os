@@ -1,10 +1,13 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { ChevronLeft } from 'lucide-react';
 import { requireUser } from '@/lib/auth';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { QuizRunner } from '@/components/courses/QuizRunner';
+import { PageHeader, PageShell } from '@/components/ui/PageHeader';
+import { StatusLabel } from '@/components/ui/Status';
+import { StateBlock } from '@/components/ui/StateBlock';
+import { Button } from '@/components/ui/Button';
 import { resourceHasCapability } from '@/lib/resources/catalog';
 
 export const dynamic = 'force-dynamic';
@@ -75,40 +78,51 @@ export default async function ModuleQuizPage({ params }: { params: Promise<Param
   );
 
   return (
-    <div className="min-h-screen bg-navy-950 px-6 pt-28 pb-24">
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-8">
-          <Link
-            href={`/resources/${courseSlug}`}
-            className="text-sm text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            {course.title}
-          </Link>
-        </div>
+    <PageShell width="narrow">
+      <Link
+        href={`/resources/${courseSlug}`}
+        className="ml-label inline-flex min-h-[44px] items-center hover:text-bone"
+      >
+        <span aria-hidden="true" className="mr-2">
+          ◂
+        </span>
+        {course.title}
+      </Link>
 
-        <div className="mb-8">
-          <p className="text-xs font-semibold text-gold-400 uppercase tracking-widest mb-2">
-            Module quiz
-          </p>
-          <h1 className="font-serif text-3xl md:text-4xl font-bold text-white">{module.title}</h1>
-          {best && (
-            <p className="text-sm text-slate-500 mt-3">
-              Best attempt so far: <span className="text-gold-400 font-medium">{best.score}/{best.total}</span>
-            </p>
-          )}
-        </div>
+      <PageHeader
+        className="mt-1"
+        label="Module quiz"
+        title={module.title}
+        lede={
+          questions.length > 0
+            ? `${questions.length} questions, graded on submission. Answers and explanations appear once you submit.`
+            : undefined
+        }
+        actions={
+          best ? (
+            <StatusLabel>
+              Best {best.score}/{best.total}
+            </StatusLabel>
+          ) : (
+            <StatusLabel>No attempts yet</StatusLabel>
+          )
+        }
+      />
 
+      <div className="mt-10">
         {questions.length === 0 ? (
-          <div className="glass rounded-2xl border border-white/8 p-8 text-center">
-            <p className="text-slate-400">This module&apos;s quiz isn&apos;t available yet.</p>
-            <Link
-              href={`/resources/${courseSlug}`}
-              className="mt-4 inline-flex text-sm text-gold-400 hover:text-gold-300 transition-colors"
-            >
-              Back to the course
-            </Link>
-          </div>
+          <StateBlock
+            kind="empty"
+            title="This quiz isn't published yet"
+            action={
+              <Button href={`/resources/${courseSlug}`} variant="secondary">
+                Back to the course
+              </Button>
+            }
+          >
+            The module content is available — the graded questions for it are still being
+            written.
+          </StateBlock>
         ) : (
           <QuizRunner
             moduleId={module.id}
@@ -117,6 +131,6 @@ export default async function ModuleQuizPage({ params }: { params: Promise<Param
           />
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }

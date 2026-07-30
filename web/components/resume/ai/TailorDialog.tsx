@@ -8,13 +8,14 @@ import {
   type ResumeChange,
   type ResumeDocument,
 } from '@trajectoryos/core/resume/document';
-import { AlertTriangle, Crosshair, Loader2 } from 'lucide-react';
 import { api } from '../api';
 import { useResumeAiJob } from '../useResumeAiJob';
 import { Dialog } from './Dialog';
 import { ChangeProposal } from './ProposalReview';
 import { CoverageReport } from './CoverageReport';
+import { Notice } from './Notice';
 import { ExportMenu } from '../ExportMenu';
+import { Button } from '@/components/ui/Button';
 import type { WorkspaceRows } from '../ResumeBuilder';
 
 interface Props {
@@ -57,6 +58,8 @@ export function TailorDialog({ onClose, onApplied }: Props) {
     }
   }
 
+  const working = state.phase === 'creating' || state.phase === 'processing';
+
   return (
     <Dialog
       title="Tailor to a job description"
@@ -67,25 +70,33 @@ export function TailorDialog({ onClose, onApplied }: Props) {
       {tailored?.success && coverage ? (
         <div className="space-y-4">
           <CoverageReport coverage={coverage} tailored={tailored.data} />
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3">
-            <p className="text-slate-400 text-xs">Download the tailored version without changing your master resume:</p>
+          <div className="flex flex-wrap items-center justify-between gap-3 border border-rule p-3">
+            <p className="text-[13px] text-graphite">
+              Download the tailored version without changing your master resume:
+            </p>
             {state.jobId && <ExportMenu jobId={state.jobId} compact />}
           </div>
           <ChangeProposal
             changes={tailored.data.changes}
             applying={applying}
-            header={<p className="text-slate-300 text-sm">Or apply selected changes to your master resume:</p>}
+            header={
+              <p className="text-[15px] leading-[1.6] text-bone">
+                Or apply selected changes to your master resume:
+              </p>
+            }
             onApply={(accepted) => void apply(accepted)}
             onCancel={onClose}
           />
         </div>
       ) : state.phase === 'completed' ? (
         <div className="space-y-4">
-          <div className="rounded-xl border border-red-400/20 bg-red-400/10 p-4 text-red-300 text-sm flex gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-            The AI returned a tailoring result we couldn&apos;t validate. Nothing was applied — you can try again.
-          </div>
-          <button onClick={() => reset()} className="px-4 py-2 rounded-lg border border-white/10 text-slate-300 text-sm">Try again</button>
+          <Notice tone="error" title="Could not validate">
+            The AI returned a tailoring result we couldn&apos;t validate. Nothing was applied —
+            you can try again.
+          </Notice>
+          <Button variant="secondary" onClick={() => reset()}>
+            Try again
+          </Button>
         </div>
       ) : (
         <div className="space-y-4">
@@ -95,24 +106,26 @@ export function TailorDialog({ onClose, onApplied }: Props) {
             rows={10}
             maxLength={15000}
             placeholder="Paste the full job description here — responsibilities, requirements, the lot…"
-            className="w-full px-3 py-3 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm resize-y"
+            aria-label="Job description"
+            className="ml-field resize-y"
           />
-          {state.phase === 'error' && (
-            <div role="alert" className="rounded-xl border border-red-400/20 bg-red-400/10 p-3 text-red-300 text-sm flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0" />{state.error}</div>
-          )}
-          <button
+          {state.phase === 'error' && <Notice tone="error" alert>{state.error}</Notice>}
+          <Button
             onClick={() => void run(() => api<{ jobId: string }>('/tailor', 'POST', { jobDescription }))}
-            disabled={state.phase === 'creating' || state.phase === 'processing' || jobDescription.trim().length < 100}
-            className="w-full px-5 py-3 bg-gold-400 text-navy-950 font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
+            disabled={jobDescription.trim().length < 100}
+            loading={working}
+            className="w-full"
           >
-            {state.phase === 'creating' || state.phase === 'processing'
-              ? <><Loader2 className="w-4 h-4 animate-spin" />Analysing the JD and matching your experience…</>
-              : <><Crosshair className="w-4 h-4" />Tailor my resume to this JD</>}
-          </button>
+            {working
+              ? 'Analysing the JD and matching your experience…'
+              : 'Tailor my resume to this JD'}
+          </Button>
         </div>
       )}
       {applyError && (
-        <div role="alert" className="mt-3 rounded-xl border border-amber-400/25 bg-amber-400/10 p-3 text-amber-200 text-sm flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0" />{applyError}</div>
+        <div className="mt-3">
+          <Notice tone="warn" alert>{applyError}</Notice>
+        </div>
       )}
     </Dialog>
   );

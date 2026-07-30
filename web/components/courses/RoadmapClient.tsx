@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CalendarRange, Loader2, Map, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { StateBlock } from '@/components/ui/StateBlock';
 
 // Drives the two-phase generate flow (create → process → refresh),
 // modelled on ReportPending. The server page passes the latest roadmap
@@ -97,91 +98,94 @@ export function RoadmapClient({ courseSlug, initial }: Props) {
   if (initial?.status === 'completed' && initial.sections) {
     const sections = initial.sections;
     return (
-      <div className="space-y-6">
-        {SECTION_TITLES.map(([key, title]) => (
-          <div key={key} className="glass rounded-2xl border border-white/8 p-6">
-            <div className="flex items-center gap-2.5 mb-4">
-              <CalendarRange className="w-4 h-4 text-gold-400" />
-              <h2 className="font-serif text-xl font-bold text-white">{title}</h2>
+      <div className="space-y-10">
+        {SECTION_TITLES.map(([key, title], sectionIndex) => (
+          <section key={key}>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-bone pb-3">
+              <div className="flex flex-wrap items-baseline gap-x-3">
+                <span className="ml-label" aria-hidden="true">
+                  H{sectionIndex + 1}
+                </span>
+                <h2 className="text-[17px] font-bold uppercase tracking-[-0.015em] text-bone">
+                  {title}
+                </h2>
+              </div>
+              <span className="ml-label">
+                <span className="ml-num">{sections[key].length}</span> actions
+              </span>
             </div>
-            <ol className="space-y-4">
+
+            <ol className="mt-2">
               {sections[key].map((item, i) => (
-                <li key={i} className="flex gap-3">
-                  <span className="w-6 h-6 rounded-full bg-gold-400/10 text-gold-400 font-semibold flex items-center justify-center shrink-0 text-xs mt-0.5">
-                    {i + 1}
+                <li
+                  key={i}
+                  className="ml-row grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-4 py-4"
+                >
+                  <span className="ml-num pt-0.5 text-[13px] text-graphite" aria-hidden="true">
+                    {String(i + 1).padStart(2, '0')}
                   </span>
-                  <div>
-                    <p className="text-white text-sm font-semibold">{item.title}</p>
-                    <p className="text-slate-400 text-sm leading-relaxed mt-0.5">{item.detail}</p>
+                  <div className="min-w-0">
+                    <p className="text-[16px] font-semibold leading-[1.4] text-bone">
+                      {item.title}
+                    </p>
+                    <p className="mt-1.5 max-w-[68ch] text-[15px] leading-[1.6] text-graphite">
+                      {item.detail}
+                    </p>
                   </div>
                 </li>
               ))}
             </ol>
-          </div>
+          </section>
         ))}
 
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <p className="text-xs text-slate-600">
-            Generated{' '}
-            {new Date(initial.createdAt).toLocaleDateString('en-AU', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-rule pt-6">
+          <p className="max-w-[52ch] text-[13px] leading-[1.55] text-graphite">
+            <span className="ml-label mr-2">Generated</span>
+            <span className="ml-num">
+              {new Date(initial.createdAt).toLocaleDateString('en-AU', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </span>
             . Dates referenced are typical patterns — verify with each firm.
           </p>
-          <button
-            type="button"
-            onClick={() => void generate()}
-            disabled={working}
-            className="px-4 py-2.5 rounded-xl border border-white/10 text-sm text-slate-300 hover:text-white hover:border-gold-400/40 transition-colors flex items-center gap-2 disabled:opacity-50"
-          >
-            {working ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <RefreshCw className="w-4 h-4" />
-            )}
+          <Button onClick={() => void generate()} variant="secondary" loading={working}>
             Regenerate with latest progress
-          </button>
+          </Button>
         </div>
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+
+        {error && (
+          <p className="text-[15px] text-red" role="alert">
+            ▲ {error}
+          </p>
+        )}
       </div>
     );
   }
 
   // ── Empty / processing / error ───────────────────────────────
+  if (working) {
+    return (
+      <StateBlock kind="loading" title="Building your roadmap">
+        Turning your readiness profile, quiz results and target list into a week-by-week plan.
+        This takes a few seconds.
+      </StateBlock>
+    );
+  }
+
   return (
-    <div className="glass rounded-2xl border border-white/8 p-10 text-center">
-      {working ? (
-        <>
-          <Loader2 className="w-8 h-8 text-gold-400 animate-spin mx-auto mb-5" />
-          <h2 className="font-serif text-xl font-bold text-white mb-2">
-            Building your roadmap
-          </h2>
-          <p className="text-slate-400 text-sm">
-            Turning your readiness profile, quiz results and target list into a
-            week-by-week plan. This takes a few seconds.
-          </p>
-        </>
-      ) : (
-        <>
-          <Map className="w-8 h-8 text-gold-400 mx-auto mb-5" />
-          <h2 className="font-serif text-xl font-bold text-white mb-2">
-            {error ? "We couldn't finish your roadmap" : 'Your personalised recruiting roadmap'}
-          </h2>
-          <p className="text-slate-400 text-sm mb-6 max-w-md mx-auto">
-            {error ??
-              'A week-by-week action plan built from your diagnostic, course progress and bank target list.'}
-          </p>
-          <button
-            type="button"
-            onClick={() => void generate()}
-            className="px-6 py-3 bg-gold-400 text-navy-950 font-semibold rounded-xl hover:bg-gold-300 transition-all text-sm shadow-[0_0_20px_rgba(212,175,55,0.25)]"
-          >
-            {error ? 'Try again' : 'Generate my roadmap'}
-          </button>
-        </>
-      )}
-    </div>
+    <StateBlock
+      kind={error ? 'error' : 'empty'}
+      title={error ? "We couldn't finish your roadmap" : 'Your personalised recruiting roadmap'}
+      action={
+        <Button onClick={() => void generate()} size="lg">
+          {error ? 'Try again' : 'Generate my roadmap'}
+        </Button>
+      }
+    >
+      {error ??
+        'A week-by-week action plan built from your diagnostic, course progress and bank target list.'}
+    </StateBlock>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Download, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 
 // Bottom-of-report CTA: generates the longer AI deep-dive on demand (one LLM
 // call, cached server-side), then streams it down as a PDF. Re-downloads skip
@@ -43,29 +43,19 @@ export default function DownloadCompassReport({ reportId }: { reportId: string }
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <button
-        onClick={() => void prepare()}
-        disabled={status === 'preparing'}
-        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gold-400 text-navy-950 font-semibold text-sm hover:bg-gold-300 transition-all disabled:opacity-60"
-      >
-        {status === 'preparing' ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Preparing your in-depth report…
-          </>
-        ) : (
-          <>
-            <Download className="w-4 h-4" />
-            {status === 'ready' ? 'Download again (PDF)' : 'Download your full report (PDF)'}
-          </>
-        )}
-      </button>
-      <p className="text-slate-500 text-xs max-w-md text-center">
+      <Button onClick={() => void prepare()} loading={status === 'preparing'}>
+        {status === 'preparing'
+          ? 'Preparing your in-depth report…'
+          : status === 'ready'
+            ? 'Download again (PDF)'
+            : 'Download your full report (PDF)'}
+      </Button>
+      <p className="max-w-[52ch] text-center text-[15px] leading-snug text-graphite">
         A 2–3 page personalised deep-dive: how investment banking really works, exactly where to
         improve, your highest-leverage moves, and the one resource to start with next.
       </p>
       {status === 'error' && (
-        <p className="text-red-400 text-xs">
+        <p className="text-[14px] text-red">
           We couldn&apos;t build your report just now.{' '}
           <button onClick={() => void prepare()} className="underline hover:text-red-300">Try again</button>.
         </p>

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, CircleHelp, X } from 'lucide-react';
 
 // Formative inline check: instant client-side feedback, nothing is
 // recorded. (Scored quizzes are the module quiz, graded server-side.)
@@ -21,53 +20,64 @@ export function KnowledgeCheck({ block }: Props) {
   const correct = selected === block.correctId;
 
   return (
-    <div className="glass rounded-xl border border-white/10 p-5">
-      <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-gold-400">
-        <CircleHelp className="w-4 h-4 shrink-0" />
-        Quick check
+    <section className="ml-panel">
+      <div className="border-b border-rule px-4 py-3 sm:px-5">
+        <span className="ml-label">Quick check · not recorded</span>
       </div>
-      <p className="text-white text-sm font-medium mb-4">{block.question}</p>
-      <div className="space-y-2">
-        {block.options.map((opt) => {
-          const isChosen = selected === opt.id;
-          const isCorrect = opt.id === block.correctId;
-          let ring = 'border-white/10 hover:border-gold-400/40';
-          if (answered) {
-            if (isCorrect) ring = 'border-emerald-400/60 bg-emerald-400/5';
-            else if (isChosen) ring = 'border-red-400/60 bg-red-400/5';
-            else ring = 'border-white/10 opacity-60';
-          }
-          return (
-            <button
-              key={opt.id}
-              type="button"
-              disabled={answered}
-              onClick={() => setSelected(opt.id)}
-              className={`w-full text-left px-4 py-3 rounded-lg border text-sm text-slate-300 transition-colors flex items-start gap-3 ${ring} ${
-                answered ? 'cursor-default' : 'cursor-pointer'
-              }`}
-            >
-              {answered && isCorrect && (
-                <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-              )}
-              {answered && isChosen && !isCorrect && (
-                <X className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-              )}
-              <span>{opt.text}</span>
-            </button>
-          );
-        })}
-      </div>
-      {answered && (
-        <div
-          className={`mt-4 text-sm rounded-lg p-4 ${
-            correct ? 'bg-emerald-400/10 text-emerald-200' : 'bg-red-400/10 text-red-200'
-          }`}
-        >
-          <span className="font-semibold">{correct ? 'Correct. ' : 'Not quite. '}</span>
-          {block.explanation}
+
+      <div className="px-4 py-5 sm:px-5">
+        <p className="max-w-[62ch] text-[16px] font-semibold leading-[1.55] text-bone">
+          {block.question}
+        </p>
+
+        {/* One frame, hairline-separated rows — the options are a register. */}
+        <div className="mt-4 border border-rule">
+          {block.options.map((opt) => {
+            const isChosen = selected === opt.id;
+            const isCorrect = opt.id === block.correctId;
+            let state = 'border-l-transparent';
+            if (answered) {
+              if (isCorrect) state = 'border-l-ok bg-raised';
+              else if (isChosen) state = 'border-l-red bg-raised';
+              else state = 'border-l-transparent opacity-60';
+            }
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                disabled={answered}
+                onClick={() => setSelected(opt.id)}
+                className={`ml-row ${answered ? '' : 'ml-row-hover'} flex w-full min-h-[52px] items-start gap-3 border-l-2 px-4 py-3 text-left text-[15px] leading-[1.5] text-bone ${state} ${
+                  answered ? 'cursor-default' : 'cursor-pointer'
+                }`}
+              >
+                <span className="min-w-0 flex-1">{opt.text}</span>
+                {/* Never colour alone: the outcome is spelled out. */}
+                {answered && isCorrect && (
+                  <span className="ml-label shrink-0 text-ok">Correct</span>
+                )}
+                {answered && isChosen && !isCorrect && (
+                  <span className="ml-label shrink-0 text-red">Your answer</span>
+                )}
+              </button>
+            );
+          })}
         </div>
-      )}
-    </div>
+
+        {answered && (
+          <div
+            className={`mt-4 max-w-[68ch] border-l-2 pl-4 text-[15px] leading-[1.65] text-graphite ${
+              correct ? 'border-ok' : 'border-red'
+            }`}
+            role="status"
+          >
+            <span className={`ml-label mr-2 ${correct ? 'text-ok' : 'text-red'}`}>
+              {correct ? 'Correct' : 'Not quite'}
+            </span>
+            {block.explanation}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }

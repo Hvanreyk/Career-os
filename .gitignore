@@ -13,8 +13,17 @@ build/
 .env.*
 !.env.example
 
+# Generated hero masters from gpt-image-2 (~16MB of PNGs). These are the
+# intermediate source for scripts/process-hero-assets.mjs; the committed
+# AVIF/WebP variants in web/public/hero/ are what the app actually ships.
+# Kept out of git for repo size — archive them separately if you need the
+# originals, since image generation is not deterministic.
+design/hero-src/
 # Real professional data pulled from Supabase for local calibration — never
 # commit real people's career histories. The committed test fixture is
 # synthetic (tests/scoring/professionals.snapshot.json); see
 # scripts/snapshot-professionals.ts.
 tests/scoring/professionals.snapshot.local.json
+
+# Build dirs renamed aside when .next could not be deleted (cloud-sync I/O stalls).
+.next-stale-*/

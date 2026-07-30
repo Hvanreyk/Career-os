@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 120" width="320" height="120" role="img" aria-labelledby="ca-title ca-desc">
+  <title id="ca-title">MappedLabs logo concept A — Plotted M</title>
+  <desc id="ca-desc">A capital M drawn as a single surveyed route polyline, with open station nodes at its vertices.</desc>
+
+  <!-- Concept A · PLOTTED M
+       The M is not a letter with a route pasted on it — it IS the route: one
+       continuous traverse, low to high to low to high to low, with survey
+       stations knocked out at the turning points. Mapping, progression and
+       measurement collapse into the monogram's first letter. -->
+
+  <rect width="320" height="120" fill="#F4F2ED"/>
+
+  <g transform="translate(28 28)">
+    <!-- Datum: the reference elevation the traverse is measured against. -->
+    <path d="M-8 40 H72" stroke="#14181A" stroke-width="1" opacity="0.35"/>
+    <path d="M-8 36 v8 M72 36 v8" stroke="#14181A" stroke-width="1" opacity="0.35"/>
+
+    <!-- The traverse. -->
+    <path d="M4 60 L4 4 L32 40 L60 4 L60 60"
+          fill="none" stroke="#14181A" stroke-width="9"
+          stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Stations: knocked out of the stroke so they read at any scale. -->
+    <circle cx="4"  cy="4"  r="4.5" fill="#F4F2ED"/>
+    <circle cx="60" cy="4"  r="4.5" fill="#F4F2ED"/>
+    <circle cx="32" cy="40" r="4.5" fill="#C8452A"/>
+  </g>
+
+  <g transform="translate(116 0)">
+    <text x="0" y="66" font-family="Archivo, 'Helvetica Neue', Arial, sans-serif"
+          font-size="34" font-weight="600" letter-spacing="-0.9" fill="#14181A">MappedLabs</text>
+    <text x="1" y="86" font-family="ui-monospace, 'SF Mono', Menlo, monospace"
+          font-size="9" letter-spacing="2.4" fill="#14181A" opacity="0.55">CAREER INTELLIGENCE</text>
+  </g>
+</svg>

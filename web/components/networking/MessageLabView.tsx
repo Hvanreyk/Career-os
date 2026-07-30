@@ -10,21 +10,11 @@ import type {
   NetworkingReview,
 } from '@trajectoryos/core/networking/types';
 import { runPreflight, preflightPasses, type PreflightIssue } from '@trajectoryos/core/networking';
-import {
-  AlertTriangle,
-  Check,
-  Clipboard,
-  Loader2,
-  Mail,
-  Send,
-  Sparkles,
-} from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { CheckControl, Field } from '@/components/ui/Field';
+import { Panel } from '@/components/ui/Panel';
 import { networkingApi } from './api';
-
-const INPUT = 'w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-gold-400/50';
-const SELECT = `${INPUT} [&>option]:bg-navy-950`;
-const BUTTON = 'text-xs px-3 py-1.5 rounded-full border border-white/10 text-slate-400 hover:text-white hover:border-gold-400/40 transition-colors disabled:opacity-50 inline-flex items-center gap-1.5';
-const PRIMARY = 'text-sm px-4 py-2 rounded-full bg-gold-400/15 text-gold-400 border border-gold-400/40 hover:bg-gold-400/25 transition-colors disabled:opacity-50 inline-flex items-center gap-2';
+import { Notice, SectionHeading } from './ui';
 
 type ContactLite = Pick<NetworkingContactRow, 'id' | 'full_name' | 'firm' | 'role_title' | 'seniority' | 'city' | 'email' | 'email_normalized' | 'linkedin_url' | 'linkedin_normalized' | 'stage' | 'is_alum' | 'do_not_contact'>;
 
@@ -219,203 +209,370 @@ export function MessageLabView({ contacts, messages, initialContactId, initialCh
   }
 
   const bodyMax = 4000;
+  const locked = state === 'sent';
+  const sendDisabled = !contact?.email || !body.trim();
 
   return (
-    <div className="grid lg:grid-cols-3 gap-5">
-      <div className="lg:col-span-2 space-y-5">
-        {error && <p role="alert" className="text-sm text-red-400 border border-red-400/30 bg-red-400/10 rounded-lg px-4 py-2.5">{error}</p>}
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] lg:gap-10">
+      <div className="space-y-8">
+        {error && <Notice>{error}</Notice>}
 
-        <div className="glass rounded-2xl border border-white/8 p-6 space-y-4">
-          <div className="grid sm:grid-cols-3 gap-3">
-            <select
-              value={contactId}
-              onChange={(e) => { setContactId(e.target.value); setMessageId(null); resetOutputs(); }}
-              className={SELECT}
-              aria-label="Contact"
-              disabled={state === 'sent'}
-            >
-              {contacts.length === 0 && <option value="">No contacts yet</option>}
-              {contacts.map((c) => <option key={c.id} value={c.id}>{c.full_name}{c.firm ? ` — ${c.firm}` : ''}</option>)}
-            </select>
-            <select
-              value={channel}
-              onChange={(e) => changeChannel(e.target.value as MessageChannel)}
-              className={SELECT}
-              aria-label="Channel"
-              disabled={state === 'sent'}
-            >
-              <option value="email">Email</option>
-              <option value="linkedin">LinkedIn</option>
-            </select>
-            <select
-              value={purpose}
-              onChange={(e) => { setPurpose(e.target.value as MessagePurpose); setMessageId(null); resetOutputs(); }}
-              className={SELECT}
-              aria-label="Purpose"
-              disabled={state === 'sent'}
-            >
-              {availablePurposes.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-            </select>
-          </div>
-          {contact?.do_not_contact && (
-            <p className="text-xs text-red-400">This contact is marked do-not-contact. Choose a different contact.</p>
-          )}
-          {channel === 'email' && !contact?.email_normalized && (
-            <p className="text-xs text-amber-300">This contact has no email saved — add one on their profile, or switch to LinkedIn.</p>
-          )}
+        {/* ── Composer ─────────────────────────────────────────── */}
+        <section>
+          <SectionHeading title="Draft" label={locked ? 'Sent — read only' : `State: ${state}`} />
 
-          <div>
-            <p className="text-xs text-slate-500 mb-2">Truthful facts to personalise with (one per line — the AI uses only these, nothing invented)</p>
-            <textarea value={factsText} onChange={(e) => setFactsText(e.target.value)} rows={3} placeholder={'Interned at a Big 4 firm in audit\nAttended the UNSW finance society info night'} className={INPUT} aria-label="Facts" disabled={state === 'sent'} />
-          </div>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <input value={ask} onChange={(e) => setAsk(e.target.value)} placeholder="Your ask (e.g. 15-minute call)" className={INPUT} aria-label="Ask" disabled={state === 'sent'} />
-            <input value={priorInteraction} onChange={(e) => setPriorInteraction(e.target.value)} placeholder="Prior interaction (optional)" className={INPUT} aria-label="Prior interaction" disabled={state === 'sent'} />
-          </div>
-
-          <div className="flex gap-2">
-            <button type="button" onClick={aiDraft} disabled={busy !== null || !contactId || state === 'sent'} className={BUTTON}>
-              {busy === 'ai_draft' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} AI first draft
-            </button>
-            {quota && <span className="text-xs text-slate-600 self-center">{quota.remaining} AI uses left today</span>}
-          </div>
-
-          {channel === 'email' && (
-            <input value={subject} onChange={(e) => { setSubject(e.target.value); setState('draft'); }} placeholder="Subject" className={INPUT} aria-label="Subject" maxLength={200} disabled={state === 'sent'} />
-          )}
-          <div>
-            <textarea
-              value={body}
-              onChange={(e) => { setBody(e.target.value); setState('draft'); }}
-              rows={10}
-              placeholder={channel === 'linkedin' ? 'LinkedIn message or connection note…' : 'Write your message…'}
-              className={INPUT}
-              aria-label="Message body"
-              maxLength={bodyMax}
-              disabled={state === 'sent'}
-            />
-            <p className="text-xs text-slate-600 mt-1 text-right">{body.length}/{bodyMax}</p>
-          </div>
-
-          {blockingIssues.length > 0 && (
-            <div className="border border-red-400/30 bg-red-400/5 rounded-xl p-4 space-y-1.5">
-              <p className="text-xs font-semibold text-red-400 uppercase tracking-wider flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Fix before review</p>
-              {blockingIssues.map((issue) => (
-                <p key={issue.code} className={`text-sm ${issue.severity === 'block' ? 'text-red-300' : 'text-amber-300'}`}>{issue.message}</p>
-              ))}
+          <div className="mt-5 space-y-5">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field label="Contact">
+                {(f) => (
+                  <select
+                    {...f}
+                    value={contactId}
+                    onChange={(e) => { setContactId(e.target.value); setMessageId(null); resetOutputs(); }}
+                    className="ml-field"
+                    disabled={locked}
+                  >
+                    {contacts.length === 0 && <option value="">No contacts yet</option>}
+                    {contacts.map((c) => <option key={c.id} value={c.id}>{c.full_name}{c.firm ? ` — ${c.firm}` : ''}</option>)}
+                  </select>
+                )}
+              </Field>
+              <Field label="Channel">
+                {(f) => (
+                  <select
+                    {...f}
+                    value={channel}
+                    onChange={(e) => changeChannel(e.target.value as MessageChannel)}
+                    className="ml-field"
+                    disabled={locked}
+                  >
+                    <option value="email">Email</option>
+                    <option value="linkedin">LinkedIn</option>
+                  </select>
+                )}
+              </Field>
+              <Field label="Purpose">
+                {(f) => (
+                  <select
+                    {...f}
+                    value={purpose}
+                    onChange={(e) => { setPurpose(e.target.value as MessagePurpose); setMessageId(null); resetOutputs(); }}
+                    className="ml-field"
+                    disabled={locked}
+                  >
+                    {availablePurposes.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+                  </select>
+                )}
+              </Field>
             </div>
-          )}
 
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={saveDraft} disabled={busy !== null || !contactId || !body.trim() || state === 'sent'} className={BUTTON}>
-              {busy === 'save' && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Save draft
-            </button>
-            <button type="button" onClick={runReview} disabled={busy !== null || !contactId || !body.trim() || state === 'sent'} className={PRIMARY}>
-              {busy === 'review' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} AI review
-            </button>
+            {contact?.do_not_contact && (
+              <Notice label="Do not contact">
+                This contact is marked do-not-contact. Choose a different contact.
+              </Notice>
+            )}
+            {channel === 'email' && !contact?.email_normalized && (
+              <Notice tone="warn" label="No email on file">
+                This contact has no email saved. Add one on their record, or switch to LinkedIn.
+              </Notice>
+            )}
+
+            <Field
+              label="Truthful facts to personalise with"
+              hint="One per line, up to eight. The AI uses only these — it invents nothing."
+            >
+              {(f) => (
+                <textarea
+                  {...f}
+                  value={factsText}
+                  onChange={(e) => setFactsText(e.target.value)}
+                  rows={3}
+                  placeholder={'Interned at a Big 4 firm in audit\nAttended the UNSW finance society info night'}
+                  className="ml-field"
+                  disabled={locked}
+                />
+              )}
+            </Field>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Your ask" hint="For example: a 15-minute call.">
+                {(f) => (
+                  <input
+                    {...f}
+                    value={ask}
+                    onChange={(e) => setAsk(e.target.value)}
+                    className="ml-field"
+                    disabled={locked}
+                  />
+                )}
+              </Field>
+              <Field label="Prior interaction" hint="Optional.">
+                {(f) => (
+                  <input
+                    {...f}
+                    value={priorInteraction}
+                    onChange={(e) => setPriorInteraction(e.target.value)}
+                    className="ml-field"
+                    disabled={locked}
+                  />
+                )}
+              </Field>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                variant="secondary"
+                onClick={aiDraft}
+                disabled={busy !== null || !contactId || locked}
+                loading={busy === 'ai_draft'}
+              >
+                AI first draft
+              </Button>
+              {quota && (
+                <span className="ml-num text-[13px] text-graphite">
+                  {quota.remaining} AI uses left today
+                </span>
+              )}
+            </div>
+
+            {channel === 'email' && (
+              <Field label="Subject">
+                {(f) => (
+                  <input
+                    {...f}
+                    value={subject}
+                    onChange={(e) => { setSubject(e.target.value); setState('draft'); }}
+                    className="ml-field"
+                    maxLength={200}
+                    disabled={locked}
+                  />
+                )}
+              </Field>
+            )}
+
+            <Field label="Message body">
+              {(f) => (
+                <>
+                  <textarea
+                    {...f}
+                    value={body}
+                    onChange={(e) => { setBody(e.target.value); setState('draft'); }}
+                    rows={10}
+                    placeholder={channel === 'linkedin' ? 'LinkedIn message or connection note…' : 'Write your message…'}
+                    className="ml-field"
+                    maxLength={bodyMax}
+                    disabled={locked}
+                  />
+                  <p className="ml-num mt-1.5 text-right text-[13px] text-graphite">
+                    {body.length}/{bodyMax}
+                  </p>
+                </>
+              )}
+            </Field>
+
+            {blockingIssues.length > 0 && (
+              <Notice label="Fix before review">
+                <ul className="space-y-1.5">
+                  {blockingIssues.map((issue) => (
+                    <li key={issue.code}>
+                      <span className="ml-num text-[12px] uppercase tracking-[0.12em] text-graphite">
+                        {issue.severity === 'block' ? 'Blocking' : 'Warning'}
+                      </span>{' '}
+                      {issue.message}
+                    </li>
+                  ))}
+                </ul>
+              </Notice>
+            )}
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="secondary"
+                onClick={saveDraft}
+                disabled={busy !== null || !contactId || !body.trim() || locked}
+                loading={busy === 'save'}
+              >
+                Save draft
+              </Button>
+              <Button
+                onClick={runReview}
+                disabled={busy !== null || !contactId || !body.trim() || locked}
+                loading={busy === 'review'}
+              >
+                AI review
+              </Button>
+            </div>
           </div>
-        </div>
+        </section>
 
+        {/* ── Review ───────────────────────────────────────────── */}
         {review && (
-          <div className="glass rounded-2xl border border-gold-400/25 p-6 space-y-4">
-            <h3 className="text-white font-semibold">Review</h3>
-            <p className="text-sm text-slate-300 leading-relaxed">{review.summary}</p>
+          <section>
+            <SectionHeading title="Review" label="AI assessment" />
+            <p className="mt-4 max-w-[72ch] text-[16px] leading-[1.62] text-bone">{review.summary}</p>
+
             {review.strengths.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Strengths</p>
-                <ul className="space-y-1">{review.strengths.map((s) => <li key={s} className="text-sm text-slate-300">• {s}</li>)}</ul>
+              <div className="mt-6">
+                <span className="ml-label">Strengths</span>
+                <ul className="mt-2">
+                  {review.strengths.map((s) => (
+                    <li key={s} className="ml-row py-2.5 text-[16px] leading-[1.6] text-graphite">{s}</li>
+                  ))}
+                </ul>
               </div>
             )}
+
             {review.issues.length > 0 && (
-              <div className="space-y-3">
-                <p className="text-xs font-semibold text-amber-300 uppercase tracking-wider">Issues</p>
-                {review.issues.map((issue) => (
-                  <div key={issue.observation} className="border-l-2 border-amber-300/40 pl-3">
-                    <p className="text-xs text-amber-300 uppercase tracking-wider">{issue.area}</p>
-                    <p className="text-sm text-slate-300 mt-0.5">{issue.observation}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{issue.why_it_matters}</p>
-                    <p className="text-xs text-slate-400 mt-1 italic">{issue.revision_question}</p>
-                  </div>
-                ))}
+              <div className="mt-6">
+                <span className="ml-label">Issues</span>
+                <ul className="mt-2">
+                  {review.issues.map((issue) => (
+                    <li key={issue.observation} className="ml-row py-4">
+                      <span className="ml-label">{issue.area}</span>
+                      <p className="mt-1.5 max-w-[70ch] text-[16px] leading-[1.6] text-bone">
+                        {issue.observation}
+                      </p>
+                      <p className="mt-1.5 max-w-[70ch] text-[15px] leading-[1.55] text-graphite">
+                        {issue.why_it_matters}
+                      </p>
+                      <p className="mt-2 max-w-[70ch] border-l-2 border-rule-bright pl-3 text-[15px] leading-[1.55] text-graphite">
+                        {issue.revision_question}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
+
             {review.rewrite_options.length > 0 && (
-              <div className="space-y-3">
-                <p className="text-xs font-semibold text-gold-400 uppercase tracking-wider">Faithful rewrites</p>
-                {review.rewrite_options.map((rewrite, index) => (
-                  <div key={index} className="border border-white/8 rounded-xl p-3.5">
-                    {rewrite.subject && <p className="text-xs text-slate-500 mb-1">{rewrite.subject}</p>}
-                    <p className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">{rewrite.body}</p>
-                    <p className="text-xs text-slate-500 mt-2">{rewrite.change_summary}</p>
-                    <button type="button" onClick={() => applyRewrite(rewrite.subject, rewrite.body)} className={`${BUTTON} mt-2`}>Use this version</button>
-                  </div>
-                ))}
+              <div className="mt-6">
+                <span className="ml-label">Faithful rewrites</span>
+                <div className="mt-2 space-y-4">
+                  {review.rewrite_options.map((rewrite, index) => (
+                    <Panel as="div" key={index} raised className="p-4 sm:p-5">
+                      <span className="ml-label">Option {String(index + 1).padStart(2, '0')}</span>
+                      {rewrite.subject && (
+                        <p className="mt-2 text-[15px] font-semibold text-bone">{rewrite.subject}</p>
+                      )}
+                      <p className="mt-2 max-w-[70ch] whitespace-pre-wrap text-[16px] leading-[1.62] text-graphite">
+                        {rewrite.body}
+                      </p>
+                      <p className="mt-3 text-[14px] leading-[1.55] text-graphite">
+                        {rewrite.change_summary}
+                      </p>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="mt-4"
+                        onClick={() => applyRewrite(rewrite.subject, rewrite.body)}
+                      >
+                        Use this version
+                      </Button>
+                    </Panel>
+                  ))}
+                </div>
               </div>
             )}
-          </div>
+          </section>
         )}
       </div>
 
-      <div className="space-y-5">
-        <div className="glass rounded-2xl border border-white/8 p-5">
-          <h3 className="text-white font-semibold mb-3">Send</h3>
-          {state === 'sent' || sentConfirmation ? (
-            <p className="text-sm text-emerald-400 flex items-center gap-1.5"><Check className="w-4 h-4" /> Logged as sent.</p>
+      {/* ── Rail ───────────────────────────────────────────────── */}
+      <div className="space-y-8">
+        <section>
+          <SectionHeading title="Send" />
+          {locked || sentConfirmation ? (
+            <Notice tone="ok" label="Sent" className="mt-4">
+              Logged as sent. Your timeline and follow-ups are up to date.
+            </Notice>
           ) : (
-            <div className="space-y-3">
-              <p className="text-xs text-slate-500">
-                TrajectoryOS does not send email or LinkedIn messages directly yet. Send it yourself, then log it here
-                so your timeline and follow-ups stay accurate.
+            <div className="mt-4 space-y-5">
+              <p className="max-w-[60ch] text-[15px] leading-[1.6] text-graphite">
+                TrajectoryOS does not send email or LinkedIn messages directly yet. Send it yourself,
+                then log it here so your timeline and follow-ups stay accurate.
               </p>
+
               {channel === 'email' ? (
                 <a
                   href={mailtoHref()}
                   onClick={() => logSent('mailto')}
-                  aria-disabled={!contact?.email || !body.trim()}
-                  className={`${PRIMARY} ${(!contact?.email || !body.trim()) ? 'pointer-events-none opacity-50' : ''}`}
+                  aria-disabled={sendDisabled}
+                  className={`ml-btn ml-btn-primary on-accent min-h-[44px] px-5 text-[13px] ${
+                    sendDisabled ? 'pointer-events-none' : ''
+                  }`}
                 >
-                  <Mail className="w-4 h-4" /> Open in mail app
+                  Open in mail app <span aria-hidden="true">▸</span>
                 </a>
               ) : (
-                <button type="button" onClick={() => { void copyBody(); void logSent('linkedin_copy'); }} disabled={!body.trim() || busy !== null} className={PRIMARY}>
-                  <Clipboard className="w-4 h-4" /> Copy & mark sent
-                </button>
+                <Button
+                  onClick={() => { void copyBody(); void logSent('linkedin_copy'); }}
+                  disabled={!body.trim() || busy !== null}
+                  loading={busy === 'send'}
+                >
+                  Copy and mark sent
+                </Button>
               )}
-              <button type="button" onClick={() => logSent('copy')} disabled={!messageId || busy !== null} className={BUTTON}>
-                <Send className="w-3.5 h-3.5" /> Already sent it — just log it
-              </button>
 
-              <div className="pt-3 border-t border-white/5">
-                <label className="flex items-center gap-2 text-xs text-slate-400 mb-2">
-                  <input type="checkbox" checked={followUp.enabled} onChange={(e) => setFollowUp({ ...followUp, enabled: e.target.checked })} className="accent-[#d3a955]" />
-                  Queue a follow-up
-                </label>
+              <div>
+                <Button
+                  variant="secondary"
+                  onClick={() => logSent('copy')}
+                  disabled={!messageId || busy !== null}
+                >
+                  Already sent it — just log it
+                </Button>
+              </div>
+
+              <div className="border-t border-rule pt-3">
+                <CheckControl
+                  checked={followUp.enabled}
+                  onChange={() => setFollowUp({ ...followUp, enabled: !followUp.enabled })}
+                  label="Queue a follow-up"
+                />
                 {followUp.enabled && (
-                  <div className="grid grid-cols-2 gap-2">
-                    <select value={followUp.kind} onChange={(e) => setFollowUp({ ...followUp, kind: e.target.value })} className={`${SELECT} text-xs`} aria-label="Follow-up type">
-                      <option value="follow_up_no_reply">Follow up if no reply</option>
-                      <option value="maintain">Keep warm</option>
-                    </select>
-                    <select value={followUp.days} onChange={(e) => setFollowUp({ ...followUp, days: Number(e.target.value) })} className={`${SELECT} text-xs`} aria-label="Follow-up timing">
-                      <option value={3}>in 3 days</option>
-                      <option value={5}>in 5 days</option>
-                      <option value={7}>in 7 days</option>
-                    </select>
+                  <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                    <Field label="Type">
+                      {(f) => (
+                        <select
+                          {...f}
+                          value={followUp.kind}
+                          onChange={(e) => setFollowUp({ ...followUp, kind: e.target.value })}
+                          className="ml-field"
+                        >
+                          <option value="follow_up_no_reply">Follow up if no reply</option>
+                          <option value="maintain">Keep warm</option>
+                        </select>
+                      )}
+                    </Field>
+                    <Field label="Timing">
+                      {(f) => (
+                        <select
+                          {...f}
+                          value={followUp.days}
+                          onChange={(e) => setFollowUp({ ...followUp, days: Number(e.target.value) })}
+                          className="ml-field"
+                        >
+                          <option value={3}>In 3 days</option>
+                          <option value={5}>In 5 days</option>
+                          <option value={7}>In 7 days</option>
+                        </select>
+                      )}
+                    </Field>
                   </div>
                 )}
               </div>
             </div>
           )}
-        </div>
+        </section>
 
-        <div className="glass rounded-2xl border border-white/8 p-5">
-          <h3 className="text-white font-semibold mb-3">Recent drafts</h3>
+        <section>
+          <SectionHeading title="Recent drafts" label={`${messages.length}`} />
           {messages.length === 0 ? (
-            <p className="text-sm text-slate-500">Nothing saved yet.</p>
+            <p className="mt-4 text-[16px] text-graphite">Nothing saved yet.</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="mt-2">
               {messages.slice(0, 10).map((message) => (
-                <li key={message.id}>
+                <li key={message.id} className="ml-row">
                   <button
                     type="button"
                     onClick={() => {
@@ -431,15 +588,18 @@ export function MessageLabView({ contacts, messages, initialContactId, initialCh
                       setState(message.state);
                       resetOutputs();
                     }}
-                    className="text-sm text-slate-400 hover:text-gold-400 transition-colors text-left"
+                    className="ml-row-hover flex min-h-[44px] w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2.5 text-left text-[15px] text-bone hover:text-red"
                   >
-                    {message.purpose.replace(/_/g, ' ')} · {message.channel} · <span className="text-xs">{message.state}</span>
+                    <span className="capitalize">{message.purpose.replace(/_/g, ' ')}</span>
+                    <span className="ml-num text-[12px] uppercase tracking-[0.12em] text-graphite">
+                      {message.channel} · {message.state}
+                    </span>
                   </button>
                 </li>
               ))}
             </ul>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );

@@ -1,21 +1,48 @@
 'use client';
 
-import { useState } from 'react';
-import { Send } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
+/**
+ * Contact form.
+ *
+ * Note: this has never been wired to a backend — submitting only flips local
+ * state. Behaviour is preserved exactly as it was; the copy no longer claims
+ * someone will be in touch, because nothing is actually sent.
+ */
 export function ContactForm() {
   const [sent, setSent] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // A live region mounted at the same moment as its content is announced
+  // inconsistently, and the submit button that had focus unmounts — which
+  // drops keyboard users back at the document start. Focusing the panel
+  // fixes both.
+  useEffect(() => {
+    if (sent) panelRef.current?.focus();
+  }, [sent]);
 
   if (sent) {
     return (
-      <div className="glass rounded-2xl border border-gold-400/20 p-10 text-center h-full flex flex-col items-center justify-center">
-        <div className="w-14 h-14 rounded-full bg-gold-400/15 flex items-center justify-center mb-4">
-          <Send className="w-6 h-6 text-gold-400" />
-        </div>
-        <h3 className="font-serif text-2xl font-bold text-white mb-2">Message sent</h3>
-        <p className="text-slate-400 text-sm">
-          Thanks for reaching out. We&apos;ll be in touch shortly.
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        className="border border-rule bg-surface p-6"
+        role="status"
+      >
+        <span className="ml-label text-red">▸ Submitted</span>
+        <h2 className="mt-3 text-[18px] font-bold uppercase tracking-[-0.01em] text-bone">
+          Message captured
+        </h2>
+        <p className="mt-3 text-[15px] leading-[1.6] text-graphite">
+          This form is not yet connected to a mailbox, so nothing has been delivered. Email us
+          directly and we will reply.
         </p>
+        <button
+          onClick={() => setSent(false)}
+          className="ml-btn ml-btn-text mt-5 min-h-[44px] text-[14px]"
+        >
+          Write another message
+        </button>
       </div>
     );
   }
@@ -26,48 +53,55 @@ export function ContactForm() {
         e.preventDefault();
         setSent(true);
       }}
-      className="glass rounded-2xl border border-white/8 p-8 space-y-5"
+      className="border border-rule bg-surface p-5 sm:p-6"
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <div>
-          <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">
+          <label htmlFor="cf-name" className="block text-[13px] font-semibold text-bone">
             Name
           </label>
           <input
+            id="cf-name"
+            name="name"
             type="text"
             required
+            autoComplete="name"
             placeholder="Your name"
-            className="w-full bg-navy-800/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-gold-400/40 transition-colors"
+            className="ml-field mt-2"
           />
         </div>
         <div>
-          <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">
+          <label htmlFor="cf-email" className="block text-[13px] font-semibold text-bone">
             Email
           </label>
           <input
+            id="cf-email"
+            name="email"
             type="email"
             required
+            autoComplete="email"
             placeholder="your@email.com"
-            className="w-full bg-navy-800/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-gold-400/40 transition-colors"
+            className="ml-field mt-2"
           />
         </div>
       </div>
-      <div>
-        <label className="text-xs text-slate-400 uppercase tracking-wider block mb-2">
+
+      <div className="mt-5">
+        <label htmlFor="cf-message" className="block text-[13px] font-semibold text-bone">
           Message
         </label>
         <textarea
+          id="cf-message"
+          name="message"
           required
           rows={6}
-          placeholder="Tell us what's on your mind..."
-          className="w-full bg-navy-800/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-gold-400/40 transition-colors resize-none"
+          placeholder="Tell us what's on your mind…"
+          className="ml-field mt-2"
         />
       </div>
-      <button
-        type="submit"
-        className="w-full py-3.5 bg-gold-400 text-navy-950 font-semibold rounded-xl hover:bg-gold-300 transition-all shadow-[0_0_24px_rgba(212,175,55,0.3)] hover:shadow-[0_0_36px_rgba(212,175,55,0.45)] flex items-center justify-center gap-2"
-      >
-        Send Message <Send className="w-4 h-4" />
+
+      <button type="submit" className="ml-btn ml-btn-primary on-accent mt-6 min-h-[44px] px-5 text-[13px]">
+        Send message <span aria-hidden="true">▸</span>
       </button>
     </form>
   );

@@ -1,0 +1,279 @@
+/* DITHERED INTELLIGENCE — brutalist editorial × bitmap research terminal.
+   Hard dividers, zero radius, no soft shadows, deliberate tension. */
+
+.di {
+  /* Three ground values, not one. The page was flat because every band sat on
+     the same black; strata give scrolling a sense of descent. */
+  --di-black: #0a0a0b;
+  --di-surface: #101013;
+  --di-raised: #17171b;
+
+  --di-bone: #edeae3;
+  --di-graphite: #909095; /* 7.0:1 on black */
+  --di-rule: #2e2e32;
+  --di-rule-bright: #45454b;
+  --di-red: #f0563a; /* 6.0:1 on black */
+
+  background-color: var(--di-black);
+  color: var(--di-bone);
+}
+
+.di ::selection {
+  background: var(--di-red);
+  color: var(--di-black);
+}
+
+/* ── Surfaces ─────────────────────────────────────────────── */
+.di-surface { background-color: var(--di-surface); }
+.di-raised  { background-color: var(--di-raised); }
+
+/* Ordered-dither texture, used as a surface treatment rather than decoration.
+   Density differs per surface so the strata read as different materials. */
+.di-tex::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-conic-gradient(
+    rgba(255, 255, 255, 0.028) 0% 25%,
+    transparent 0% 50%
+  );
+  background-size: 3px 3px;
+}
+
+/* Section boundary: a dithered falloff instead of a flat 1px rule everywhere. */
+.di-edge-top {
+  position: relative;
+}
+.di-edge-top::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 96px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(10, 10, 11, 0.85), rgba(10, 10, 11, 0));
+}
+
+/* ── Actions ──────────────────────────────────────────────── */
+.di-cta {
+  background: var(--di-red);
+  color: var(--di-black);
+  border: 1px solid var(--di-red);
+  transition: background-color 0.18s linear, color 0.18s linear, box-shadow 0.18s linear;
+}
+.di-cta:hover {
+  background: var(--di-black);
+  color: var(--di-red);
+  box-shadow: 4px 4px 0 0 var(--di-red);
+}
+.di-cta:active { box-shadow: 1px 1px 0 0 var(--di-red); }
+.di-cta:focus-visible {
+  outline: 2px solid var(--di-bone);
+  outline-offset: 2px;
+}
+
+.di-cta-2 {
+  border: 1px solid var(--di-rule-bright);
+  color: var(--di-bone);
+  /* Ghost buttons sit over the hero plate. Without a backing they inherit
+     whatever the image happens to be doing underneath, which is not a contrast
+     guarantee — this one is cheap and keeps the outlined character. */
+  background: rgba(10, 10, 11, 0.62);
+  transition: border-color 0.18s linear, background-color 0.18s linear;
+}
+.di-cta-2:hover {
+  border-color: var(--di-bone);
+  background: var(--di-raised);
+}
+.di-cta-2:focus-visible {
+  outline: 2px solid var(--di-red);
+  outline-offset: 2px;
+}
+
+.di-link:focus-visible {
+  outline: 2px solid var(--di-red);
+  outline-offset: 2px;
+}
+
+.di-band { border-top: 1px solid var(--di-rule); border-bottom: 1px solid var(--di-rule); }
+
+.di-row {
+  border-bottom: 1px solid var(--di-rule);
+  transition: background-color 0.18s linear, padding-left 0.18s linear;
+}
+.di-row:hover {
+  background: var(--di-raised);
+  padding-left: 0.5rem;
+}
+
+/* ── Hero scrim ───────────────────────────────────────────── */
+/* The scrim has to hold whichever edge the type occupies, and that edge changes
+   with the layout. A single horizontal gradient tuned for a wide viewport is
+   still 95% opaque 98px into a 375px screen, which smothers the plate on a
+   phone — so mobile gets a vertical scrim instead.
+   It holds the TOP, where the type sits, and clears toward the bottom. That
+   direction is also the right one for the plates themselves: each is darkest
+   overhead and brightest at floor level, so the scrim does its heaviest work
+   where the image is already near-black, and releases where it has something
+   worth showing. */
+/* The type block runs to roughly 75% of the hero on a 375px screen, so the
+   scrim stays near-opaque to there and only then falls away — the reveal is a
+   band, not a fade the copy has to compete with. */
+.di-hero-scrim {
+  background: linear-gradient(
+    to bottom,
+    var(--di-black) 0%,
+    rgba(10, 10, 11, 0.96) 45%,
+    rgba(10, 10, 11, 0.9) 70%,
+    rgba(10, 10, 11, 0.62) 80%,
+    rgba(10, 10, 11, 0.26) 90%,
+    rgba(10, 10, 11, 0.06) 100%
+  );
+}
+
+@media (min-width: 640px) {
+  /* Type moves to the left column — hold that edge and clear by the midpoint. */
+  .di-hero-scrim {
+    background: linear-gradient(
+      97deg,
+      var(--di-black) 0%,
+      rgba(10, 10, 11, 0.95) 26%,
+      rgba(10, 10, 11, 0.72) 42%,
+      rgba(10, 10, 11, 0.2) 62%,
+      rgba(10, 10, 11, 0) 80%
+    );
+  }
+}
+
+/* ── Hero plate ───────────────────────────────────────────── */
+/* Pointer parallax is applied to a wrapper that is deliberately oversized, so
+   translating it never exposes an edge. */
+.di-plate {
+  position: absolute;
+  inset: -3%;
+  will-change: transform;
+  transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Slow drift over the plate — the dither breathing, not a decorative shimmer. */
+.di-plate-drift::after {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  background: radial-gradient(
+    42% 42% at 50% 50%,
+    rgba(240, 86, 58, 0.12) 0%,
+    rgba(240, 86, 58, 0) 70%
+  );
+  animation: di-drift 19s ease-in-out infinite alternate;
+}
+
+@keyframes di-drift {
+  from { transform: translate3d(-8%, 4%, 0) scale(1); }
+  to   { transform: translate3d(10%, -6%, 0) scale(1.15); }
+}
+
+/* Scanline sweep — one authored moment, slow enough to read as instrumentation. */
+.di-scan::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(237, 234, 227, 0.055) 48%,
+    rgba(237, 234, 227, 0.09) 50%,
+    rgba(237, 234, 227, 0.055) 52%,
+    transparent 100%
+  );
+  height: 26%;
+  animation: di-scan 7.5s linear infinite;
+}
+
+@keyframes di-scan {
+  from { transform: translateY(-120%); }
+  to   { transform: translateY(500%); }
+}
+
+/* ── Scroll reveal ────────────────────────────────────────── */
+/* Hidden only while data-shown is false. The Reveal component sets it true on
+   intersection AND on a 1.4s failsafe timer, so content can never be stranded
+   invisible if the observer never fires. */
+.di-reveal[data-shown='false'] {
+  opacity: 0.001;
+  transform: translate3d(0, 14px, 0);
+  transition:
+    opacity 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  filter: blur(3px);
+}
+.di-reveal {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  transition:
+    opacity 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Marquee ──────────────────────────────────────────────── */
+/* Two identical tracks; translating by exactly -50% of the pair makes the loop
+   seamless. Runs left→right, as specified. */
+.di-marquee {
+  display: flex;
+  width: max-content;
+  animation: di-marquee 34s linear infinite;
+  will-change: transform;
+}
+.di-marquee-wrap:hover .di-marquee { animation-play-state: paused; }
+
+@keyframes di-marquee {
+  from { transform: translate3d(-50%, 0, 0); }
+  to   { transform: translate3d(0, 0, 0); }
+}
+
+.di-marquee-word {
+  font-size: clamp(3.5rem, 13vw, 11rem);
+  line-height: 0.86;
+  letter-spacing: -0.045em;
+  padding-right: 0.28em;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--di-rule-bright);
+}
+/* Solid fill sits just above the ground so the word reads as a ghosted mass
+   rather than disappearing into it — #17171b was too close to #0a0a0b. */
+.di-marquee-word.is-solid {
+  color: #232329;
+  -webkit-text-stroke: 0;
+}
+
+/* ── Scroll progress ──────────────────────────────────────── */
+.di-progress {
+  transform-origin: left center;
+  transform: scaleX(var(--di-p, 0));
+  transition: transform 90ms linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .di-plate,
+  .di-plate-drift::after,
+  .di-scan::after,
+  .di-marquee {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+  .di-scan::after { display: none; }
+  /* Must match the [data-shown] selector's specificity or it cannot win. */
+  .di-reveal,
+  .di-reveal[data-shown='false'] {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+}

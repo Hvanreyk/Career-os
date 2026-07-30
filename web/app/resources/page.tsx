@@ -1,18 +1,22 @@
 import type { Metadata } from 'next';
-import { FloatingOrbs } from '@/components/background/FloatingOrbs';
-import { AnimatedSection } from '@/components/ui/AnimatedSection';
-import { GlassCard } from '@/components/ui/GlassCard';
-import { CourseCard } from '@/components/courses/CourseCard';
-import { CourseIcon } from '@/components/courses/icons';
+import Link from 'next/link';
+import { PageHeader, PageShell } from '@/components/ui/PageHeader';
+import { Meter, StatusLabel } from '@/components/ui/Status';
 import { createClient } from '@/lib/supabase/server';
 import type { CourseRow } from '@/lib/courses/types';
 import { RESOURCE_CATALOG } from '@/lib/resources/catalog';
-import { ArrowUpRight } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Resources' };
 
 // Live course + per-user progress state.
 export const dynamic = 'force-dynamic';
+
+function formatDuration(minutes: number): string {
+  if (!minutes) return '—';
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h ? `${h}h ${m ? `${m}m` : ''}`.trim() : `${m}m`;
+}
 
 export default async function ResourcesPage() {
   const supabase = await createClient();
@@ -55,80 +59,99 @@ export default async function ResourcesPage() {
     }
   }
 
+  const liveCount = RESOURCE_CATALOG.filter((r) => courses.has(r.slug)).length;
+
   return (
-    <div className="relative">
-      <section className="relative pt-36 pb-16 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-navy-900 to-navy-950" />
-        <FloatingOrbs />
-        <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
-          <AnimatedSection>
-            <div className="text-xs font-semibold uppercase tracking-widest text-gold-400 mb-4">
-              Knowledge Base
-            </div>
-            <h1 className="font-serif text-5xl sm:text-6xl font-bold text-white mb-6">
-              Resources to <span className="text-gold-gradient">Sharpen Your Edge</span>
-            </h1>
-            <p className="text-slate-400 text-xl max-w-xl mx-auto">
-              Interactive courses, templates, and frameworks built for students serious about
-              breaking into investment banking.
-            </p>
-          </AnimatedSection>
-        </div>
-      </section>
+    <PageShell>
+      <PageHeader
+        label="Resources"
+        title="Field manuals"
+        lede="Interactive courses, workspaces and frameworks for students serious about breaking into investment banking. Each one carries its own practice tools and saved outputs."
+        actions={<StatusLabel>{liveCount} of {RESOURCE_CATALOG.length} live</StatusLabel>}
+      />
 
-      <section className="py-20 pb-32">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {RESOURCE_CATALOG.map((resource, i) => {
-              const course = courses.get(resource.slug);
-              if (course) {
-                return (
-                  <AnimatedSection key={resource.slug} delay={i * 0.08}>
-                    <CourseCard
-                      course={course}
-                      progressPercent={progressByCourse.get(resource.slug) ?? null}
+      {/* A register of courses — hairline rows, not a grid of cards. */}
+      <div className="mt-10 border-t border-rule">
+        {RESOURCE_CATALOG.map((resource, i) => {
+          const course = courses.get(resource.slug);
+          const progress = progressByCourse.get(resource.slug) ?? null;
+          const live = !!course;
+          const body = (
+            <>
+              <span className="ml-label shrink-0" aria-hidden="true">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+
+              <span className="min-w-0">
+                <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className="text-[17px] font-bold uppercase tracking-[-0.015em] text-bone">
+                    {course?.title ?? resource.title}
+                  </span>
+                  <StatusLabel>{resource.tag}</StatusLabel>
+                  {!live && <StatusLabel>Not published</StatusLabel>}
+                </span>
+                <span className="mt-2 block max-w-[72ch] text-[16px] leading-[1.6] text-graphite">
+                  {course?.description ?? resource.description}
+                </span>
+
+                {progress !== null && (
+                  <span className="mt-3 block max-w-[22rem]">
+                    <span className="flex items-baseline justify-between">
+                      <span className="ml-label">Progress</span>
+                      <span className="ml-num text-[13px] text-bone">{Math.round(progress)}%</span>
+                    </span>
+                    <Meter
+                      value={progress}
+                      accent
+                      className="mt-1.5"
+                      label={`${course?.title ?? resource.title}: ${Math.round(progress)}% complete`}
                     />
-                  </AnimatedSection>
-                );
-              }
-              return (
-                <AnimatedSection key={resource.slug} delay={i * 0.08}>
-                  <GlassCard className="h-full flex flex-col group">
-                    <div className="flex items-start justify-between mb-5">
-                      <div className="w-11 h-11 rounded-xl bg-gold-400/10 flex items-center justify-center">
-                        <CourseIcon name={resource.icon} className="w-5 h-5 text-gold-400" />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs px-2.5 py-1 rounded-full glass border border-white/10 text-slate-400">
-                          {resource.tag}
-                        </span>
-                        <ArrowUpRight className="w-4 h-4 text-slate-600 group-hover:text-gold-400 transition-colors" />
-                      </div>
-                    </div>
-                    <h3 className="text-white font-semibold text-lg mb-2">{resource.title}</h3>
-                    <p className="text-slate-400 text-sm leading-relaxed flex-1">
-                      {resource.description}
-                    </p>
-                    <div className="mt-5 pt-4 border-t border-white/6 text-xs text-slate-500">
-                      Coming soon
-                    </div>
-                  </GlassCard>
-                </AnimatedSection>
-              );
-            })}
-          </div>
+                  </span>
+                )}
+              </span>
 
-          <AnimatedSection className="text-center mt-16" delay={0.2}>
-            <div className="glass inline-block rounded-2xl border border-gold-400/15 px-8 py-6 max-w-lg">
-              <div className="text-gold-400 font-semibold mb-2">More courses on the way</div>
-              <p className="text-slate-400 text-sm">
-                We&apos;re building out the full resource library — each section becomes a
-                complete interactive course with practice tools and saved outputs.
-              </p>
+              <span className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 md:flex-col md:items-end md:gap-1">
+                {live && (
+                  <span className="ml-num text-[13px] text-graphite">
+                    {formatDuration(course.est_minutes)}
+                  </span>
+                )}
+                <span className={`text-[14px] font-semibold ${live ? 'text-red' : 'text-graphite'}`}>
+                  {live ? (
+                    <>
+                      {progress !== null ? 'Resume' : 'Start'} <span aria-hidden="true">▸</span>
+                    </>
+                  ) : (
+                    'Coming soon'
+                  )}
+                </span>
+              </span>
+            </>
+          );
+
+          const layout =
+            'ml-row grid grid-cols-[2.5rem_minmax(0,1fr)] items-start gap-x-4 gap-y-3 py-6 md:grid-cols-[3rem_minmax(0,1fr)_9rem] md:gap-x-6';
+
+          return live ? (
+            <Link
+              key={resource.slug}
+              href={`/resources/${resource.slug}`}
+              className={`${layout} ml-row-hover transition-colors`}
+            >
+              {body}
+            </Link>
+          ) : (
+            <div key={resource.slug} className={layout}>
+              {body}
             </div>
-          </AnimatedSection>
-        </div>
-      </section>
-    </div>
+          );
+        })}
+      </div>
+
+      <p className="mt-8 max-w-[70ch] border-l-2 border-red pl-4 text-[15px] leading-[1.6] text-graphite">
+        The library is still being built out. Each section becomes a complete interactive course
+        with practice tools and saved outputs as it lands.
+      </p>
+    </PageShell>
   );
 }
