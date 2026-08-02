@@ -83,27 +83,6 @@ export async function recordResumeEvent(
 }
 
 /**
- * Determines the daily limit for resume critiques from environment configuration.
- *
- * @returns The configured integer limit from 1 through 1000, or `25` when the configuration is invalid or absent.
- */
-export function getResumeCritiqueDailyLimit(): number {
-  const value = Number(process.env.RESUME_CRITIQUE_DAILY_LIMIT ?? '25');
-  return Number.isInteger(value) && value >= 1 && value <= 1000 ? value : 25;
-}
-
-/**
- * Determines the daily per-kind limit for the heavy resume AI generators
- * (import / compose / improve / tailor) from environment configuration.
- *
- * @returns The configured integer limit from 1 through 1000, or `10` when the configuration is invalid or absent.
- */
-export function getResumeAiDailyLimit(): number {
-  const value = Number(process.env.RESUME_AI_DAILY_LIMIT ?? '10');
-  return Number.isInteger(value) && value >= 1 && value <= 1000 ? value : 10;
-}
-
-/**
  * Creates a SHA-256 hash of an AI job's canonical input string, used for
  * idempotent job reuse via the resume_ai_jobs unique index.
  */

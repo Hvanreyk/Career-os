@@ -7,7 +7,6 @@ import {
 import { runPreflight, preflightPasses } from '@trajectoryos/core/networking';
 import { MessageContextSchema } from '@trajectoryos/core/networking/types';
 import {
-  getNetworkingAiDailyLimit,
   getNetworkingApiContext,
   hashMessageContent,
   recordNetworkingEvent,
@@ -62,21 +61,6 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'Fix the blocking issues before an AI review', preflight }, { status: 422 });
   }
 
-  const limit = getNetworkingAiDailyLimit();
-  const { data: quotaRows, error: quotaError } = await context.service.rpc(
-    'claim_networking_review_quota',
-    { p_user_id: context.user.id, p_limit: limit },
-  );
-  const quota = Array.isArray(quotaRows) ? quotaRows[0] : null;
-  if (quotaError || !quota) return NextResponse.json({ error: 'Could not check the AI quota' }, { status: 500 });
-  if (!quota.allowed) {
-    return NextResponse.json({
-      error: 'Daily AI limit reached',
-      remaining: 0,
-      resetsAt: quota.resets_at,
-    }, { status: 429 });
-  }
-
   try {
     const generated = await generateNetworkingReview({
       channel: message.channel,
@@ -112,7 +96,6 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       },
     );
     if (saveError) {
-      await context.service.rpc('release_networking_review_quota', { p_user_id: context.user.id });
       if (saveError.message.includes('STALE_REVIEW')) {
         return NextResponse.json({ error: 'The draft changed while it was being reviewed. Review again.' }, { status: 409 });
       }
@@ -130,11 +113,8 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       review: generated.output,
       reviewId: review?.id ?? null,
       preflight,
-      remaining: quota.remaining,
-      resetsAt: quota.resets_at,
     });
   } catch (error) {
-    await context.service.rpc('release_networking_review_quota', { p_user_id: context.user.id });
     console.error('networking review failed:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json({ error: 'AI review is temporarily unavailable' }, { status: 502 });
   }

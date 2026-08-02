@@ -107,12 +107,6 @@ export async function recordNetworkingEvent(
   if (error) console.error(`networking event insert failed (${eventName}):`, error.message);
 }
 
-/** Daily limit shared by AI drafting and review (1–1000, default 25). */
-export function getNetworkingAiDailyLimit(): number {
-  const value = Number(process.env.NETWORKING_AI_DAILY_LIMIT ?? '25');
-  return Number.isInteger(value) && value >= 1 && value <= 1000 ? value : 25;
-}
-
 /**
  * Content hash binding reviews/sends to the exact message text. Must
  * match save_networking_message_review in migration 0010:

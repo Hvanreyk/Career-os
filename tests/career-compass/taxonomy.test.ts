@@ -18,6 +18,7 @@ const validPayload = {
   degree_type: 'bachelor',
   majors: ['Finance'],
   current_year: 2,
+  expected_graduation_year: 2028,
   is_co_op: false,
   wam_band: 'hd',
   high_school_type: 'unknown',

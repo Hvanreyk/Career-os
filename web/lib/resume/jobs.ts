@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { ResumeAiJobKind } from '@trajectoryos/core/resume/document';
 import {
-  getResumeAiDailyLimit,
   hashResumeAiInput,
   recordResumeEvent,
   type ResumeApiContext,
@@ -31,11 +30,11 @@ export function stableStringify(value: unknown): string {
 
 /**
  * Creates (or idempotently reuses) a resume AI job for the authenticated
- * user: identical live inputs return the existing job; otherwise the per-kind
- * Sydney-day quota is claimed and a pending job row is inserted.
+ * user: identical live inputs return the existing job; otherwise a pending
+ * job row is inserted.
  *
- * @returns `{ response }` with an HTTP error on quota/infrastructure failure,
- * or `{ jobId, reused }` on success.
+ * @returns `{ response }` with an HTTP error on infrastructure failure, or
+ * `{ jobId, reused }` on success.
  */
 export async function createResumeAiJob(
   context: ResumeApiContext,
@@ -61,26 +60,6 @@ export async function createResumeAiJob(
   const { data: existing } = await findExisting();
   if (existing) return { jobId: existing.id, reused: true };
 
-  const limit = getResumeAiDailyLimit();
-  const { data: quotaRows, error: quotaError } = await context.service.rpc('claim_resume_ai_quota', {
-    p_user_id: context.user.id,
-    p_kind: options.kind,
-    p_limit: limit,
-  });
-  const quota = Array.isArray(quotaRows) ? quotaRows[0] : null;
-  if (quotaError || !quota) {
-    return { response: NextResponse.json({ error: 'Could not check AI quota' }, { status: 500 }) };
-  }
-  if (!quota.allowed) {
-    return {
-      response: NextResponse.json({
-        error: `Daily ${options.kind} limit reached`,
-        remaining: 0,
-        resetsAt: quota.resets_at,
-      }, { status: 429 }),
-    };
-  }
-
   const { data: job, error } = await context.service.from('resume_ai_jobs').insert({
     user_id: context.user.id,
     resume_id: options.resumeId ?? null,
@@ -91,20 +70,12 @@ export async function createResumeAiJob(
   }).select('id').single();
 
   if (error?.code === '23505') {
-    // Lost a creation race — reuse the winner and hand back the claim.
-    // Quota is released exactly once here regardless of the outcome below,
-    // since the raced insert never consumed a generation.
-    await context.service.rpc('release_resume_ai_quota', {
-      p_user_id: context.user.id, p_kind: options.kind,
-    });
+    // Lost a creation race — reuse the winner.
     const { data: raced } = await findExisting();
     if (raced) return { jobId: raced.id, reused: true };
     return { response: NextResponse.json({ error: 'Could not create AI job' }, { status: 500 }) };
   }
   if (error || !job) {
-    await context.service.rpc('release_resume_ai_quota', {
-      p_user_id: context.user.id, p_kind: options.kind,
-    });
     return { response: NextResponse.json({ error: 'Could not create AI job' }, { status: 500 }) };
   }
 

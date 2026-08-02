@@ -111,13 +111,6 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     if (failUpdateError) {
       console.error('Failed to mark resume AI job as error:', failUpdateError);
     }
-    // Quota is NOT refunded here. The claim RPC allows reclaiming a job
-    // already in 'error' status (so an interrupted/failed attempt can be
-    // retried for free) — if a failure also refunded the quota, retrying
-    // the same job to a later success would net a generation for $0, an
-    // unlimited bypass of the daily limit. One created job always costs
-    // exactly one quota unit, whatever its outcome; only a genuinely new
-    // job (new input) claims quota again.
     await recordResumeEvent(context, 'resume_ai_job_failed', { kind: claimed.kind });
     return NextResponse.json({ error: 'AI generation failed', status: 'error' }, { status: 502 });
   }

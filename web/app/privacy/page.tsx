@@ -26,7 +26,7 @@ const sections = [
   },
   {
     title: 'Resume Workshop Data',
-    body: 'Your master resume, sections, bullets and explicitly saved AI-assisted revisions remain private to your account. Product analytics record feature names and counts, not resume or critique text. You can delete all content-bearing workshop data from the workshop at any time. A text-free daily usage counter may remain briefly to enforce the daily AI critique limit.',
+    body: 'Your master resume, sections, bullets and explicitly saved AI-assisted revisions remain private to your account. Product analytics record feature names and counts, not resume or critique text. You can delete all content-bearing workshop data from the workshop at any time.',
   },
   {
     title: 'Contact Us',
@@ -35,7 +35,7 @@ const sections = [
 ];
 
 // Bump this when the text below actually changes.
-const LAST_UPDATED = '2026-07-30';
+const LAST_UPDATED = '2026-08-02';
 
 const NOTICE =
   'This is placeholder legal content for development purposes only. This policy should be reviewed and replaced by a qualified legal professional before public launch.';
