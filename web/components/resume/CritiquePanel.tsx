@@ -20,8 +20,6 @@ interface CritiqueState {
 interface Props {
   bullet: ResumeBulletRow;
   revisions: ResumeBulletRevisionRow[];
-  remaining: number | null;
-  onRemainingChange: (remaining: number) => void;
   onBulletChanged: (bullet: ResumeBulletRow) => void;
   onRevisionSaved: (revision: ResumeBulletRevisionRow, bulletText: string) => void;
   onDeleteBullet: (id: string) => void;
@@ -35,7 +33,7 @@ interface Props {
  * the original ResumeWorkshop right-hand panel.
  */
 export function CritiquePanel({
-  bullet, revisions, remaining, onRemainingChange,
+  bullet, revisions,
   onBulletChanged, onRevisionSaved, onDeleteBullet, onDirtyChange,
 }: Props) {
   const [baseText, setBaseText] = useState(bullet.text);
@@ -99,8 +97,8 @@ export function CritiquePanel({
     }
     setBusy('critique'); setError(null); setNotice(null);
     try {
-      const result = await api<CritiqueState & { remaining: number }>('/critique', 'POST', { bulletId: bullet.id });
-      setCritique(result); setRevisedText(bullet.text); onRemainingChange(result.remaining);
+      const result = await api<CritiqueState>('/critique', 'POST', { bulletId: bullet.id });
+      setCritique(result); setRevisedText(bullet.text);
     } catch (value) { fail(value); } finally { setBusy(null); }
   }
 
@@ -181,11 +179,11 @@ export function CritiquePanel({
       {!critique && (
         <Button
           onClick={() => void requestCritique()}
-          disabled={busy !== null || remaining === 0}
+          disabled={busy !== null}
           loading={busy === 'critique'}
           className="w-full"
         >
-          Request AI critique {remaining !== null && `(${remaining} left today)`}
+          Request AI critique
         </Button>
       )}
 

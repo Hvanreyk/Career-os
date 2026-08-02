@@ -55,7 +55,6 @@ export function ResumeBuilder({ initialData }: Props) {
   const [bullets, setBullets] = useState(initialData.bullets);
   const [revisions, setRevisions] = useState(initialData.revisions);
   const [selectedId, setSelectedId] = useState<string | null>(initialData.bullets[0]?.id ?? null);
-  const [remaining, setRemaining] = useState<number | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [newHeading, setNewHeading] = useState('Experience');
@@ -73,12 +72,6 @@ export function ResumeBuilder({ initialData }: Props) {
     setCritiqueDirty(false);
     setSelectedId(bullet.id);
   }
-
-  useEffect(() => {
-    void api<{ remaining: number }>('/critique', 'GET')
-      .then((value) => setRemaining(value.remaining))
-      .catch(() => undefined);
-  }, []);
 
   function fail(value: unknown) {
     setError(value instanceof Error ? value.message : 'Something went wrong');
@@ -432,8 +425,6 @@ export function ResumeBuilder({ initialData }: Props) {
             <CritiquePanel
               bullet={selected}
               revisions={revisions.filter((revision) => revision.bullet_id === selected.id)}
-              remaining={remaining}
-              onRemainingChange={setRemaining}
               onDirtyChange={setCritiqueDirty}
               onBulletChanged={(bullet) => setBullets((rows) => rows.map((row) => row.id === bullet.id ? bullet : row))}
               onRevisionSaved={(revision, bulletText) => {

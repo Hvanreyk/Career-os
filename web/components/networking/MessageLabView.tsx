@@ -63,7 +63,6 @@ export function MessageLabView({ contacts, messages, initialContactId, initialCh
   const [error, setError] = useState<string | null>(null);
   const [blockingIssues, setBlockingIssues] = useState<PreflightIssue[]>([]);
   const [review, setReview] = useState<NetworkingReview | null>(null);
-  const [quota, setQuota] = useState<{ remaining: number; resetsAt: string } | null>(null);
   const [followUp, setFollowUp] = useState({ enabled: true, kind: 'follow_up_no_reply', days: 5 });
   const [sentConfirmation, setSentConfirmation] = useState(false);
 
@@ -129,12 +128,11 @@ export function MessageLabView({ contacts, messages, initialContactId, initialCh
       await networkingApi(`/messages/${id}`, 'PATCH', {
         subject, body, context: { personal_facts: facts, ask, prior_interaction: priorInteraction },
       });
-      const result = await networkingApi<{ draft: { subject: string; body: string; notes_for_student: string }; remaining: number; resetsAt: string }>(
+      const result = await networkingApi<{ draft: { subject: string; body: string; notes_for_student: string } }>(
         `/messages/${id}/draft`, 'POST',
       );
       setSubject(result.draft.subject);
       setBody(result.draft.body);
-      setQuota({ remaining: result.remaining, resetsAt: result.resetsAt });
       setState('draft');
       resetOutputs();
     } catch (err) {
@@ -159,9 +157,8 @@ export function MessageLabView({ contacts, messages, initialContactId, initialCh
         setBlockingIssues(preflight);
         return;
       }
-      const result = await networkingApi<{ review: NetworkingReview; remaining: number; resetsAt: string }>(`/messages/${id}/review`, 'POST');
+      const result = await networkingApi<{ review: NetworkingReview }>(`/messages/${id}/review`, 'POST');
       setReview(result.review);
-      setQuota({ remaining: result.remaining, resetsAt: result.resetsAt });
       setState('reviewed');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -328,11 +325,6 @@ export function MessageLabView({ contacts, messages, initialContactId, initialCh
               >
                 AI first draft
               </Button>
-              {quota && (
-                <span className="ml-num text-[13px] text-graphite">
-                  {quota.remaining} AI uses left today
-                </span>
-              )}
             </div>
 
             {channel === 'email' && (

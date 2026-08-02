@@ -109,8 +109,8 @@ placeholders; per-change user checkpoints; JD coverage % computed in code by
 `lib/resume/coverage.ts`, never by the LLM). All four generators
 (`lib/llm/resume-{extract,compose,improve,tailor}.ts`) run through one leased
 `resume_ai_jobs` two-phase rail (`web/lib/resume/jobs.ts` +
-`/api/resources/resume-cover-letter/ai-jobs/[id]/process`) with per-kind
-Sydney-day quotas (`RESUME_AI_DAILY_LIMIT`). The compose profile projection
+`/api/resources/resume-cover-letter/ai-jobs/[id]/process`) with idempotent
+input-hash reuse and no per-user quota. The compose profile projection
 (`toComposeProfileInput`) must never include high-school/ATAR fields —
 regression-locked in `tests/resume/prompts.test.ts`. The per-bullet critique
 surface from migration 0008 is unchanged and lives on inside the builder.

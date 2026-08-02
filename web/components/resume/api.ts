@@ -16,11 +16,8 @@ export async function api<T>(path: string, method: string, body?: unknown): Prom
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!response.ok) {
-    const payload = await response.json().catch(() => ({})) as { error?: string; resetsAt?: string };
-    const reset = payload.resetsAt
-      ? ` Resets ${new Date(payload.resetsAt).toLocaleString('en-AU')}.`
-      : '';
-    throw new Error(`${payload.error ?? 'Something went wrong'}${reset}`);
+    const payload = await response.json().catch(() => ({})) as { error?: string };
+    throw new Error(payload.error ?? 'Something went wrong');
   }
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;

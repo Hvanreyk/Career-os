@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { generateNetworkingDraft } from '@trajectoryos/core/llm/networking';
 import { MessageContextSchema } from '@trajectoryos/core/networking/types';
 import {
-  getNetworkingAiDailyLimit,
   getNetworkingApiContext,
   recordNetworkingEvent,
 } from '@/lib/networking/server';
@@ -49,21 +48,6 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     ? messageContext.data
     : { personal_facts: [], ask: '', prior_interaction: '' };
 
-  const limit = getNetworkingAiDailyLimit();
-  const { data: quotaRows, error: quotaError } = await context.service.rpc(
-    'claim_networking_review_quota',
-    { p_user_id: context.user.id, p_limit: limit },
-  );
-  const quota = Array.isArray(quotaRows) ? quotaRows[0] : null;
-  if (quotaError || !quota) return NextResponse.json({ error: 'Could not check the AI quota' }, { status: 500 });
-  if (!quota.allowed) {
-    return NextResponse.json({
-      error: 'Daily AI limit reached',
-      remaining: 0,
-      resetsAt: quota.resets_at,
-    }, { status: 429 });
-  }
-
   try {
     const generated = await generateNetworkingDraft({
       channel: message.channel,
@@ -93,7 +77,6 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       .eq('id', message.id)
       .eq('user_id', context.user.id);
     if (error) {
-      await context.service.rpc('release_networking_review_quota', { p_user_id: context.user.id });
       return NextResponse.json({ error: 'Could not save the draft' }, { status: 500 });
     }
 
@@ -102,13 +85,8 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       purpose: message.purpose,
       model: generated.model,
     });
-    return NextResponse.json({
-      draft: generated.output,
-      remaining: quota.remaining,
-      resetsAt: quota.resets_at,
-    });
+    return NextResponse.json({ draft: generated.output });
   } catch (error) {
-    await context.service.rpc('release_networking_review_quota', { p_user_id: context.user.id });
     console.error('networking draft failed:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json({ error: 'AI drafting is temporarily unavailable' }, { status: 502 });
   }
