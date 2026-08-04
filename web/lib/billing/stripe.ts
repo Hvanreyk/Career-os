@@ -8,12 +8,22 @@ function secretKey(): string {
   return key;
 }
 
-export async function stripeRequest<T>(path: string, values?: URLSearchParams, method = 'POST'): Promise<T> {
+interface StripeRequestOptions {
+  method?: 'GET' | 'POST';
+  idempotencyKey?: string;
+}
+
+export async function stripeRequest<T>(
+  path: string,
+  values?: URLSearchParams,
+  options: StripeRequestOptions = {},
+): Promise<T> {
   const response = await fetch(`${STRIPE_API}${path}`, {
-    method,
+    method: options.method ?? 'POST',
     headers: {
       Authorization: `Bearer ${secretKey()}`,
       ...(values ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}),
+      ...(options.idempotencyKey ? { 'Idempotency-Key': options.idempotencyKey } : {}),
     },
     body: values,
   });
@@ -33,8 +43,11 @@ export function verifyStripeSignature(body: string, signatureHeader: string | nu
   if (!Number.isFinite(seconds) || Math.abs(Date.now() / 1000 - seconds) > 300) return false;
   const expected = createHmac('sha256', secret).update(`${timestamp}.${body}`).digest('hex');
   return signatures.some((signature) => {
-    if (signature.length !== expected.length) return false;
-    return timingSafeEqual(Buffer.from(signature, 'hex'), Buffer.from(expected, 'hex'));
+    if (!/^[0-9a-f]{64}$/i.test(signature)) return false;
+    const received = Buffer.from(signature, 'hex');
+    const expectedBytes = Buffer.from(expected, 'hex');
+    if (received.length !== expectedBytes.length) return false;
+    return timingSafeEqual(received, expectedBytes);
   });
 }
 
@@ -53,5 +66,5 @@ export interface StripeSubscription {
 }
 
 export async function getStripeSubscription(id: string): Promise<StripeSubscription> {
-  return stripeRequest<StripeSubscription>(`/subscriptions/${encodeURIComponent(id)}`, undefined, 'GET');
+  return stripeRequest<StripeSubscription>(`/subscriptions/${encodeURIComponent(id)}`, undefined, { method: 'GET' });
 }

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { parseFixed } from '../../lib/interview/decimal';
 import { generateQuestionInstance, validateGeneratedFamily } from '../../lib/interview/generator';
+import { gradeDeterministicAnswer } from '../../lib/interview/grading';
 import { calculateConceptMastery } from '../../lib/interview/mastery';
 import { TECHNICAL_CONCEPTS, TECHNICAL_CORE_120_ALLOCATION, validateConceptTaxonomy } from '../../lib/interview/taxonomy';
 import { TechnicalItemFamilySchema } from '../../lib/interview/types';
@@ -34,6 +36,38 @@ describe('Technical family validation and generation', () => {
 
   it('passes repeated deterministic property generation', () => {
     expect(validateGeneratedFamily(numericEvFamily, 100)).toEqual([]);
+  });
+});
+
+describe('deterministic grading', () => {
+  it('rejects decimal inputs beyond the supported fixed precision', () => {
+    expect(parseFixed('1.123456')).toBe(1_123_456n);
+    expect(() => parseFixed('1.1234567')).toThrow('Invalid decimal: 1.1234567');
+  });
+
+  it('maps labelled observations to separate checks instead of reusing the last number', () => {
+    const checks = [
+      { code: 'EQUITY', expression: 'EQUITY', expectedUnit: 'A$m', absoluteTolerance: '0', relativeTolerance: null, requiredSign: 'positive' as const, acceptedRounding: [0] },
+      { code: 'EV', expression: 'EV', expectedUnit: 'A$m', absoluteTolerance: '0', relativeTolerance: null, requiredSign: 'positive' as const, acceptedRounding: [0] },
+    ];
+    const labelled = gradeDeterministicAnswer('EQUITY: 100; EV is 140', { EQUITY: '100', EV: '140' }, checks, []);
+    const unlabelled = gradeDeterministicAnswer('The values are 100 and 140', { EQUITY: '100', EV: '140' }, checks, []);
+    expect(labelled.classification).toBe('correct');
+    expect(labelled.checks.map((check) => check.observed)).toEqual(['100', '140']);
+    expect(unlabelled.checks.every((check) => check.status === 'not_observed')).toBe(true);
+  });
+
+  it('only emits a fatal misconception when its deterministic detector matches', () => {
+    const checks = [{
+      code: 'EV', expression: 'EV', expectedUnit: 'A$m', absoluteTolerance: '0', relativeTolerance: null,
+      requiredSign: 'positive' as const, acceptedRounding: [0],
+    }];
+    const fatalErrors = [
+      { misconceptionCode: 'E02.MATCHED', description: 'Detected EV error', triggerRules: [{ kind: 'numeric' as const, value: 'EV', negated: false }], blocksMastery: true },
+      { misconceptionCode: 'E02.UNRELATED', description: 'Unrelated sign error', triggerRules: [{ kind: 'sign' as const, value: 'DEBT_OR_CASH', negated: false }], blocksMastery: true },
+    ];
+    const grade = gradeDeterministicAnswer('150', { EV: '140' }, checks, fatalErrors);
+    expect(grade.misconceptionCodes).toEqual(['E02.MATCHED']);
   });
 });
 

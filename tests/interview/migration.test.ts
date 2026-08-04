@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const sql = readFileSync(new URL('../../supabase/migrations/0015_technical_core_foundation.sql', import.meta.url), 'utf8');
+const reviewFixSql = readFileSync(new URL('../../supabase/migrations/0016_technical_core_review_fixes.sql', import.meta.url), 'utf8');
 
 describe('technical core migration', () => {
   it('creates every content, evidence and commercial table from the plan', () => {
@@ -26,5 +27,15 @@ describe('technical core migration', () => {
 
   it('pins the search path for technical-core trigger functions', () => {
     expect((sql.match(/set search_path = public/g) ?? [])).toHaveLength(3);
+  });
+});
+
+describe('technical core review-fix migration', () => {
+  it('makes reviewed imports and dispute submission transactional service operations', () => {
+    expect(reviewFixSql).toContain('function public.technical_import_reviewed_family');
+    expect(reviewFixSql).toContain('function public.technical_submit_dispute');
+    expect((reviewFixSql.match(/security invoker/g) ?? [])).toHaveLength(2);
+    expect(reviewFixSql).toContain('to service_role');
+    expect(reviewFixSql).toContain('SOURCE_ID_CONFLICT');
   });
 });

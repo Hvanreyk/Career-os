@@ -15,8 +15,9 @@ export async function POST(request: Request) {
   const priceId = process.env.STRIPE_TECHNICAL_CORE_PRICE_ID;
   if (!priceId) return NextResponse.json({ error: 'Technical Core billing is not configured' }, { status: 503 });
   const service = createServiceClient();
-  const { data: existing } = await service.from('billing_customers')
+  const { data: existing, error: lookupError } = await service.from('billing_customers')
     .select('provider_customer_id').eq('user_id', user.id).maybeSingle();
+  if (lookupError) return NextResponse.json({ error: 'Could not load billing customer' }, { status: 500 });
   let customerId = existing?.provider_customer_id ?? null;
   try {
     if (!customerId) {
@@ -25,12 +26,15 @@ export async function POST(request: Request) {
         'metadata[user_id]': user.id,
         'metadata[product]': 'technical_core',
       });
-      const customer = await stripeRequest<StripeCustomer>('/customers', customerValues);
-      customerId = customer.id;
-      await service.from('billing_customers').upsert({
+      const customer = await stripeRequest<StripeCustomer>('/customers', customerValues, {
+        idempotencyKey: `technical-core-customer:${user.id}`,
+      });
+      const { data: persisted, error: persistError } = await service.from('billing_customers').upsert({
         user_id: user.id,
-        provider_customer_id: customerId,
-      }, { onConflict: 'user_id' });
+        provider_customer_id: customer.id,
+      }, { onConflict: 'user_id' }).select('provider_customer_id').single();
+      if (persistError || !persisted) throw new Error(`Could not persist billing customer: ${persistError?.message ?? 'no row returned'}`);
+      customerId = persisted.provider_customer_id;
     }
     const origin = new URL(request.url).origin;
     const values = new URLSearchParams({

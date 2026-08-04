@@ -3,7 +3,7 @@ import { zodTextFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 import type { TechnicalItemFamily } from '../interview/types';
 
-const MODEL = process.env.OPENAI_INTERVIEW_GRADER_MODEL ?? 'gpt-5.6-terra';
+const MODEL = process.env.OPENAI_INTERVIEW_GRADER_MODEL?.trim() || 'gpt-5.6-terra';
 const TIMEOUT_MS = 30_000;
 export const INTERVIEW_GRADER_VERSION = 'technical-stage1-v1';
 

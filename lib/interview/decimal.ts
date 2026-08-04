@@ -7,9 +7,10 @@ export function parseFixed(value: string | number): Fixed {
   const source = String(value).trim();
   const match = source.match(/^(-)?(\d+)(?:\.(\d+))?$/);
   if (!match) throw new Error(`Invalid decimal: ${source}`);
+  if ((match[3]?.length ?? 0) > SCALE_DIGITS) throw new Error(`Invalid decimal: ${source}`);
   const sign = match[1] ? -1n : 1n;
   const whole = BigInt(match[2] ?? '0');
-  const fraction = (match[3] ?? '').padEnd(SCALE_DIGITS, '0').slice(0, SCALE_DIGITS);
+  const fraction = (match[3] ?? '').padEnd(SCALE_DIGITS, '0');
   return sign * (whole * SCALE + BigInt(fraction || '0'));
 }
 
