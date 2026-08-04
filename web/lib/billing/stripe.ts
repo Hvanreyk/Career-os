@@ -1,6 +1,7 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
 const STRIPE_API = 'https://api.stripe.com/v1';
+const STRIPE_REQUEST_TIMEOUT_MS = 15_000;
 
 function secretKey(): string {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -20,6 +21,7 @@ export async function stripeRequest<T>(
 ): Promise<T> {
   const response = await fetch(`${STRIPE_API}${path}`, {
     method: options.method ?? 'POST',
+    signal: AbortSignal.timeout(STRIPE_REQUEST_TIMEOUT_MS),
     headers: {
       Authorization: `Bearer ${secretKey()}`,
       ...(values ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}),
@@ -27,8 +29,20 @@ export async function stripeRequest<T>(
     },
     body: values,
   });
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(payload?.error?.message ?? `Stripe request failed (${response.status})`);
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch (error) {
+    if (response.ok) throw new Error('Stripe returned an unreadable success response.', { cause: error });
+    payload = null;
+  }
+  const errorMessage = payload && typeof payload === 'object' && 'error' in payload
+    && payload.error && typeof payload.error === 'object' && 'message' in payload.error
+    && typeof payload.error.message === 'string'
+    ? payload.error.message
+    : null;
+  if (!response.ok) throw new Error(errorMessage ?? `Stripe request failed (${response.status})`);
+  if (!payload || typeof payload !== 'object') throw new Error('Stripe returned a malformed success response.');
   return payload as T;
 }
 

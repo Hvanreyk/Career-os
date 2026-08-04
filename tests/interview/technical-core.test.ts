@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { parseFixed } from '../../lib/interview/decimal';
-import { generateQuestionInstance, validateGeneratedFamily } from '../../lib/interview/generator';
-import { gradeDeterministicAnswer } from '../../lib/interview/grading';
-import { calculateConceptMastery } from '../../lib/interview/mastery';
-import { TECHNICAL_CONCEPTS, TECHNICAL_CORE_120_ALLOCATION, validateConceptTaxonomy } from '../../lib/interview/taxonomy';
-import { TechnicalItemFamilySchema } from '../../lib/interview/types';
+import { parseFixed } from '../../lib/interview/decimal.js';
+import { generateQuestionInstance, validateGeneratedFamily } from '../../lib/interview/generator.js';
+import { gradeDeterministicAnswer } from '../../lib/interview/grading.js';
+import { calculateConceptMastery } from '../../lib/interview/mastery.js';
+import { TECHNICAL_CONCEPTS, TECHNICAL_CORE_120_ALLOCATION, validateConceptTaxonomy } from '../../lib/interview/taxonomy.js';
+import { TechnicalItemFamilySchema } from '../../lib/interview/types.js';
 import { numericEvFamily } from './fixtures';
 
 describe('Technical Core taxonomy', () => {
@@ -54,7 +54,23 @@ describe('deterministic grading', () => {
     const unlabelled = gradeDeterministicAnswer('The values are 100 and 140', { EQUITY: '100', EV: '140' }, checks, []);
     expect(labelled.classification).toBe('correct');
     expect(labelled.checks.map((check) => check.observed)).toEqual(['100', '140']);
+    expect(unlabelled.classification).toBe('unparsed');
     expect(unlabelled.checks.every((check) => check.status === 'not_observed')).toBe(true);
+  });
+
+  it('treats unsupported answer precision as unparsed without inferring a fatal misconception', () => {
+    const checks = [{
+      code: 'EV', expression: 'EV', expectedUnit: 'A$m', absoluteTolerance: '0', relativeTolerance: null,
+      requiredSign: 'positive' as const, acceptedRounding: [6],
+    }];
+    const fatalErrors = [{
+      misconceptionCode: 'E02.BRIDGE_SIGN_ERROR', description: 'Detected EV error',
+      triggerRules: [{ kind: 'numeric' as const, value: 'EV', negated: false }], blocksMastery: true,
+    }];
+    const grade = gradeDeterministicAnswer('1.1234567', { EV: '1.123456' }, checks, fatalErrors);
+    expect(grade.classification).toBe('unparsed');
+    expect(grade.checks[0]?.status).toBe('unparsed');
+    expect(grade.misconceptionCodes).toEqual([]);
   });
 
   it('only emits a fatal misconception when its deterministic detector matches', () => {

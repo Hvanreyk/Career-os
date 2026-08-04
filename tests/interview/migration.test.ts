@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 const sql = readFileSync(new URL('../../supabase/migrations/0015_technical_core_foundation.sql', import.meta.url), 'utf8');
 const reviewFixSql = readFileSync(new URL('../../supabase/migrations/0016_technical_core_review_fixes.sql', import.meta.url), 'utf8');
+const disputeHardeningSql = readFileSync(new URL('../../supabase/migrations/0017_technical_dispute_hardening.sql', import.meta.url), 'utf8');
 
 describe('technical core migration', () => {
   it('creates every content, evidence and commercial table from the plan', () => {
@@ -37,5 +38,14 @@ describe('technical core review-fix migration', () => {
     expect((reviewFixSql.match(/security invoker/g) ?? [])).toHaveLength(2);
     expect(reviewFixSql).toContain('to service_role');
     expect(reviewFixSql).toContain('SOURCE_ID_CONFLICT');
+  });
+
+  it('prevents concurrent active disputes and restricts eligibility', () => {
+    expect(disputeHardeningSql).toContain('technical_disputes_one_active_per_attempt_idx');
+    expect(disputeHardeningSql).toContain("where status in ('open', 'reviewing')");
+    expect(disputeHardeningSql).toContain("and a.status = 'graded'");
+    expect(disputeHardeningSql).toContain('DISPUTE_ALREADY_OPEN');
+    expect(disputeHardeningSql).toContain('security invoker');
+    expect(disputeHardeningSql).toContain('to service_role');
   });
 });

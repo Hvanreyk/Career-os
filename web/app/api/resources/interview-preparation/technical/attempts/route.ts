@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     (rubric.deterministic_checks ?? []) as TechnicalItemFamily['rubricVersion']['deterministicChecks'],
     (rubric.fatal_errors ?? []) as TechnicalItemFamily['rubricVersion']['fatalErrors'],
   );
-  const isDeterministicallyGraded = deterministic.classification !== 'not_deterministic';
+  const isDeterministicallyGraded = !['not_deterministic', 'unparsed'].includes(deterministic.classification);
   const { data: attempt, error: attemptError } = await context.service.from('technical_attempts').insert({
     instance_id: instance.id,
     user_id: context.user.id,

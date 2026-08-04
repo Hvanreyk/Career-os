@@ -2,10 +2,10 @@ import { evaluateFixed, formatFixed, parseFixed } from './decimal';
 import type { TechnicalItemFamily } from './types';
 
 export interface DeterministicGradeResult {
-  classification: 'correct' | 'partial' | 'incorrect' | 'not_deterministic';
+  classification: 'correct' | 'partial' | 'incorrect' | 'unparsed' | 'not_deterministic';
   checks: Array<{
     code: string;
-    status: 'pass' | 'fail' | 'not_observed';
+    status: 'pass' | 'fail' | 'unparsed' | 'not_observed';
     expected: string;
     observed: string | null;
     expectedUnit: string | null;
@@ -54,7 +54,7 @@ export function gradeDeterministicAnswer(
     try {
       observed = parseFixed(observedText);
     } catch {
-      return { code: check.code, status: 'fail' as const, expected, observed: observedText, expectedUnit: check.expectedUnit };
+      return { code: check.code, status: 'unparsed' as const, expected, observed: observedText, expectedUnit: check.expectedUnit };
     }
     const absoluteTolerance = parseFixed(check.absoluteTolerance ?? '0');
     const relativeTolerance = check.relativeTolerance
@@ -77,7 +77,11 @@ export function gradeDeterministicAnswer(
     };
   });
   const passes = results.filter((result) => result.status === 'pass').length;
-  const classification = passes === results.length ? 'correct' : passes > 0 ? 'partial' : 'incorrect';
+  const classification = checks.length > 1 && results.every((result) => result.status === 'not_observed')
+    ? 'unparsed'
+    : results.some((result) => result.status === 'unparsed') && results.every((result) => ['unparsed', 'not_observed'].includes(result.status))
+      ? 'unparsed'
+      : passes === results.length ? 'correct' : passes > 0 ? 'partial' : 'incorrect';
   const misconceptionCodes = fatalErrors.filter((error) => error.blocksMastery && error.triggerRules.some((rule) => (
     !rule.negated
     && matchedFatalDetectors.has(`${rule.kind}:${rule.value}`)

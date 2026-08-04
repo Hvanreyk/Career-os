@@ -35,9 +35,9 @@ export async function POST(request: Request) {
   const coachRule = parsed.data.mode === 'coach'
     ? 'After the candidate finishes each response, give at most one short cue about structure or an omitted assumption. Never reveal the answer.'
     : 'Run a realistic interview. Do not give feedback, hints, scores, praise, or corrections during the session.';
-  let providerResponse: Response;
+  let payload: Record<string, unknown>;
   try {
-    providerResponse = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
+    const providerResponse = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(REALTIME_PROVIDER_TIMEOUT_MS),
@@ -68,17 +68,24 @@ export async function POST(request: Request) {
         },
       }),
     });
+    const parsedPayload = await providerResponse.json().catch((error) => {
+      if (providerResponse.ok) throw error;
+      return null;
+    });
+    if (!providerResponse.ok) {
+      console.error('OpenAI realtime secret failed:', providerResponse.status, parsedPayload);
+      return NextResponse.json({ error: 'Could not start live simulation' }, { status: 502 });
+    }
+    if (!parsedPayload || typeof parsedPayload !== 'object' || Array.isArray(parsedPayload)) {
+      return NextResponse.json({ error: 'Live simulation provider returned an invalid response' }, { status: 502 });
+    }
+    payload = parsedPayload as Record<string, unknown>;
   } catch (error) {
     if (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
       return NextResponse.json({ error: 'Live simulation provider timed out' }, { status: 504 });
     }
     console.error('OpenAI realtime secret request failed:', error);
     return NextResponse.json({ error: 'Could not reach live simulation provider' }, { status: 502 });
-  }
-  const payload = await providerResponse.json().catch(() => null);
-  if (!providerResponse.ok) {
-    console.error('OpenAI realtime secret failed:', providerResponse.status, payload);
-    return NextResponse.json({ error: 'Could not start live simulation' }, { status: 502 });
   }
   await recordTechnicalEvent(context, 'technical_realtime_started', {
     family_id: instance.family_id,
