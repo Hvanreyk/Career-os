@@ -4,6 +4,11 @@ import { generateQuestionInstance, validateGeneratedFamily } from '../../lib/int
 import { gradeDeterministicAnswer } from '../../lib/interview/grading.js';
 import { calculateConceptMastery } from '../../lib/interview/mastery.js';
 import { TECHNICAL_CONCEPTS, TECHNICAL_CORE_120_ALLOCATION, validateConceptTaxonomy } from '../../lib/interview/taxonomy.js';
+import {
+  TECHNICAL_CORE_120_DRAFTS,
+  TECHNICAL_CORE_RESEARCH_SOURCES,
+  validateTechnicalCore120Drafts,
+} from '../../lib/interview/technical-core-120.js';
 import { TechnicalItemFamilySchema } from '../../lib/interview/types.js';
 import { numericEvFamily } from './fixtures';
 
@@ -12,6 +17,28 @@ describe('Technical Core taxonomy', () => {
     expect(TECHNICAL_CONCEPTS).toHaveLength(60);
     expect(validateConceptTaxonomy()).toEqual([]);
     expect(TECHNICAL_CORE_120_ALLOCATION.reduce((sum, row) => sum + row.foundation + row.interviewReady + row.advanced, 0)).toBe(120);
+  });
+
+  it('contains 120 independently authored draft families with answers and complete variant coverage', () => {
+    expect(validateTechnicalCore120Drafts()).toEqual([]);
+    expect(TECHNICAL_CORE_120_DRAFTS).toHaveLength(120);
+    expect(new Set(TECHNICAL_CORE_120_DRAFTS.map((family) => family.slug)).size).toBe(120);
+    expect(new Set(TECHNICAL_CORE_120_DRAFTS.map((family) => family.primaryConceptId)).size).toBe(60);
+    expect(TECHNICAL_CORE_120_DRAFTS.every((family) =>
+      family.rubricVersion.answerOutline.length === 3
+      && family.parameterSpec.transformationRules.length === 7
+      && family.variantCoverage.length === 7
+      && family.questionVersion.promptTemplate.length > 20
+    )).toBe(true);
+  });
+
+  it('records the supplied guides as non-publishable coverage research only', () => {
+    expect(TECHNICAL_CORE_RESEARCH_SOURCES).toHaveLength(2);
+    expect(TECHNICAL_CORE_RESEARCH_SOURCES.every((source) =>
+      source.sourceType === 'competitor_concept_research'
+      && source.rightsBasis === 'fact_reference_only'
+      && source.notes.toLowerCase().includes('only')
+    )).toBe(true);
   });
 });
 
