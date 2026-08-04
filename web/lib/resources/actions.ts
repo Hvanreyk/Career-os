@@ -1,6 +1,6 @@
 import type { ResourceCapability, ResourceDefinition } from './catalog';
 
-export type ResourceActionIcon = 'landmark' | 'map' | 'file-text' | 'users' | 'mail';
+export type ResourceActionIcon = 'landmark' | 'map' | 'file-text' | 'users' | 'mail' | 'mic';
 
 export interface ResourceActionDefinition {
   capability: ResourceCapability;
@@ -45,6 +45,13 @@ const ACTIONS: Partial<Record<ResourceCapability, ResourceActionDefinition>> = {
     description: 'Draft, review and revise truthful outreach before you send it',
     path: 'network/messages',
     icon: 'mail',
+  },
+  'question-bank': {
+    capability: 'question-bank',
+    title: 'Technical Core practice',
+    description: 'Prerequisite-aware technical drills, audio simulation, misconceptions and concept mastery',
+    path: 'practice',
+    icon: 'mic',
   },
 };
 

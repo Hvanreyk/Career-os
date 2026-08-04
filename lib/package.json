@@ -26,6 +26,7 @@
     "./resume/apply": "./resume/apply.ts",
     "./resume/coverage": "./resume/coverage.ts",
     "./llm/networking": "./llm/networking.ts",
+    "./llm/interview-grade": "./llm/interview-grade.ts",
     "./networking": "./networking/index.ts",
     "./networking/types": "./networking/types.ts",
     "./professionals": "./professionals/index.ts",
@@ -35,7 +36,13 @@
     "./courses/recommend": "./courses/recommend.ts",
     "./courses/diagnostic": "./courses/diagnostic.ts",
     "./courses/readiness": "./courses/readiness.ts",
-    "./courses/timeline": "./courses/timeline.ts"
+    "./courses/timeline": "./courses/timeline.ts",
+    "./interview": "./interview/index.ts",
+    "./interview/types": "./interview/types.ts",
+    "./interview/taxonomy": "./interview/taxonomy.ts",
+    "./interview/generator": "./interview/generator.ts",
+    "./interview/grading": "./interview/grading.ts",
+    "./interview/mastery": "./interview/mastery.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

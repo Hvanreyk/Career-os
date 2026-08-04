@@ -112,6 +112,12 @@ export default async function AdminResourcesPage({
           className="mt-2"
         />
 
+        <div className="mt-5 flex justify-end">
+          <Link href="/admin/interview-preparation" className="ml-btn ml-btn-secondary min-h-[44px] px-5 text-[13px]">
+            Technical Core operations <span aria-hidden="true">▸</span>
+          </Link>
+        </div>
+
         <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {RESOURCE_CATALOG.map((resource) => (
             <AdminResourceCard key={resource.slug} resource={resource} course={courses.get(resource.slug) ?? null} />

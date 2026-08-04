@@ -1,0 +1,57 @@
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+
+const STRIPE_API = 'https://api.stripe.com/v1';
+
+function secretKey(): string {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error('STRIPE_SECRET_KEY is not configured.');
+  return key;
+}
+
+export async function stripeRequest<T>(path: string, values?: URLSearchParams, method = 'POST'): Promise<T> {
+  const response = await fetch(`${STRIPE_API}${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${secretKey()}`,
+      ...(values ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}),
+    },
+    body: values,
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(payload?.error?.message ?? `Stripe request failed (${response.status})`);
+  return payload as T;
+}
+
+export function verifyStripeSignature(body: string, signatureHeader: string | null): boolean {
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!secret || !signatureHeader) return false;
+  const parts = signatureHeader.split(',').map((part) => part.split('=', 2));
+  const timestamp = parts.find(([key]) => key === 't')?.[1];
+  const signatures = parts.filter(([key]) => key === 'v1').map(([, value]) => value).filter(Boolean) as string[];
+  if (!timestamp || !signatures.length) return false;
+  const seconds = Number(timestamp);
+  if (!Number.isFinite(seconds) || Math.abs(Date.now() / 1000 - seconds) > 300) return false;
+  const expected = createHmac('sha256', secret).update(`${timestamp}.${body}`).digest('hex');
+  return signatures.some((signature) => {
+    if (signature.length !== expected.length) return false;
+    return timingSafeEqual(Buffer.from(signature, 'hex'), Buffer.from(expected, 'hex'));
+  });
+}
+
+export function hashWebhookPayload(body: string): string {
+  return createHash('sha256').update(body).digest('hex');
+}
+
+export interface StripeSubscription {
+  id: string;
+  customer: string;
+  status: string;
+  cancel_at_period_end: boolean;
+  current_period_start: number;
+  current_period_end: number;
+  items?: { data?: Array<{ price?: { id?: string } }> };
+}
+
+export async function getStripeSubscription(id: string): Promise<StripeSubscription> {
+  return stripeRequest<StripeSubscription>(`/subscriptions/${encodeURIComponent(id)}`, undefined, 'GET');
+}
