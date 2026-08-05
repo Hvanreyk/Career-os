@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type {
-  ResumeBulletRevisionRow,
   ResumeBulletRow,
   ResumeEntryRow,
   ResumeRow,
@@ -423,6 +422,7 @@ export function ResumeBuilder({ initialData }: Props) {
             </StateBlock>
           ) : (
             <CritiquePanel
+              key={selected.id}
               bullet={selected}
               revisions={revisions.filter((revision) => revision.bullet_id === selected.id)}
               onDirtyChange={setCritiqueDirty}

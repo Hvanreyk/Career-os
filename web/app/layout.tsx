@@ -1,27 +1,20 @@
 import type { Metadata } from 'next';
-import { Archivo, JetBrains_Mono } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 import { SiteChrome } from '@/components/layout/SiteChrome';
 
 /**
- * Archivo carries headings and body; JetBrains Mono carries labels, IDs and
- * figures. Both are loaded once here so the landing page and the application
- * share exactly one typographic system.
+ * The checked-in Archivo face carries headings and body. Labels, IDs and
+ * figures use the platform monospace stack. Keeping fonts local prevents a
+ * production build from depending on fonts.googleapis.com.
  *
  * --di-display / --di-mono are the names the landing page already compiles
  * against. They are aliased rather than renamed so that page is untouched.
  */
-const archivo = Archivo({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
+const archivo = localFont({
+  src: '../../design/archivo-600.ttf',
+  weight: '600',
   variable: '--font-archivo',
-  display: 'swap',
-});
-
-const jetbrains = JetBrains_Mono({
-  subsets: ['latin'],
-  weight: ['400', '500'],
-  variable: '--font-jetbrains',
   display: 'swap',
 });
 
@@ -53,10 +46,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      className={`${archivo.variable} ${jetbrains.variable} h-full`}
+      className={`${archivo.variable} h-full`}
       style={
         {
           '--di-display': `var(--font-archivo)`,
+          '--font-jetbrains': `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace`,
           '--di-mono': `var(--font-jetbrains)`,
         } as React.CSSProperties
       }

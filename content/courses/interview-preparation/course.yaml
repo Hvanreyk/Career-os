@@ -1,0 +1,14 @@
+slug: interview-preparation
+title: Interview Preparation
+description: >-
+  Practise investment-banking technical interviews against reviewed question
+  families, exact rubric versions and concept-level evidence. Includes an open
+  testing workspace for adaptive drills and live audio simulation.
+icon: mic
+tag: Technical Core
+region: au
+status: draft
+sort_order: 4
+last_reviewed: "2026-08-02"
+modules:
+  - 01-technical-core-orientation

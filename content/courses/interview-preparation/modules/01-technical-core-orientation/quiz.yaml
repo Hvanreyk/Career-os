@@ -1,0 +1,26 @@
+status: draft
+questions:
+  - slug: q1
+    prompt: What is the identity used for Technical Core mastery?
+    options:
+      - { id: a, text: The exact question wording }
+      - { id: b, text: The underlying technical concept across independent variants }
+      - { id: c, text: The interviewer's personality }
+    correct: b
+    explanation: Evidence aggregates by concept, difficulty, variant, recency and independence—not by memorised wording.
+  - slug: q2
+    prompt: Can the AI create a new answer key while an interview is running?
+    options:
+      - { id: a, text: Yes, whenever a follow-up would be useful }
+      - { id: b, text: Only in Coach mode }
+      - { id: c, text: No, graded content must come from approved immutable versions }
+    correct: c
+    explanation: The interviewer and grader consume the approved bank; they cannot invent graded technical truth at runtime.
+  - slug: q3
+    prompt: What does the testing implementation retain from a live-audio answer?
+    options:
+      - { id: a, text: Raw audio forever }
+      - { id: b, text: The transcript the student reviews and submits, not raw audio }
+      - { id: c, text: An inferred personality profile }
+    correct: b
+    explanation: Live audio uses an ephemeral provider credential; the submitted transcript becomes attempt evidence.

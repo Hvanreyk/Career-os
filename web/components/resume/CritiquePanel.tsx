@@ -43,14 +43,6 @@ export function CritiquePanel({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  useEffect(() => {
-    setBaseText(bullet.text);
-    setRevisedText(bullet.text);
-    setCritique(null);
-    setError(null);
-    setNotice(null);
-  }, [bullet.id, bullet.text]);
-
   const baseDirty = baseText.trim() !== bullet.text.trim();
   const dirtyRevision = Boolean(critique && revisedText.trim() !== bullet.text.trim());
   const dirty = baseDirty || dirtyRevision;

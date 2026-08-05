@@ -7,6 +7,11 @@ second resource is published.
 
 Read `CLAUDE.md` first for architecture, deployment and admin-role setup.
 
+Interview Preparation now has its own Technical-Core implementation handoff in
+`INTERVIEW_PREPARATION_IMPLEMENTATION.md`. Treat that document as the current
+source of truth for the question-bank architecture, open testing access,
+content review gates and remaining human calibration work.
+
 ## Product vision
 
 Resources are not six identical courses. They share a learning layer, but each
@@ -146,4 +151,3 @@ Phase 0 is complete when:
   state (`draft → reviewed → published`) before more editors are invited?
 - What target cohort and recruiting window should drive Phase 1 prioritisation
   and success criteria?
-

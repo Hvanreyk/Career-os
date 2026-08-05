@@ -12,7 +12,7 @@
     "lint": "npm run lint -w web",
     "typecheck": "npm run typecheck:core && npm run typecheck:web",
     "typecheck:core": "tsc --noEmit",
-    "typecheck:web": "tsc -p web/tsconfig.json --noEmit",
+    "typecheck:web": "tsc -p web/tsconfig.json --noEmit --incremental false",
     "import:dry": "tsx scripts/import-csv.ts --dry-run",
     "import": "tsx scripts/import-csv.ts",
     "import:reject-test": "tsx scripts/import-csv.ts --reject-test",
@@ -25,7 +25,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "seed:courses": "tsx scripts/seed-courses.ts",
-    "seed:courses:dry": "tsx scripts/seed-courses.ts --dry-run"
+    "seed:courses:dry": "tsx scripts/seed-courses.ts --dry-run",
+    "seed:technical-core": "tsx scripts/seed-technical-core.ts",
+    "seed:technical-core:dry": "tsx scripts/seed-technical-core.ts --dry-run"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
