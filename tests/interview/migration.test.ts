@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 const sql = readFileSync(new URL('../../supabase/migrations/0015_technical_core_foundation.sql', import.meta.url), 'utf8');
 const reviewFixSql = readFileSync(new URL('../../supabase/migrations/0016_technical_core_review_fixes.sql', import.meta.url), 'utf8');
 const disputeHardeningSql = readFileSync(new URL('../../supabase/migrations/0017_technical_dispute_hardening.sql', import.meta.url), 'utf8');
-const disputeLifetimeSql = readFileSync(new URL('../../supabase/migrations/20260805002720_technical_dispute_lifetime.sql', import.meta.url), 'utf8');
-const importGuardSql = readFileSync(new URL('../../supabase/migrations/20260805004448_reviewed_family_import_guards.sql', import.meta.url), 'utf8');
+const disputeLifetimeSql = readFileSync(new URL('../../supabase/migrations/20260805003127_technical_dispute_lifetime.sql', import.meta.url), 'utf8');
+const importGuardSql = readFileSync(new URL('../../supabase/migrations/20260805004517_reviewed_family_import_guards.sql', import.meta.url), 'utf8');
 
 describe('technical core migration', () => {
   it('creates every content, evidence and commercial table from the plan', () => {
