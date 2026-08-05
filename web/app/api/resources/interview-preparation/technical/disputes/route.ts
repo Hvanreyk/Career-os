@@ -21,11 +21,11 @@ export async function POST(request: Request) {
   if (attempt.status !== 'graded') {
     return NextResponse.json({ error: 'Only graded attempts can be disputed' }, { status: 409 });
   }
-  const { data: activeDispute, error: activeDisputeError } = await context.service.from('technical_disputes')
+  const { data: existingDispute, error: existingDisputeError } = await context.service.from('technical_disputes')
     .select('id').eq('attempt_id', attempt.id).eq('user_id', context.user.id)
-    .in('status', ['open', 'reviewing']).limit(1).maybeSingle();
-  if (activeDisputeError) return NextResponse.json({ error: 'Could not check dispute status' }, { status: 500 });
-  if (activeDispute) return NextResponse.json({ error: 'A dispute is already open for this attempt' }, { status: 409 });
+    .limit(1).maybeSingle();
+  if (existingDisputeError) return NextResponse.json({ error: 'Could not check dispute status' }, { status: 500 });
+  if (existingDispute) return NextResponse.json({ error: 'This attempt has already been disputed' }, { status: 409 });
   const { data: rows, error } = await context.service.rpc('technical_submit_dispute', {
     p_user_id: context.user.id,
     p_attempt_id: attempt.id,
@@ -33,8 +33,8 @@ export async function POST(request: Request) {
     p_description: parsed.data.description,
   });
   const dispute = Array.isArray(rows) ? rows[0] : rows;
-  if (error?.code === '23505' || error?.message.includes('DISPUTE_ALREADY_OPEN') || error?.message.includes('ATTEMPT_NOT_ELIGIBLE')) {
-    return NextResponse.json({ error: 'A dispute is already open or the attempt is no longer eligible' }, { status: 409 });
+  if (error?.code === '23505' || error?.message.includes('DISPUTE_ALREADY_SUBMITTED') || error?.message.includes('ATTEMPT_NOT_ELIGIBLE')) {
+    return NextResponse.json({ error: 'This attempt has already been disputed or is no longer eligible' }, { status: 409 });
   }
   if (error || !dispute) return NextResponse.json({ error: 'Could not submit dispute' }, { status: 500 });
   await recordTechnicalEvent(context, 'technical_dispute_submitted', { reason_code: parsed.data.reasonCode });

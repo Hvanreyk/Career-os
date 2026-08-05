@@ -1,8 +1,21 @@
--- Allow at most one dispute per attempt and restrict dispute creation to attempts
--- that have completed grading. The unique index is the concurrency
--- backstop; the function predicates provide clear errors for normal retries.
+-- Upgrade databases that already applied 0017 from one active dispute to one
+-- dispute for the lifetime of an attempt. A repeat dispute would otherwise be
+-- impossible to process because dispute resolution does not restore the
+-- attempt to the graded state.
 
-create unique index technical_disputes_one_per_attempt_idx
+do $$
+begin
+  if exists (
+    select 1 from technical_disputes group by attempt_id having count(*) > 1
+  ) then
+    raise exception 'DUPLICATE_ATTEMPT_DISPUTES_REQUIRE_ADJUDICATION';
+  end if;
+end;
+$$;
+
+drop index if exists technical_disputes_one_active_per_attempt_idx;
+
+create unique index if not exists technical_disputes_one_per_attempt_idx
   on technical_disputes (attempt_id);
 
 create or replace function public.technical_submit_dispute(

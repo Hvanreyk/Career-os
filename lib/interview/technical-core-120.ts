@@ -5,12 +5,16 @@ import type { Difficulty, TechnicalTopic, VariantType } from './types';
 type QuestionAngle = {
   prompt: string;
   answer?: readonly [string, string, string];
+  difficulty: Difficulty;
 };
 
 type ConceptDraft = {
   principles: readonly [string, string, string];
   angles: readonly QuestionAngle[];
 };
+
+type RawQuestionAngle = Omit<QuestionAngle, 'difficulty'>;
+type RawConceptDraft = Omit<ConceptDraft, 'angles'> & { angles: readonly RawQuestionAngle[] };
 
 export interface TechnicalCoreDraftFamily {
   id: string;
@@ -76,11 +80,11 @@ export interface TechnicalCoreDraftFamily {
   };
 }
 
-const c = (principles: ConceptDraft['principles'], ...angles: QuestionAngle[]): ConceptDraft => ({ principles, angles });
+const c = (principles: ConceptDraft['principles'], ...angles: RawQuestionAngle[]): RawConceptDraft => ({ principles, angles });
 
 // These are independently authored concept cards. The two supplied interview guides
 // informed coverage only; none of their wording, sequencing, or answer prose is used.
-const CONTENT: Record<string, ConceptDraft> = {
+const RAW_CONTENT: Record<string, RawConceptDraft> = {
   A01: c(
     ['The income statement measures performance over a period, the balance sheet shows resources and claims at a date, and the cash-flow statement reconciles the change in cash.', 'Net income links into retained earnings and starts the indirect cash-flow statement; ending cash from the cash-flow statement returns to the balance sheet.', 'A strong answer distinguishes period flows from point-in-time stocks and explains why profit, cash, and equity can move differently.'],
     { prompt: 'Give a concise map of the three primary financial statements and explain the job each one performs.' },
@@ -391,6 +395,58 @@ const CONTENT: Record<string, ConceptDraft> = {
   ),
 };
 
+// Difficulty is assigned to each item deliberately. Topic allocations below
+// validate this editorial choice; they never determine it by array position.
+const ITEM_DIFFICULTIES: Record<string, readonly Difficulty[]> = {
+  A01: ['foundation', 'interview_ready'], A02: ['foundation', 'interview_ready'],
+  A03: ['foundation', 'interview_ready'], A04: ['foundation', 'interview_ready'],
+  A05: ['foundation', 'interview_ready'], A06: ['foundation', 'interview_ready'],
+  A07: ['foundation', 'interview_ready'], A08: ['foundation', 'interview_ready'],
+  A09: ['interview_ready', 'advanced'], A10: ['interview_ready', 'advanced'],
+  A11: ['interview_ready', 'advanced'], A12: ['advanced', 'advanced'],
+  E01: ['foundation', 'interview_ready'], E02: ['foundation', 'foundation'],
+  E03: ['foundation', 'interview_ready'], E04: ['interview_ready', 'interview_ready'],
+  E05: ['interview_ready', 'advanced'], E06: ['advanced', 'advanced'],
+  V01: ['foundation', 'interview_ready', 'interview_ready'],
+  V02: ['foundation', 'interview_ready', 'interview_ready'],
+  V03: ['foundation', 'interview_ready', 'interview_ready'],
+  V04: ['foundation', 'interview_ready', 'advanced'],
+  V05: ['foundation', 'interview_ready'], V06: ['interview_ready', 'advanced'],
+  V07: ['advanced', 'advanced'],
+  F01: ['foundation', 'foundation', 'interview_ready'],
+  F02: ['foundation', 'interview_ready', 'interview_ready'],
+  F03: ['foundation', 'interview_ready'], F04: ['interview_ready', 'interview_ready'],
+  F05: ['interview_ready', 'advanced'], F06: ['interview_ready', 'advanced'],
+  F07: ['advanced', 'advanced'],
+  M01: ['interview_ready', 'foundation', 'advanced'],
+  M02: ['foundation', 'interview_ready', 'advanced'],
+  M03: ['foundation', 'interview_ready'], M04: ['foundation', 'interview_ready'],
+  M05: ['interview_ready', 'interview_ready'], M06: ['interview_ready', 'advanced'],
+  M07: ['interview_ready', 'advanced'],
+  L01: ['foundation', 'interview_ready'], L02: ['foundation', 'interview_ready'],
+  L03: ['interview_ready', 'advanced'], L04: ['foundation', 'interview_ready'],
+  L05: ['interview_ready', 'advanced'], L06: ['interview_ready', 'advanced'],
+  C01: ['foundation', 'interview_ready'], C02: ['foundation', 'interview_ready'],
+  C03: ['interview_ready', 'advanced'], C04: ['advanced'], C05: ['interview_ready'],
+  K01: ['foundation', 'interview_ready'], K02: ['foundation', 'interview_ready'],
+  K03: ['interview_ready'], K04: ['advanced'],
+  J01: ['interview_ready', 'advanced'], J02: ['interview_ready', 'advanced'],
+  J03: ['interview_ready'], J04: ['advanced'], J05: ['advanced'], J06: ['advanced'],
+};
+
+const CONTENT: Record<string, ConceptDraft> = Object.fromEntries(
+  Object.entries(RAW_CONTENT).map(([conceptId, draft]) => {
+    const difficulties = ITEM_DIFFICULTIES[conceptId];
+    if (!difficulties || difficulties.length !== draft.angles.length) {
+      throw new Error(`${conceptId} requires one explicit difficulty per item`);
+    }
+    return [conceptId, {
+      principles: draft.principles,
+      angles: draft.angles.map((angle, index) => ({ ...angle, difficulty: difficulties[index]! })),
+    } satisfies ConceptDraft];
+  }),
+);
+
 const ALLOCATION: Record<TechnicalTopic, readonly [foundation: number, interviewReady: number, advanced: number]> = {
   accounting: [8, 11, 5],
   enterprise_value: [4, 5, 3],
@@ -474,18 +530,13 @@ function buildFamilies(): TechnicalCoreDraftFamily[] {
   }
 
   return [...byTopic.entries()].flatMap(([topic, rows]) => {
-    const [foundation, interviewReady, advanced] = ALLOCATION[topic];
-    const difficulties: Difficulty[] = [
-      ...Array<Difficulty>(foundation).fill('foundation'),
-      ...Array<Difficulty>(interviewReady).fill('interview_ready'),
-      ...Array<Difficulty>(advanced).fill('advanced'),
-    ];
-    if (difficulties.length !== rows.length) {
-      throw new Error(`${topic} has ${rows.length} draft questions but allocation requires ${difficulties.length}`);
+    const expectedCount = ALLOCATION[topic].reduce((total, count) => total + count, 0);
+    if (expectedCount !== rows.length) {
+      throw new Error(`${topic} has ${rows.length} draft questions but allocation requires ${expectedCount}`);
     }
-    return rows.map(({ conceptId, angle, index }, rowIndex) => {
+    return rows.map(({ conceptId, angle, index }) => {
       const concept = TECHNICAL_CONCEPT_BY_ID.get(conceptId)!;
-      const difficulty = difficulties[rowIndex]!;
+      const difficulty = angle.difficulty;
       const answerOutline = [...(angle.answer ?? CONTENT[conceptId]!.principles)];
       const slug = `${conceptId.toLowerCase()}-${String(index + 1).padStart(2, '0')}-${concept.slug.replace(`${conceptId.toLowerCase()}-`, '')}`;
       const familyId = stableUuid(`family:${slug}`);

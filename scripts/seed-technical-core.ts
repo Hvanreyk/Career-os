@@ -3,13 +3,13 @@ import { createClient } from '@supabase/supabase-js';
 import {
   TECHNICAL_CONCEPTS,
   validateConceptTaxonomy,
-} from '../lib/interview/taxonomy';
+} from '../lib/interview/taxonomy.js';
 import {
   TECHNICAL_CORE_120_DRAFTS,
   TECHNICAL_CORE_RESEARCH_SECTIONS,
   TECHNICAL_CORE_RESEARCH_SOURCES,
   validateTechnicalCore120Drafts,
-} from '../lib/interview/technical-core-120';
+} from '../lib/interview/technical-core-120.js';
 
 const dryRun = process.argv.includes('--dry-run');
 const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -67,7 +67,7 @@ async function main() {
   const { error: misconceptionError } = await supabase.from('technical_misconceptions').upsert(misconceptionRows, { onConflict: 'code' });
   if (misconceptionError) throw new Error(`Could not seed misconceptions: ${misconceptionError.message}`);
 
-  const accessedAt = '2026-08-05T00:00:00.000Z';
+  const accessedAt = '2026-08-04T23:20:00.000Z';
   const sourceRows = TECHNICAL_CORE_RESEARCH_SOURCES.map((source) => ({
     id: source.id,
     source_type: source.sourceType,
@@ -86,18 +86,31 @@ async function main() {
   if (sourceError) throw new Error(`Could not seed Technical Core research sources: ${sourceError.message}`);
 
   const slugs = TECHNICAL_CORE_120_DRAFTS.map((family) => family.slug);
-  const { data: existingFamilies, error: existingError } = await supabase.from('technical_item_families')
-    .select('id, slug, status').in('slug', slugs);
-  if (existingError) throw new Error(`Could not inspect existing Technical Core families: ${existingError.message}`);
+  const ids = TECHNICAL_CORE_120_DRAFTS.map((family) => family.id);
+  const [bySlugResult, byIdResult] = await Promise.all([
+    supabase.from('technical_item_families').select('id, slug, status').in('slug', slugs),
+    supabase.from('technical_item_families').select('id, slug, status').in('id', ids),
+  ]);
+  if (bySlugResult.error) throw new Error(`Could not inspect existing Technical Core family slugs: ${bySlugResult.error.message}`);
+  if (byIdResult.error) throw new Error(`Could not inspect existing Technical Core family IDs: ${byIdResult.error.message}`);
+  const existingFamilies = [...new Map(
+    [...(bySlugResult.data ?? []), ...(byIdResult.data ?? [])].map((family) => [family.id, family]),
+  ).values()];
   const expectedIdBySlug = new Map(TECHNICAL_CORE_120_DRAFTS.map((family) => [family.slug, family.id]));
-  const idConflicts = (existingFamilies ?? []).filter((family) => expectedIdBySlug.get(family.slug) !== family.id);
+  const expectedSlugById = new Map(TECHNICAL_CORE_120_DRAFTS.map((family) => [family.id, family.slug]));
+  const idConflicts = existingFamilies.filter((family) =>
+    (expectedIdBySlug.has(family.slug) && expectedIdBySlug.get(family.slug) !== family.id)
+    || (expectedSlugById.has(family.id) && expectedSlugById.get(family.id) !== family.slug));
   if (idConflicts.length) {
-    throw new Error(`Draft seed ID conflict for: ${idConflicts.map((family) => family.slug).join(', ')}`);
+    throw new Error(`Draft seed ID/slug conflict for: ${idConflicts.map((family) => `${family.id}:${family.slug}`).join(', ')}`);
   }
-  const mutableSlugs = new Set((existingFamilies ?? [])
+  const mutableSlugs = new Set(existingFamilies
     .filter((family) => family.status === 'draft')
     .map((family) => family.slug));
-  const protectedSlugs = new Set((existingFamilies ?? [])
+  const mutableFamilyIds = new Set(existingFamilies
+    .filter((family) => family.status === 'draft')
+    .map((family) => family.id));
+  const protectedSlugs = new Set(existingFamilies
     .filter((family) => family.status !== 'draft')
     .map((family) => family.slug));
   const draftFamilies = TECHNICAL_CORE_120_DRAFTS.filter((family) => !protectedSlugs.has(family.slug));
@@ -121,6 +134,13 @@ async function main() {
   }));
   const { error: familyError } = await supabase.from('technical_item_families').upsert(familyRows, { onConflict: 'id' });
   if (familyError) throw new Error(`Could not seed draft item families: ${familyError.message}`);
+
+  const refreshedFamilyIds = draftFamilies.filter((family) => mutableFamilyIds.has(family.id)).map((family) => family.id);
+  if (refreshedFamilyIds.length) {
+    const { error: staleRelationshipError } = await supabase.from('technical_family_concepts')
+      .delete().in('family_id', refreshedFamilyIds).eq('relationship', 'prerequisite');
+    if (staleRelationshipError) throw new Error(`Could not remove stale family prerequisites: ${staleRelationshipError.message}`);
+  }
 
   const relationshipRows = draftFamilies.flatMap((family) => family.prerequisiteConceptIds.map((conceptId) => ({
     family_id: family.id,
@@ -211,6 +231,14 @@ async function main() {
     claim_supported: 'Coverage research only; this source does not support published wording or answer content.',
     source_location: TECHNICAL_CORE_RESEARCH_SECTIONS[family.topic][sourceIndex],
   })));
+  const refreshedQuestionIds = draftFamilies
+    .filter((family) => mutableFamilyIds.has(family.id))
+    .map((family) => family.questionVersion.id);
+  if (refreshedQuestionIds.length) {
+    const { error: staleSourceLinkError } = await supabase.from('technical_question_source_links')
+      .delete().in('question_version_id', refreshedQuestionIds);
+    if (staleSourceLinkError) throw new Error(`Could not remove stale draft source links: ${staleSourceLinkError.message}`);
+  }
   const { error: sourceLinkError } = await supabase.from('technical_question_source_links').upsert(sourceLinkRows, {
     onConflict: 'question_version_id,source_id,claim_supported',
   });

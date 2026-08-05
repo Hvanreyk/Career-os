@@ -112,6 +112,17 @@ describe('deterministic grading', () => {
     const grade = gradeDeterministicAnswer('150', { EV: '140' }, checks, fatalErrors);
     expect(grade.misconceptionCodes).toEqual(['E02.MATCHED']);
   });
+
+  it('accepts answers rounded to any explicitly permitted precision', () => {
+    const checks = [{
+      code: 'VALUE', expression: 'VALUE', expectedUnit: 'A$m', absoluteTolerance: '0', relativeTolerance: null,
+      requiredSign: 'positive' as const, acceptedRounding: [0, 1],
+    }];
+    expect(gradeDeterministicAnswer('VALUE: 11', { VALUE: '10.56' }, checks, []).classification).toBe('correct');
+    expect(gradeDeterministicAnswer('VALUE: 10.6', { VALUE: '10.56' }, checks, []).classification).toBe('correct');
+    expect(gradeDeterministicAnswer('VALUE: 10.56', { VALUE: '10.56' }, checks, []).classification).toBe('correct');
+    expect(gradeDeterministicAnswer('VALUE: 10.5', { VALUE: '10.56' }, checks, []).classification).toBe('incorrect');
+  });
 });
 
 describe('concept mastery', () => {

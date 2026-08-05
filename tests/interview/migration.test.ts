@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 const sql = readFileSync(new URL('../../supabase/migrations/0015_technical_core_foundation.sql', import.meta.url), 'utf8');
 const reviewFixSql = readFileSync(new URL('../../supabase/migrations/0016_technical_core_review_fixes.sql', import.meta.url), 'utf8');
 const disputeHardeningSql = readFileSync(new URL('../../supabase/migrations/0017_technical_dispute_hardening.sql', import.meta.url), 'utf8');
+const disputeLifetimeSql = readFileSync(new URL('../../supabase/migrations/20260805002720_technical_dispute_lifetime.sql', import.meta.url), 'utf8');
+const importGuardSql = readFileSync(new URL('../../supabase/migrations/20260805004448_reviewed_family_import_guards.sql', import.meta.url), 'utf8');
 
 describe('technical core migration', () => {
   it('creates every content, evidence and commercial table from the plan', () => {
@@ -38,14 +40,22 @@ describe('technical core review-fix migration', () => {
     expect((reviewFixSql.match(/security invoker/g) ?? [])).toHaveLength(2);
     expect(reviewFixSql).toContain('to service_role');
     expect(reviewFixSql).toContain('SOURCE_ID_CONFLICT');
+    expect(reviewFixSql).toContain('MISSING_REVIEWED_FAMILY_SOURCES');
+    expect(reviewFixSql).toContain("coalesce((p_family #>> '{review,founderOverride}')::boolean, false)");
+    expect(importGuardSql).toContain('MISSING_REVIEWED_FAMILY_SOURCES');
+    expect(importGuardSql).toContain("coalesce((p_family #>> '{review,founderOverride}')::boolean, false)");
+    expect(importGuardSql).toContain('to service_role');
   });
 
-  it('prevents concurrent active disputes and restricts eligibility', () => {
-    expect(disputeHardeningSql).toContain('technical_disputes_one_active_per_attempt_idx');
-    expect(disputeHardeningSql).toContain("where status in ('open', 'reviewing')");
+  it('allows only one lifetime dispute and restricts eligibility', () => {
+    expect(disputeHardeningSql).toContain('technical_disputes_one_per_attempt_idx');
     expect(disputeHardeningSql).toContain("and a.status = 'graded'");
-    expect(disputeHardeningSql).toContain('DISPUTE_ALREADY_OPEN');
+    expect(disputeHardeningSql).toContain('DISPUTE_ALREADY_SUBMITTED');
     expect(disputeHardeningSql).toContain('security invoker');
     expect(disputeHardeningSql).toContain('to service_role');
+    expect(disputeLifetimeSql).toContain('drop index if exists technical_disputes_one_active_per_attempt_idx');
+    expect(disputeLifetimeSql).toContain('DUPLICATE_ATTEMPT_DISPUTES_REQUIRE_ADJUDICATION');
+    expect(disputeLifetimeSql).toContain('technical_disputes_one_per_attempt_idx');
+    expect(disputeLifetimeSql).toContain('DISPUTE_ALREADY_SUBMITTED');
   });
 });

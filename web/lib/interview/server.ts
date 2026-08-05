@@ -86,8 +86,18 @@ export async function refreshConceptMastery(context: TechnicalApiContext, concep
   const evidenceByAttempt = new Map<string, string[]>();
   for (const row of evidence ?? []) evidenceByAttempt.set(row.attempt_id, [...(evidenceByAttempt.get(row.attempt_id) ?? []), row.classification]);
   const fatalByAttempt = new Map<string, string[]>();
+  const detectedCodes = [...new Set((misconceptions ?? []).map((row) => row.misconception_code))];
+  const { data: misconceptionDefinitions } = detectedCodes.length
+    ? await context.service.from('technical_misconceptions')
+      .select('code, mastery_blocking').in('code', detectedCodes)
+    : { data: [] };
+  const masteryBlockingCodes = new Set(
+    (misconceptionDefinitions ?? [])
+      .filter((definition) => definition.mastery_blocking)
+      .map((definition) => definition.code),
+  );
   for (const row of misconceptions ?? []) {
-    if (!['confirmed', 'possible'].includes(row.status)) continue;
+    if (row.status !== 'confirmed' || !masteryBlockingCodes.has(row.misconception_code)) continue;
     fatalByAttempt.set(row.attempt_id, [...(fatalByAttempt.get(row.attempt_id) ?? []), row.misconception_code]);
   }
   const mastery = calculateConceptMastery((attempts ?? []).flatMap((attempt) => {

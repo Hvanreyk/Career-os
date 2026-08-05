@@ -1,4 +1,4 @@
-import { evaluateFixed, formatFixed, parseFixed } from './decimal';
+import { evaluateFixed, formatFixed, parseFixed, roundFixed } from './decimal';
 import type { TechnicalItemFamily } from './types';
 
 export interface DeterministicGradeResult {
@@ -61,7 +61,14 @@ export function gradeDeterministicAnswer(
       ? (expectedFixed < 0n ? -expectedFixed : expectedFixed) * parseFixed(check.relativeTolerance) / 1_000_000n
       : 0n;
     const tolerance = absoluteTolerance > relativeTolerance ? absoluteTolerance : relativeTolerance;
-    const difference = observed > expectedFixed ? observed - expectedFixed : expectedFixed - observed;
+    const acceptedExpectedValues = [
+      expectedFixed,
+      ...check.acceptedRounding.map((precision) => roundFixed(expectedFixed, precision, 'half_up')),
+    ];
+    const difference = acceptedExpectedValues.reduce<bigint>((smallest, acceptedExpected) => {
+      const candidate = observed > acceptedExpected ? observed - acceptedExpected : acceptedExpected - observed;
+      return candidate < smallest ? candidate : smallest;
+    }, observed > expectedFixed ? observed - expectedFixed : expectedFixed - observed);
     const signPass = check.requiredSign === 'any'
       || (check.requiredSign === 'positive' && observed > 0n)
       || (check.requiredSign === 'negative' && observed < 0n)

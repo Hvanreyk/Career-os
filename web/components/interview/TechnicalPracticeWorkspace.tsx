@@ -75,13 +75,18 @@ export function TechnicalPracticeWorkspace({
   useEffect(() => {
     if (!question || feedback) return;
     startedAt.current = Date.now();
-    setSeconds(0);
     const timer = window.setInterval(() => setSeconds(Math.floor((Date.now() - (startedAt.current ?? Date.now())) / 1000)), 1000);
     return () => window.clearInterval(timer);
   }, [question, feedback]);
 
+  useEffect(() => () => {
+    peer.current?.close();
+    stream.current?.getTracks().forEach((track) => track.stop());
+  }, []);
+
   async function loadQuestion(nextMode = mode) {
-    setLoading(true); setMessage(''); setFeedback(null); setAnswer('');
+    stopLiveInterview();
+    setLoading(true); setMessage(''); setFeedback(null); setAnswer(''); setSeconds(0);
     try {
       const response = await fetch(`/api/resources/interview-preparation/technical/next?mode=${nextMode}`, { cache: 'no-store' });
       const data = await response.json();
@@ -94,6 +99,7 @@ export function TechnicalPracticeWorkspace({
 
   async function submitAnswer() {
     if (!question || !answer.trim()) return;
+    stopLiveInterview();
     setLoading(true); setMessage('');
     try {
       const response = await fetch('/api/resources/interview-preparation/technical/attempts', {
@@ -198,7 +204,7 @@ export function TechnicalPracticeWorkspace({
                 <div className="mt-7 border-t border-rule pt-5">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex gap-2">
-                      <Button size="sm" variant={answerMode === 'text' ? 'primary' : 'secondary'} onClick={() => setAnswerMode('text')}>Text</Button>
+                      <Button size="sm" variant={answerMode === 'text' ? 'primary' : 'secondary'} onClick={() => { stopLiveInterview(); setAnswerMode('text'); }}>Text</Button>
                       <Button size="sm" variant={answerMode === 'audio' ? 'primary' : 'secondary'} onClick={() => setAnswerMode('audio')}>Live audio</Button>
                     </div>
                     {answerMode === 'audio' && fullAccess && (

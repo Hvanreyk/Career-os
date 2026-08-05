@@ -78,6 +78,13 @@ export async function GET(request: Request) {
       .eq('is_free_diagnostic', true).order('started_at', { ascending: false }).limit(1).maybeSingle();
     diagnosticRunId = activeRun?.id ?? null;
     if (!diagnosticRunId) {
+      if (!fullAccess) {
+        const { data: completedRun, error: completedRunError } = await context.service.from('technical_diagnostic_runs')
+          .select('id').eq('user_id', context.user.id).eq('status', 'completed')
+          .eq('is_free_diagnostic', true).limit(1).maybeSingle();
+        if (completedRunError) return NextResponse.json({ error: 'Could not check diagnostic access' }, { status: 500 });
+        if (completedRun) return NextResponse.json({ complete: true, exhausted: true, limit: 12 });
+      }
       const { data: created, error } = await context.service.from('technical_diagnostic_runs')
         .insert({ user_id: context.user.id, is_free_diagnostic: true }).select('id').single();
       if (error || !created) return NextResponse.json({ error: 'Could not start diagnostic' }, { status: 500 });
